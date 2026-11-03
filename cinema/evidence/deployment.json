@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-03",
+  "url": "https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev",
+  "worker": "cung-xem-cinema-alpha",
+  "deploymentId": "2d039b7019984938b05b4a3af78bf143",
+  "migration": "v1 SQLite RoomSlot",
+  "workers_dev_enabled": true,
+  "transport": "Cloudflare connected API, gzip assets embedded in Worker for alpha",
+  "limits": "Static requests count as Worker requests in this deployment; migrate to Static Assets upload before wider rollout",
+  "gzipFix": "Response encodeBody manual prevents recompression of pre-gzipped bytes",
+  "payloadVerification": "HTML and 2 linked assets decode after exactly one gunzip; production browser verification unavailable",
+  "release": "Viewport-filling cinema, click-to-open panels, D-pad/WASD and drag input, live WebSocket head poses, mandatory host video form, iframe fill and dark screen fallback",
+  "verification": "Frontend/Worker typecheck; 20 model/lifecycle/projection tests; two-browser regression passed including viewport, actual iframe-element geometry, required form Escape/defer, keyboard focus and live pose frames. YouTube/speech APIs mocked."
+}

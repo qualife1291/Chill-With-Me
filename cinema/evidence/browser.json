@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "errors": [],
+  "checks": [
+    "lobby",
+    "3D canvas mounted",
+    "sit transition",
+    "camera switch",
+    "safe chat text",
+    "320/390px no horizontal overflow",
+    "six fallback seats"
+  ],
+  "scope": "Local demo; no actual YouTube playback measured"
+}

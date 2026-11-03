@@ -1,0 +1,152 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import {
+  apply,
+  createRoom,
+  requestJoin,
+  seats,
+  target,
+  videoId,
+  view,
+} from "../shared/model";
+test("all nine capacities produce exact unique seats", () => {
+  for (let n = 2; n <= 10; n++) {
+    const s = seats(n);
+    assert.equal(s.length, n);
+    assert.equal(new Set(s.map((s) => `${s.x},${s.z}`)).size, n);
+    assert(s.every((s) => Math.abs(s.x) > 0.6));
+  }
+  assert.throws(() => seats(11));
+});
+test("host alone plays and late join does not alter timeline", () => {
+  const r = createRoom("h", "Host", "Room", 2, 1000);
+  apply(r, "h", { type: "add", url: "https://youtu.be/jfKfPfyJRdk" }, 1000);
+  apply(r, "h", { type: "next", generation: 0 }, 1000);
+  assert.equal(r.playing, true);
+  requestJoin(r, "v", "Viewer", 31000);
+  apply(r, "h", { type: "accept", id: "v" }, 61000);
+  assert.equal(target(r, 61000), 60);
+  assert.equal(r.generation, 1);
+});
+test("last seat admission and host role enforced", () => {
+  const r = createRoom("h", "H", "R", 2, 0);
+  requestJoin(r, "a", "A", 1);
+  requestJoin(r, "b", "B", 1);
+  apply(r, "h", { type: "accept", id: "a" }, 2);
+  assert.throws(
+    () => apply(r, "h", { type: "accept", id: "b" }, 2),
+    /ROOM_FULL/,
+  );
+  assert.throws(() => apply(r, "a", { type: "kick", id: "h" }, 3), /HOST_ONLY/);
+});
+test("pending cannot see private queue/chat or mutate room", () => {
+  const r = createRoom("h", "H", "R", 3, 0);
+  requestJoin(r, "a", "A", 1);
+  assert.equal(view(r, "a").status, "pending");
+  assert(!("room" in view(r, "a")));
+  assert.throws(
+    () => apply(r, "a", { type: "chat", text: "x" }, 2),
+    /FORBIDDEN/,
+  );
+});
+test("next race advances only once", () => {
+  const r = createRoom("h", "H", "R", 2, 0);
+  for (let i = 0; i < 2; i++)
+    apply(
+      r,
+      "h",
+      { type: "add", url: "https://www.youtube.com/watch?v=jfKfPfyJRdk" },
+      0,
+    );
+  apply(r, "h", { type: "next", generation: 0 }, 1);
+  assert.throws(
+    () => apply(r, "h", { type: "next", generation: 0 }, 2),
+    /STALE/,
+  );
+  assert.equal(r.queue.length, 1);
+});
+test("kick revokes access and cannot rejoin session", () => {
+  const r = createRoom("h", "H", "R", 2, 0);
+  requestJoin(r, "a", "A", 1);
+  apply(r, "h", { type: "accept", id: "a" }, 2);
+  apply(r, "h", { type: "kick", id: "a" }, 3);
+  assert.equal(view(r, "a").status, "removed");
+  assert.throws(() => requestJoin(r, "a", "A", 4), /BANNED/);
+});
+test("expiry and URL allowlist", () => {
+  const r = createRoom("h", "H", "R", 2, 0);
+  requestJoin(r, "a", "A", 0);
+  assert.throws(
+    () => apply(r, "h", { type: "accept", id: "a" }, 120001),
+    /EXPIRED/,
+  );
+  for (const u of [
+    "https://youtube.com.evil.test/watch?v=jfKfPfyJRdk",
+    "http://youtu.be/jfKfPfyJRdk",
+    "https://user@youtube.com/watch?v=jfKfPfyJRdk",
+    "https://127.0.0.1/",
+  ])
+    assert.throws(() => videoId(u));
+});
+
+test("cinema rows rise towards the back, ten-seat rooms have three tiers", () => {
+  const layout = seats(10);
+  assert.equal(new Set(layout.map((s) => s.y)).size, 3);
+  const rows = [...new Map(layout.map((s) => [s.z, s.y])).entries()].sort(
+    (a, b) => a[0] - b[0],
+  );
+  for (let i = 1; i < rows.length; i++) assert(rows[i][1] > rows[i - 1][1]);
+});
+
+test("host quick start is atomic, viewer cannot replace video, empty queue marks one end", () => {
+  const r = createRoom("h", "H", "R", 2, 0);
+  requestJoin(r, "v", "V", 1);
+  apply(r, "h", { type: "accept", id: "v" }, 2);
+  assert.throws(
+    () =>
+      apply(
+        r,
+        "v",
+        { type: "start", url: "https://youtu.be/jfKfPfyJRdk", generation: 0 },
+        3,
+      ),
+    /HOST_ONLY/,
+  );
+  apply(
+    r,
+    "h",
+    { type: "start", url: "https://youtu.be/jfKfPfyJRdk", generation: 0 },
+    4,
+  );
+  assert(r.playing);
+  assert.equal(r.generation, 1);
+  assert.equal(r.queue.length, 0);
+  assert.throws(
+    () =>
+      apply(
+        r,
+        "h",
+        { type: "start", url: "https://youtu.be/jfKfPfyJRdk", generation: 1 },
+        5,
+      ),
+    /SELECTED/,
+  );
+  apply(r, "h", { type: "next", generation: 1 }, 6);
+  assert.equal(r.queueEndedAt, 6);
+  assert.equal(r.current, null);
+  apply(
+    r,
+    "h",
+    { type: "start", url: "https://youtu.be/jfKfPfyJRdk", generation: 2 },
+    7,
+  );
+  assert.equal(r.queueEndedAt, undefined);
+  assert.equal(r.generation, 3);
+});
+test("look changes belong to member and enforce neck angle limits", () => {
+  const r = createRoom("h", "H", "R", 2, 0);
+  requestJoin(r, "v", "V", 1);
+  apply(r, "h", { type: "accept", id: "v" }, 2);
+  apply(r, "v", { type: "look", yaw: 20, pitch: 15, bodyYaw: 0 }, 3);
+  assert.deepEqual(r.members[1].look, { yaw: 20, pitch: 15, bodyYaw: 0 });
+});

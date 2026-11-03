@@ -1,0 +1,4 @@
+results/*/
+*.wav
+*.raw
+.env

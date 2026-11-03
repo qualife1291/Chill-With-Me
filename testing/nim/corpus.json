@@ -1,0 +1,22 @@
+[
+  {"id":"VI01","group":"short","text":"Chào mọi người, mình bắt đầu xem phim nhé."},
+  {"id":"VI02","group":"tones","text":"Ma, má, mà, mả, mã, mạ. Bé đã để đĩa ở trên bàn."},
+  {"id":"VI03","group":"numbers","text":"Phòng có 50 người, phim bắt đầu lúc 20 giờ 30 phút."},
+  {"id":"VI04","group":"question","text":"Bạn nghe rõ không? Chờ mình một chút nhé!"},
+  {"id":"VI05","group":"names","text":"Nguyễn Thị Thúy và Đặng Quốc Khánh đang ở Đà Nẵng."},
+  {"id":"VI06","group":"code_switch","text":"Mình mở YouTube trên Chrome, rồi bấm play nhé."},
+  {"id":"VI07","group":"punctuation","text":"Khoan... đừng tua! Đoạn này hay lắm; xem tiếp nhé."},
+  {"id":"VI08","group":"northern","text":"Hôm nay trời rét, chúng mình ở nhà xem phim."},
+  {"id":"VI09","group":"central","text":"Răng mà vui rứa, chờ tui với nghe."},
+  {"id":"VI10","group":"southern","text":"Bữa nay vui quá, lát nữa mình coi tiếp nghen."},
+  {"id":"VI11","group":"abbreviation","text":"TP.HCM có nhiệt độ 29°C, độ ẩm 75%."},
+  {"id":"VI12","group":"mixed","text":"Video 1080p này dài 01:25:30, bạn thử Wi-Fi khác nhé."},
+  {"id":"VI13","group":"emoji","text":"Hay quá 😂👏❤️"},
+  {"id":"VI14","group":"url","text":"Xem tại https://example.com/video?id=123 nhé."},
+  {"id":"VI15","group":"unaccented","text":"minh dang xem phim cung moi nguoi"},
+  {"id":"VI16","group":"chat_slang","text":"ok mn, đợi mình 1p nha, haha"},
+  {"id":"VI17","group":"money","text":"Giá vé giả định là 125.000 đồng, giảm 12,5 phần trăm."},
+  {"id":"VI18","group":"date","text":"Hẹn bạn ngày 01/11/2026, lúc 8:05 tối."},
+  {"id":"VI19","group":"quiet_style","text":"Mọi người nói nhỏ thôi, đoạn này cần tập trung."},
+  {"id":"VI20","group":"long","text":"Khi mọi người đã vào phòng đầy đủ, chủ phòng sẽ bắt đầu phát video. Nếu đường truyền của bạn chậm, hãy giảm chất lượng hình ảnh và bấm đồng bộ lại. Tin nhắn vẫn hiển thị ngay cả khi chức năng đọc bằng giọng nói đang bận."}
+]

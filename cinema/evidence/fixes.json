@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "errors": [],
+  "checks": [
+    "host native seek persisted, no snapback",
+    "both sessions see two members",
+    "centered approval dialog",
+    "DOM player projects onto 3D screen",
+    "rear camera and dock fallback",
+    "chat speech queue and volume 80 to 20 to 80",
+    "mobile no overflow",
+    "full viewport default theater",
+    "required link modal cannot defer or Escape",
+    "keyboard head controls",
+    "Enter starts video atomically",
+    "neck pose shared",
+    "default screen centered",
+    "host empty queue voice once and restart",
+    "viewer controls disabled",
+    "one-degree turn click",
+    "YouTube recommendation restored to room item",
+    "ended advances both sessions to next room queue item"
+  ],
+  "limitations": "YouTube and speech APIs stubbed; real device voices and actual YouTube playback require pilot"
+}

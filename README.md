@@ -9,7 +9,7 @@ Rạp xem YouTube cùng nhau với phòng 3D, nhân vật, playlist và chat rea
 - Tối đa 3 phòng; chủ phòng chọn 2–10 chỗ. Chủ phòng có thể phát ngay khi ở một mình; người vào sau tiếp tục theo timeline chung.
 - Chỉ chủ phòng điều khiển phát, tua và chuyển video trong playlist của phòng. Duyệt vào phòng, kick, chuyển quyền chủ phòng và xử lý mất kết nối.
 - Rạp phủ viewport; chat, playlist, thành viên và thông tin chỉ mở khi bấm. Ghế phân tầng, avatar, góc mắt người và góc trên cao phía sau nhân vật.
-- Điều khiển hướng đầu bằng D-pad, WASD/mũi tên hoặc kéo pad; đồng bộ hướng đầu qua WebSocket.
+- Điều khiển hướng đầu bằng cách giữ chuột/vuốt trực tiếp trên nền rạp, D-pad hoặc WASD/mũi tên; đồng bộ hướng đầu qua WebSocket. Thanh nút có icon, vùng bấm 44px và nút đưa góc nhìn về giữa.
 - Chủ phòng phải nhập link ban đầu; Enter phát ngay. Hết playlist có thông báo và lời nhắc thêm link.
 - Chat realtime; đọc tin bằng giọng tiếng Việt có sẵn trên thiết bị, giảm âm lượng video trong lúc đọc. Không có cuộc gọi mic realtime.
 
@@ -70,6 +70,6 @@ npx wrangler deploy
 
 20 ca logic về quyền, timeline, playlist, vòng đời phòng và phép chiếu đã chạy đạt trước khi xuất bản repo. [`cinema/evidence/fixes.json`](cinema/evidence/fixes.json) ghi phạm vi browser regression: hai phiên, host seek, quyền viewer, chat, hướng đầu, modal bắt buộc và bố cục mobile. YouTube và speech được mô phỏng trong browser regression; vẫn cần thử video thật, quảng cáo, autoplay/iOS và chất lượng giọng trên thiết bị thực tế.
 
-Giọng đọc hiện dùng Web Speech API, phụ thuộc giọng tiếng Việt của OS/browser. Chưa có clone giọng hoặc NIM production; không có API key trong repo. Rạp/nhân vật là geometry tự dựng, chưa phải asset rig/animation hoàn chỉnh. Chưa có benchmark 30 người đồng thời hay cam kết độ lệch đồng bộ dưới 1 giây. Free tier có quota; không thể cam kết miễn phí vô hạn.
+Giọng đọc hiện dùng Web Speech API, phụ thuộc giọng tiếng Việt của OS/browser. Chưa có clone giọng hoặc NIM production; không có API key trong repo. Bản kéo chuột mới đã build/typecheck; cần chạy lại browser regression cho thay đổi mới trước khi cập nhật web public. Rạp/nhân vật là geometry tự dựng, chưa phải asset rig/animation hoàn chỉnh. Chưa có benchmark 30 người đồng thời hay cam kết độ lệch đồng bộ dưới 1 giây. Free tier có quota; không thể cam kết miễn phí vô hạn.
 
 Guest session dùng cookie HttpOnly; backend kiểm quyền chủ phòng, origin, giới hạn phòng, dữ liệu đầu vào và command idempotency. Bản alpha vẫn cần kiểm thử thực địa, audit và hoàn thiện vận hành trước khi phát hành production.

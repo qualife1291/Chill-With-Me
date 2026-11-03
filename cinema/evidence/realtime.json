@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "errors": [],
+  "checks": [
+    "independent browser sessions",
+    "host create",
+    "guest pending",
+    "host accepts",
+    "WebSocket chat delivery",
+    "kick closes guest access",
+    "host closes room"
+  ],
+  "scope": "Local Wrangler runtime; no external video playback"
+}

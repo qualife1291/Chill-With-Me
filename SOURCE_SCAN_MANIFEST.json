@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-01",
+  "method": "GitHub API recursive tree and selected source-file reads; no execution or load test",
+  "repositories": [
+    {
+      "repo": "RblSb/SyncTube",
+      "treeSha": "532f33dab43fec5a9823311ec30317042251824b"
+    },
+    {
+      "repo": "dyc3/opentogethertube",
+      "treeSha": "a20c91efc490cd8162bfdabeb1d3471fea75fe19"
+    },
+    {
+      "repo": "chtnnh/together",
+      "treeSha": "4911246d82352889e59e6ce23617c0819372c2af"
+    },
+    {
+      "repo": "Houdini99/WatchSync",
+      "treeSha": "c1a235ad551772ace6345cc92baf89b229f4b317"
+    },
+    {
+      "repo": "pnnbao97/VieNeu-TTS",
+      "treeSha": "04044e1b8f822f946bafb2c88b716459f4164152"
+    },
+    {
+      "repo": "synctv-org/synctv",
+      "treeSha": "68c45482e2082495bd2565207c989f47d27f2df8"
+    },
+    {
+      "repo": "howardchung/watchparty",
+      "commitSha": "db06bc983e16f0c7aa9b0b6d1c65ea5a33ff8956"
+    }
+  ]
+}

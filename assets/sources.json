@@ -1,0 +1,106 @@
+{
+  "date": "2026-11-02",
+  "scope": "Source discovery only; no binaries downloaded",
+  "assets": [
+    {
+      "id": "A01",
+      "name": "Universal Base Characters",
+      "url": "https://quaternius.itch.io/universal-base-characters",
+      "license": "CC0 advertised; verify archive",
+      "role": "character",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A02",
+      "name": "Universal Animation Library",
+      "url": "https://quaternius.itch.io/universal-animation-library",
+      "license": "CC0 advertised; Standard subset",
+      "role": "animation",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A03",
+      "name": "Animated Characters 3",
+      "url": "https://kenney-assets.itch.io/animated-characters-3",
+      "license": "CC0",
+      "role": "character-fallback",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A04",
+      "name": "Furniture Kit",
+      "url": "https://kenney.nl/assets/furniture-kit",
+      "license": "CC0",
+      "role": "props",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A05",
+      "name": "Building Kit",
+      "url": "https://kenney.nl/assets/building-kit",
+      "license": "CC0",
+      "role": "structure",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A06",
+      "name": "Carpet013",
+      "url": "https://ambientcg.com/view?id=Carpet013",
+      "license": "CC0",
+      "role": "texture",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A07",
+      "name": "Fabric Pattern07",
+      "url": "https://polyhaven.com/a/fabric_pattern_07",
+      "license": "CC0",
+      "role": "texture",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A08",
+      "name": "UI Pack",
+      "url": "https://kenney-assets.itch.io/ui-pack",
+      "license": "CC0",
+      "role": "ui",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A09",
+      "name": "Lucide",
+      "url": "https://lucide.dev/license",
+      "license": "ISC plus applicable MIT notices",
+      "role": "icons",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    },
+    {
+      "id": "A10",
+      "name": "Mixamo",
+      "url": "https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html",
+      "license": "Adobe terms; not CC0",
+      "role": "animation-fallback",
+      "status": "candidate_not_downloaded",
+      "sha256": null,
+      "local_path": null
+    }
+  ]
+}

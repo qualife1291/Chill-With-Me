@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-02",
+  "scope": "Design preview only",
+  "static_checks": {
+    "relative_doc_links": "PASS",
+    "unique_html_ids": "PASS",
+    "external_asset_references": 0,
+    "key_text_contrast_ratios": {
+      "text/surface": 15.63,
+      "muted/surface": 8.96,
+      "accent/dark": 11.28,
+      "success/surface": 10.6
+    }
+  },
+  "browser_checks": "BLOCKED: bundled Playwright browser missing; system Chromium launch fails with sandbox setsockopt Operation not permitted",
+  "responsive_interactions_screenshots": "NOT_VERIFIED",
+  "application_security_load_tests": "NOT_RUN"
+}

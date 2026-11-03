@@ -1,0 +1,23 @@
+# Dependencies and build output
+node_modules/
+dist/
+release/
+.wrangler/
+*.tsbuildinfo
+worker/*.generated.ts
+
+# Credentials and local state
+.env*
+.dev.vars*
+*.pem
+*.key
+*.log
+.DS_Store
+
+# Generated evaluation results and voice recordings
+testing/nim/results/
+*.wav
+*.mp3
+*.mp4
+playwright-report/
+test-results/
