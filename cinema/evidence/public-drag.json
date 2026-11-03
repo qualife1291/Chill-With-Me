@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "url": "https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema6",
+  "checks": [
+    {
+      "path": "?v=cinema6",
+      "status": 200,
+      "gzip": true,
+      "decodedBytes": 424,
+      "sha256": "ab74cbfc5ab7216e432385e75035d357fdcb32d0af779743632a145a8fa36f00"
+    },
+    {
+      "path": "/assets/index-DAYvtar6.js",
+      "status": 200,
+      "gzip": true,
+      "decodedBytes": 334042,
+      "sha256": "e1b5e51fd44ee3ce7a92efc7348c19893fef834e4c9b7b9351c957e5db67ca1c"
+    },
+    {
+      "path": "/assets/index-Bv2cx7Mf.css",
+      "status": 200,
+      "gzip": true,
+      "decodedBytes": 19119,
+      "sha256": "6e2af874db8fbcf5fbea35a102159b6b21254498ad3cf7b9f6e9ccc5bc2e3a10"
+    },
+    {
+      "path": "/api/rooms",
+      "status": 200,
+      "gzip": true,
+      "decodedBytes": 73,
+      "sha256": "7abf2c61f8b9647fd009235a13e050092c6dcf43f5f5d5c1340219956b4b249f"
+    },
+    {
+      "path": "/assets/Cinema-CWe53SQ0.js",
+      "status": 200,
+      "gzip": true,
+      "decodedBytes": 892272,
+      "sha256": "f8fc5782e8e82b085dd4ca0e6ed46207ca45ead86e6ccb7845293b586954f3fe"
+    }
+  ],
+  "roomsReturned": 3,
+  "scope": "Read-only HTTP, HTML-linked assets and lazy 3D chunk exactly match the local build; no production room mutations or real media pilot"
+}

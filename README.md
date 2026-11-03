@@ -2,7 +2,7 @@
 
 Rạp xem YouTube cùng nhau: 3 phòng, mỗi phòng 2–10 người; video đồng bộ, avatar 3D, chat và đọc tin bằng giọng thiết bị. **Public alpha**, chưa phải production.
 
-**Web:** https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema5
+**Web:** https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema6
 
 **Đọc tiếp dự án:** [`AGENTS.md`](AGENTS.md) → [`PROJECT_STATE.md`](PROJECT_STATE.md). Hai file này ghi quy tắc, kiến trúc, tình trạng kiểm thử và việc tiếp theo; không cần đọc lại toàn bộ nghiên cứu.
 

@@ -3,9 +3,9 @@
 ## Start here
 
 Repo: https://github.com/qualife1291/Chill-With-Me · branch `main`.
-Source release: `6aa2426` (full app + drag controls). This document may be committed later.
-Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema5
-Public build is older than the latest source; new drag controls are **not deployed yet**.
+App source: `5d7b151` (verified compact UI + drag controls); later commits may update evidence/docs.
+Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema6
+Public UI now matches the verified source; deployed 2026-11-03. Read-only HTTP checks passed for HTML, all 3 asset files (exact local bytes after one gunzip) and 3-room summary; `cinema/evidence/public-drag.json`.
 
 ## Product rules / implemented behavior
 
@@ -43,6 +43,6 @@ Security baseline: opaque HttpOnly/SameSite cookie; only hashed identity public;
 
 ## Runtime / next action
 
-Cloudflare Worker `cung-xem-cinema-alpha`; account `966c7ceee358485648b935a07877ec45`; SQLite DO `RoomSlot`, migration `v1`. Last public deployment `2d039b7019984938b05b4a3af78bf143`. No server/API credentials stored in repo; connected API performs current deployment. Embedded gzip assets consume Worker requests; regular Wrangler Static Assets deployment is preferred later.
+Cloudflare Worker `cung-xem-cinema-alpha`; account `966c7ceee358485648b935a07877ec45`; SQLite DO `RoomSlot`, migration `v1`. Latest public deployment `80520b2dd07d411ea28aee473d445c3d`. No server/API credentials stored in repo; connected API performs current deployment. Embedded gzip assets consume Worker requests; regular Wrangler Static Assets deployment is preferred later.
 
-Next: push reviewed source/evidence/docs → deploy verified UI → confirm public HTML/assets → real-device pilot. Do not recreate rooms or change billing/unrelated Workers. Commands: `cinema/README.md`. Research references: `docs/INDEX.md`.
+Next: real-device YouTube/autoplay/voice/touch pilot → 3-room/30-person quota and latency benchmark → prioritize findings. Do not recreate rooms or change billing/unrelated Workers. Commands: `cinema/README.md`. Research references: `docs/INDEX.md`.
