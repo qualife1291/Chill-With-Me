@@ -2,6 +2,9 @@ const {
   chromium,
 } = require("/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright");
 let activeBrowser;
+const baseURL = process.env.CINEMA_TEST_BASE_URL || "http://localhost:8787";
+if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
+  throw Error("Room regression may only target a local runtime");
 (async () => {
   const browser = await chromium.launch({
     executablePath: "/usr/bin/chromium",
@@ -69,7 +72,7 @@ let activeBrowser;
         body: `window.YT={Player:class{constructor(el,c){this.config=c;this.time=0;this.state=2;this.volume=80;this.video='';window.__yt=this;el.innerHTML='<iframe title="YouTube test" style="width:640px;height:360px" srcdoc="&lt;body style=background:black;color:white&gt;Video&lt;/body&gt;"></iframe>';setTimeout(()=>c.events.onReady(),10)}loadVideoById(v){this.video=v.videoId;this.state=1;this.time=v.startSeconds}cueVideoById(v){this.video=v.videoId;this.state=2;this.time=v.startSeconds}get time(){return this._time+(this.state===1?(Date.now()-this._clock)/1000:0)}set time(t){this._time=t;this._clock=Date.now()}getCurrentTime(){return this.time}getPlayerState(){return this.state}getDuration(){return 600}getVideoData(){return{video_id:this.video}}getVolume(){return this.volume}setVolume(v){this.volume=v}seekTo(t){this.time=t}playVideo(){const t=this.time;this.state=1;this.time=t}pauseVideo(){const t=this.time;this.state=2;this.time=t}destroy(){}}};window.onYouTubeIframeAPIReady();`,
       }),
     );
-    await p.goto("http://localhost:8787/");
+    await p.goto(baseURL);
   }
   await host.getByPlaceholder("Mọi người gọi bạn là…").fill("Host fixes");
   await host.getByLabel("Tên phòng mới").fill(testTitle);
@@ -111,10 +114,17 @@ let activeBrowser;
   await host.evaluate(() => {
     window.__yt.time = 120;
   });
-  let state=null;
-  for(let attempt=0;attempt<40;attempt++){
-    state=await host.evaluate(async()=>{for(let slot=1;slot<=3;slot++){const r=await fetch('/api/rooms/'+slot+'/state');const v=await r.json();if(v.room)return v.room;}return null});
-    if(state&&Math.abs(state.position-120)<5)break;
+  let state = null;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    state = await host.evaluate(async () => {
+      for (let slot = 1; slot <= 3; slot++) {
+        const r = await fetch("/api/rooms/" + slot + "/state");
+        const v = await r.json();
+        if (v.room) return v.room;
+      }
+      return null;
+    });
+    if (state && Math.abs(state.position - 120) < 5) break;
     await host.waitForTimeout(250);
   }
   if (Math.abs(state.position - 120) > 5)
@@ -202,20 +212,28 @@ let activeBrowser;
   await host.waitForFunction(() => window.__yt.video === "5qap5aO4i9A");
   await guest.waitForFunction(() => window.__yt.video === "5qap5aO4i9A");
   await openPanel(host, "Chat");
+  await host.bringToFront();
   await host.getByRole("button", { name: "Ngước lên", exact: true }).click();
   await host.waitForFunction(
     () =>
       Number(document.querySelector(".screen-surface")?.dataset.pitch) > 0.5,
   );
   await host.waitForTimeout(900);
-  const ownLook = await host.evaluate(async () => {
-    for (let n = 1; n <= 3; n++) {
-      const s = await (await fetch("/api/rooms/" + n + "/state")).json();
-      if (s.room) return s.room.members.find((m) => m.id === s.room.host)?.look;
-    }
-    return null;
-  });
-  if (!ownLook || ownLook.pitch < 0.5) throw Error("Neck pose not shared");
+  let ownLook;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    ownLook = await host.evaluate(async () => {
+      for (let n = 1; n <= 3; n++) {
+        const s = await (await fetch("/api/rooms/" + n + "/state")).json();
+        if (s.room)
+          return s.room.members.find((m) => m.id === s.room.host)?.look;
+      }
+      return null;
+    });
+    if (ownLook?.pitch > 0.5) break;
+    await host.waitForTimeout(200);
+  }
+  if (!ownLook || ownLook.pitch < 0.5)
+    throw Error("Neck pose not shared: " + JSON.stringify(ownLook));
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -227,12 +245,17 @@ let activeBrowser;
     window.__lookFrames = [];
   });
   await observe;
+  await host.bringToFront();
+  await host.locator(".scene").focus();
   await host.keyboard.down("ArrowRight");
-  await host.waitForTimeout(250);
-  await host.keyboard.up("ArrowRight");
-  await host.waitForFunction(
-    () => Number(document.querySelector(".screen-surface")?.dataset.yaw) > 3,
-  );
+  try {
+    await host.waitForFunction(
+      () => Number(document.querySelector(".screen-surface")?.dataset.yaw) > 3,
+      { timeout: 5000 },
+    );
+  } finally {
+    await host.keyboard.up("ArrowRight");
+  }
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -249,6 +272,122 @@ let activeBrowser;
     return Math.abs(a.left + a.width / 2 - b.left - b.width / 2);
   });
   if (centered > 3) throw Error("Screen not centered: " + centered);
+  await host.bringToFront();
+  // Direct drag on the 3D background must not remount or intercept YouTube.
+  await host
+    .locator(".cinema-toolbar")
+    .getByRole("button", { name: "Chat", exact: true })
+    .click();
+  await host
+    .locator(".cinema-toolbar")
+    .getByRole("button", { name: "Góc nhìn 🎮", exact: true })
+    .click();
+  await host.evaluate(() => {
+    window.__originalYt = window.__yt;
+  });
+  await host.mouse.move(50, 170);
+  await host.mouse.down();
+  await host.mouse.move(230, 100, { steps: 12 });
+  await host.mouse.up();
+  await host.waitForFunction(
+    () => Number(document.querySelector(".screen-surface")?.dataset.yaw) > 30,
+  );
+  await host.waitForTimeout(500);
+  const dragPose = await host
+    .locator(".screen-surface")
+    .evaluate((el) => ({
+      yaw: Number(el.dataset.yaw),
+      pitch: Number(el.dataset.pitch),
+    }));
+  if (Math.abs(dragPose.yaw - 32.4) > 1 || Math.abs(dragPose.pitch - 12.6) > 1)
+    throw Error(
+      "Direct drag direction/sensitivity wrong " + JSON.stringify(dragPose),
+    );
+  if (await host.locator(".scene.is-looking").count())
+    throw Error("Drag stuck after release");
+  await host.mouse.move(450, 180);
+  await host.waitForTimeout(400);
+  const stoppedYaw = Number(
+    await host.locator(".screen-surface").getAttribute("data-yaw"),
+  );
+  if (Math.abs(stoppedYaw - dragPose.yaw) > 0.3)
+    throw Error("View moves after drag release");
+  if (!(await host.evaluate(() => window.__yt === window.__originalYt)))
+    throw Error("Drag remounted player");
+  await host
+    .getByRole("button", { name: "Đưa góc nhìn về giữa", exact: true })
+    .click();
+  await host.waitForFunction(
+    () =>
+      Math.abs(Number(document.querySelector(".screen-surface")?.dataset.yaw)) <
+      0.2,
+  );
+  // Ignore click jitter and the secondary mouse button.
+  await host.mouse.move(40, 170);
+  await host.mouse.down();
+  await host.mouse.move(42, 171);
+  await host.mouse.up();
+  await host.mouse.move(40, 170);
+  await host.mouse.down({ button: "right" });
+  await host.mouse.move(150, 170);
+  await host.mouse.up({ button: "right" });
+  await host.waitForTimeout(200);
+  if (
+    Math.abs(
+      Number(await host.locator(".screen-surface").getAttribute("data-yaw")),
+    ) > 0.3
+  )
+    throw Error("Click jitter/right drag changed view");
+  await host.mouse.move(40, 170);
+  await host.mouse.down();
+  await host.mouse.move(100, 170, { steps: 4 });
+  await host.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await host.mouse.up();
+  if (await host.locator(".scene.is-looking").count())
+    throw Error("Drag stuck after blur");
+  await host
+    .getByRole("button", { name: "Đưa góc nhìn về giữa", exact: true })
+    .click();
+  await host.waitForTimeout(800);
+  await host.screenshot({ path: "evidence/drag-desktop.png" });
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+  ]) {
+    await host.setViewportSize(viewport);
+    await host.waitForTimeout(1200);
+    const geometry = await host.locator(".screen-surface").evaluate((el) => {
+      const a = el.getBoundingClientRect(),
+        b = el.parentElement.getBoundingClientRect();
+      return {
+        inside:
+          a.left >= b.left - 1 &&
+          a.top >= b.top - 1 &&
+          a.right <= b.right + 1 &&
+          a.bottom <= b.bottom + 1,
+        ratio: el.offsetWidth / el.offsetHeight,
+      };
+    });
+    if (!geometry.inside)
+      throw Error(
+        "Player clipped in mobile orientation " + JSON.stringify(viewport),
+      );
+    const targets = await host
+      .locator(".cinema-toolbar button")
+      .evaluateAll((buttons) =>
+        buttons.every((b) => b.offsetWidth >= 44 && b.offsetHeight >= 44),
+      );
+    if (!targets) throw Error("Toolbar touch targets too small");
+    await host.screenshot({
+      path:
+        viewport.width === 390
+          ? "evidence/drag-mobile.png"
+          : "evidence/drag-landscape.png",
+    });
+  }
+  await host.setViewportSize({ width: 1440, height: 1000 });
+  await openPanel(host, "Góc nhìn 🎮");
+  await openPanel(host, "Chat");
   await host.evaluate(() => {
     window.__yt.time = 600;
     window.__yt.config.events.onStateChange({ data: 0 });
@@ -286,6 +425,10 @@ let activeBrowser;
         passed: !errors.length,
         errors,
         checks: [
+          "direct background drag and correct yaw/pitch",
+          "drag release and blur cleanup, no player remount",
+          "click jitter and right mouse drag ignored",
+          "recenter view, mobile orientation framing and 44px toolbar targets",
           "host native seek persisted, no snapback",
           "both sessions see two members",
           "centered approval dialog",
@@ -314,7 +457,7 @@ let activeBrowser;
   );
   if (errors.length) throw Error(errors.join("\n"));
   console.log(
-    "PASS six reported fixes (local runtime + stubbed YouTube/speech APIs)",
+    "PASS fullscreen cinema and direct-drag regression (local runtime; YouTube/speech mocked)",
   );
 })().catch(async (e) => {
   await activeBrowser?.close();

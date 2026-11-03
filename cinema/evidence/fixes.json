@@ -2,6 +2,10 @@
   "passed": true,
   "errors": [],
   "checks": [
+    "direct background drag and correct yaw/pitch",
+    "drag release and blur cleanup, no player remount",
+    "click jitter and right mouse drag ignored",
+    "recenter view, mobile orientation framing and 44px toolbar targets",
     "host native seek persisted, no snapback",
     "both sessions see two members",
     "centered approval dialog",
