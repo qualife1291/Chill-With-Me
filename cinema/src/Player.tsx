@@ -89,6 +89,10 @@ export default function PlayerView({
           },
           events: {
             onReady: () => setReady(true),
+            onAutoplayBlocked: () =>
+              setError(
+                "Trình duyệt đang chặn tự phát. Bấm Phát / bắt kịp phòng để tiếp tục.",
+              ),
             onError: (e: { data: number }) =>
               setError(
                 `YouTube báo lỗi ${e.data}. Chủ phòng có thể bỏ qua video.`,

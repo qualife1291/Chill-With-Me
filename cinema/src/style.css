@@ -1370,3 +1370,38 @@ body.cinema-active {
     display: none;
   }
 }
+
+.voice-warning {
+  margin: 6px 12px;
+  padding: 10px 12px;
+  border: 1px solid #866338;
+  border-radius: 10px;
+  color: #f4cf98;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Keep the lightweight player inside short screens as well as portrait phones. */
+.cinema-app .screen-surface.flat {
+  --flat-height: calc(100dvh - 148px);
+  width: min(
+    900px,
+    calc(100% - 32px),
+    calc(var(--flat-height) * 1.7777778)
+  ) !important;
+  min-height: 0;
+}
+.cinema-app.show-controls .screen-surface.flat {
+  --flat-height: calc(100dvh - 260px);
+}
+@media (max-height: 480px) {
+  .cinema-app.show-controls .screen-surface.flat {
+    --flat-height: calc(100dvh - 148px);
+    width: min(
+      900px,
+      calc(100% - 180px),
+      calc(var(--flat-height) * 1.7777778)
+    ) !important;
+    left: calc((100% - 154px) / 2) !important;
+  }
+}

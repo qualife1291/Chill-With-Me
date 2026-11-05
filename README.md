@@ -32,4 +32,4 @@ Lệnh test/deploy: [`cinema/README.md`](cinema/README.md). Tài liệu tham kh�
 
 ## Giới hạn
 
-20 test logic đã đạt. Browser regression dùng YouTube/speech mô phỏng; không thay thế pilot video thật, quảng cáo, autoplay/iOS và giọng tiếng Việt trên thiết bị. Chưa benchmark 30 người, chưa cam kết drift dưới 1 giây hay miễn phí vô hạn. Free tier có quota. Khóa API và dữ liệu giọng không nằm trong repo; push GitHub không tự deploy.
+23 test logic đã đạt. Browser regression dùng YouTube/speech mô phỏng; không thay thế pilot video thật, quảng cáo, autoplay/iOS và giọng tiếng Việt trên thiết bị. Chưa benchmark 30 người, chưa cam kết drift dưới 1 giây hay miễn phí vô hạn. Free tier có quota. Khóa API và dữ liệu giọng không nằm trong repo; push GitHub không tự deploy.

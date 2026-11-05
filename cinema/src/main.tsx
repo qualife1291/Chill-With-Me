@@ -1,4 +1,11 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
+import React, {
+  Suspense,
+  lazy,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createRoot } from "react-dom/client";
 import {
   Film,
@@ -272,10 +279,10 @@ function App() {
       socket?.close();
     };
   }, [slot, status]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (followChat.current && history.current)
       history.current.scrollTop = history.current.scrollHeight;
-  }, [room?.messages.length, pendingMessages.length, tab]);
+  }, [room?.messages, pendingMessages, tab, panel]);
   async function enter(n: number, create: boolean) {
     if (!name.trim()) {
       setError("Nhập tên của bạn trước nhé.");
@@ -532,11 +539,26 @@ function App() {
       keys.delete(e.key.length === 1 ? e.key.toLowerCase() : e.key);
       if (!keys.size) release();
     };
+    const focusChanged = (e: FocusEvent) => {
+      if (
+        (e.target as HTMLElement)?.closest(
+          "input,textarea,select,[contenteditable=true],[role=dialog]",
+        )
+      )
+        release();
+    };
+    const hidden = () => {
+      if (document.hidden) release();
+    };
+    document.addEventListener("focusin", focusChanged);
+    document.addEventListener("visibilitychange", hidden);
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     window.addEventListener("blur", release);
     return () => {
       release();
+      document.removeEventListener("focusin", focusChanged);
+      document.removeEventListener("visibilitychange", hidden);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", release);
@@ -1031,6 +1053,9 @@ function App() {
                       >
                         Ngồi ngay
                       </button>
+                      <button onClick={() => void command({ type: "wave" })}>
+                        Vẫy tay
+                      </button>
                       <button onClick={resetView}>Nhìn màn chiếu</button>
                       <button
                         onClick={() => {
@@ -1269,12 +1294,12 @@ function App() {
                     </div>
                     <button
                       className="tts-toggle"
+                      aria-pressed={tts}
                       onClick={() => {
                         if (tts) {
                           speech.stop();
                           setTts(false);
                         } else setTts(speech.enable());
-                        if (tts) speech.stop();
                       }}
                     >
                       <Volume2 size={16} />
@@ -1305,6 +1330,11 @@ function App() {
                         Nghe thử giọng
                       </button>
                     </div>
+                    {speech.warning && (
+                      <p className="voice-warning" role="status">
+                        {speech.warning}
+                      </p>
+                    )}
                     <form
                       className="composer"
                       onSubmit={(e) => {

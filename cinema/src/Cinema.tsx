@@ -3,18 +3,10 @@ import { useMemo, useRef, useEffect, type RefObject } from "react";
 import * as THREE from "three";
 import { seats, type Room, type Member } from "../shared/model";
 import { screenMatrix } from "../shared/projection";
+import { avatarMotion, avatarPosition } from "../shared/avatar";
 function position(m: Member, capacity: number, now: number) {
-  const s = seats(capacity)[m.seat];
-  if (!m.seated)
-    return new THREE.Vector3(
-      ((m.seat % 3) - 1) * 0.6,
-      0,
-      4 + (m.seat % 2) * 0.4,
-    );
-  const t = Math.min(1, Math.max(0, (now - (m.sitAt || 0)) / 5000));
-  if (t < 0.55)
-    return new THREE.Vector3(0, s.y * t, 4 + ((s.z - 4) * t) / 0.55);
-  return new THREE.Vector3((s.x * (t - 0.55)) / 0.45, s.y, s.z);
+  const p = avatarPosition(m, capacity, now);
+  return new THREE.Vector3(p.x, p.y, p.z);
 }
 function Avatar({
   m,
@@ -22,115 +14,198 @@ function Avatar({
   offset,
   look,
 }: {
-  look: { yaw: number; pitch: number; bodyYaw: number };
   m: Member;
   capacity: number;
   offset: number;
+  look: { yaw: number; pitch: number; bodyYaw: number };
 }) {
   const group = useRef<THREE.Group>(null),
+    torso = useRef<THREE.Group>(null),
     neck = useRef<THREE.Group>(null);
+  const limbs = useRef<(THREE.Group | null)[]>([]);
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
     invalidate();
-  }, [look.yaw, look.pitch, look.bodyYaw, invalidate]);
-  const colors = ["#dfaf6b", "#829fbc", "#a99cce", "#77ad9c", "#d0878a"];
-  useFrame(() => {
-    if (group.current)
-      group.current.position.copy(position(m, capacity, Date.now() + offset));
-    if (group.current) {
-      const desired = (-look.bodyYaw * Math.PI) / 180;
-      group.current.rotation.y = THREE.MathUtils.lerp(
-        group.current.rotation.y,
-        desired,
-        0.18,
-      );
-      if (Math.abs(group.current.rotation.y - desired) > 0.001) invalidate();
+  }, [
+    look.yaw,
+    look.pitch,
+    look.bodyYaw,
+    m.sitAt,
+    m.waveAt,
+    m.seated,
+    invalidate,
+  ]);
+  const shirt = ["#d9a558", "#6f9fc3", "#a797d0", "#68b39b", "#d88791"][
+    m.seat % 5
+  ];
+  useFrame((_, dt) => {
+    const now = Date.now() + offset,
+      pose = avatarMotion(m, now);
+    const root = group.current,
+      body = torso.current;
+    if (!root || !body || !neck.current) return;
+    root.position.copy(position(m, capacity, now));
+    // Face the direction of travel, then turn towards the screen before sitting.
+    const next = avatarPosition(m, capacity, now + 20);
+    const dx = next.x - root.position.x,
+      dz = next.z - root.position.z;
+    const desired =
+      pose.walking && Math.hypot(dx, dz) > 0.00001
+        ? Math.atan2(-dx, -dz)
+        : (-look.bodyYaw * Math.PI) / 180;
+    const delta = Math.atan2(
+      Math.sin(desired - root.rotation.y),
+      Math.cos(desired - root.rotation.y),
+    );
+    root.rotation.y += delta * (1 - Math.exp(-dt * 10));
+    body.position.y =
+      0.94 -
+      pose.sitting * 0.38 +
+      (pose.walking ? Math.abs(pose.stride) * 0.035 : 0);
+    neck.current.rotation.order = "YXZ";
+    const x = (look.pitch * Math.PI) / 180,
+      y = (-look.yaw * Math.PI) / 180;
+    neck.current.rotation.x = THREE.MathUtils.damp(
+      neck.current.rotation.x,
+      x,
+      10,
+      dt,
+    );
+    neck.current.rotation.y = THREE.MathUtils.damp(
+      neck.current.rotation.y,
+      y,
+      10,
+      dt,
+    );
+    root.userData.look = { ...look };
+    root.userData.action = pose.waving
+      ? "wave"
+      : pose.walking
+        ? "walk"
+        : pose.sitting === 1
+          ? "sit"
+          : "stand";
+    for (let side = 0; side < 2; side++) {
+      const sign = side === 0 ? -1 : 1;
+      const hip = limbs.current[side],
+        knee = limbs.current[side + 2],
+        arm = limbs.current[side + 4],
+        elbow = limbs.current[side + 6];
+      if (hip)
+        hip.rotation.x = (pose.sitting * Math.PI) / 2 + pose.stride * sign;
+      if (knee)
+        knee.rotation.x =
+          (-pose.sitting * Math.PI) / 2 -
+          Math.max(0, -pose.stride * sign) * 0.65;
+      if (arm) {
+        arm.rotation.x = -pose.stride * sign * 0.7 + pose.sitting * 0.25;
+        arm.rotation.z = sign * (0.12 + (side === 1 ? pose.wave * 2.35 : 0));
+      }
+      if (elbow) elbow.rotation.z = side === 1 ? pose.hand : 0;
     }
-    if (neck.current) {
-      neck.current.rotation.order = "YXZ";
-      group.current!.userData.look = { ...look };
-      const x = (look.pitch * Math.PI) / 180,
-        y = (-look.yaw * Math.PI) / 180;
-      neck.current.rotation.x = THREE.MathUtils.lerp(
-        neck.current.rotation.x,
-        x,
-        0.18,
-      );
-      neck.current.rotation.y = THREE.MathUtils.lerp(
-        neck.current.rotation.y,
-        y,
-        0.18,
-      );
-      if (
-        Math.abs(neck.current.rotation.x - x) +
-          Math.abs(neck.current.rotation.y - y) >
+    if (
+      pose.moving ||
+      Math.abs(delta) > 0.001 ||
+      Math.abs(neck.current.rotation.x - x) +
+        Math.abs(neck.current.rotation.y - y) >
         0.001
-      )
-        invalidate();
-    }
-    if (m.seated && Date.now() + offset - (m.sitAt || 0) < 5000) invalidate();
+    )
+      invalidate();
   });
   return (
     <group ref={group} name={"avatar-" + m.id}>
-      <group
-        ref={neck}
-        name={"head-" + m.id}
-        position={[0, m.seated ? 1.29 : 1.44, 0]}
-      >
-        <mesh position={[0, 0.21, 0]}>
-          <sphereGeometry args={[0.18, 16, 12]} />
-          <meshStandardMaterial color="#d3a686" />
+      <group ref={torso} position={[0, 0.94, 0]}>
+        <mesh position={[0, 0.25, 0]} scale={[1, 1, 0.7]}>
+          <capsuleGeometry args={[0.21, 0.23, 4, 10]} />
+          <meshStandardMaterial color={shirt} roughness={0.85} />
         </mesh>
-        <mesh position={[0, 0.26, 0.105]} scale={[1, 1, 0.45]}>
-          <sphereGeometry args={[0.158, 12, 8]} />
-          <meshStandardMaterial color="#382b27" roughness={1} />
+        <mesh position={[0, 0.06, 0]}>
+          <boxGeometry args={[0.34, 0.14, 0.25]} />
+          <meshStandardMaterial color="#263244" />
         </mesh>
-        {[-0.176, 0.176].map((x) => (
-          <mesh key={x} position={[x, 0.2, 0]} scale={[0.45, 1, 1]}>
-            <sphereGeometry args={[0.045, 8, 6]} />
-            <meshStandardMaterial color="#c59b7a" />
+        <group ref={neck} position={[0, 0.53, 0]} name={"head-" + m.id}>
+          <mesh position={[0, 0.17, 0]} scale={[0.95, 1.06, 0.95]}>
+            <sphereGeometry args={[0.185, 16, 12]} />
+            <meshStandardMaterial color="#d3a686" roughness={0.8} />
           </mesh>
-        ))}
-        <mesh position={[0, 0.18, -0.176]}>
-          <sphereGeometry args={[0.035, 8, 6]} />
-          <meshStandardMaterial color="#bd8d70" />
-        </mesh>
-        {[-0.065, 0.065].map((x) => (
-          <mesh key={x} position={[x, 0.25, -0.154]}>
-            <sphereGeometry args={[0.022, 8, 6]} />
-            <meshStandardMaterial color="#24232b" />
+          <mesh position={[0, 0.26, 0.045]} scale={[1, 0.7, 0.9]}>
+            <sphereGeometry args={[0.18, 12, 8]} />
+            <meshStandardMaterial color="#382b27" roughness={1} />
           </mesh>
+          {[-1, 1].map((side) => (
+            <group key={side}>
+              <mesh position={[side * 0.18, 0.17, 0]} scale={[0.45, 1, 1]}>
+                <sphereGeometry args={[0.045, 8, 6]} />
+                <meshStandardMaterial color="#c59b7a" />
+              </mesh>
+              <mesh position={[side * 0.064, 0.19, -0.16]}>
+                <sphereGeometry args={[0.024, 8, 6]} />
+                <meshStandardMaterial color="#24232b" />
+              </mesh>
+            </group>
+          ))}
+          <mesh position={[0, 0.14, -0.18]}>
+            <sphereGeometry args={[0.032, 8, 6]} />
+            <meshStandardMaterial color="#bd8d70" />
+          </mesh>
+        </group>
+        {[-1, 1].map((side, i) => (
+          <group key={side}>
+            <group
+              position={[side * 0.11, 0, 0]}
+              ref={(el) => {
+                limbs.current[i] = el;
+              }}
+            >
+              <mesh position={[0, -0.21, 0]}>
+                <capsuleGeometry args={[0.078, 0.28, 4, 8]} />
+                <meshStandardMaterial color="#263244" />
+              </mesh>
+              <group
+                position={[0, -0.42, 0]}
+                ref={(el) => {
+                  limbs.current[i + 2] = el;
+                }}
+              >
+                <mesh position={[0, -0.18, 0]}>
+                  <capsuleGeometry args={[0.065, 0.26, 4, 8]} />
+                  <meshStandardMaterial color="#354359" />
+                </mesh>
+                <mesh position={[0, -0.44, -0.065]}>
+                  <boxGeometry args={[0.16, 0.12, 0.28]} />
+                  <meshStandardMaterial color="#161e2b" />
+                </mesh>
+              </group>
+            </group>
+            <group
+              position={[side * 0.25, 0.4, 0]}
+              ref={(el) => {
+                limbs.current[i + 4] = el;
+              }}
+            >
+              <mesh position={[0, -0.14, 0]}>
+                <capsuleGeometry args={[0.065, 0.18, 4, 8]} />
+                <meshStandardMaterial color={shirt} />
+              </mesh>
+              <group
+                position={[0, -0.28, 0]}
+                ref={(el) => {
+                  limbs.current[i + 6] = el;
+                }}
+              >
+                <mesh position={[0, -0.12, 0]}>
+                  <capsuleGeometry args={[0.05, 0.15, 4, 8]} />
+                  <meshStandardMaterial color="#d3a686" />
+                </mesh>
+                <mesh position={[0, -0.26, 0]}>
+                  <sphereGeometry args={[0.062, 8, 6]} />
+                  <meshStandardMaterial color="#d3a686" />
+                </mesh>
+              </group>
+            </group>
+          </group>
         ))}
       </group>
-      <mesh position={[0, m.seated ? 1.12 : 1.25, 0]}>
-        <capsuleGeometry args={[0.19, 0.33, 4, 8]} />
-        <meshStandardMaterial color={colors[m.seat % colors.length]} />
-      </mesh>
-      {[-0.13, 0.13].map((x) => (
-        <group key={x}>
-          {m.seated ? (
-            <>
-              <mesh position={[x, 0.61, -0.22]} rotation={[Math.PI / 2, 0, 0]}>
-                <capsuleGeometry args={[0.085, 0.3, 4, 8]} />
-                <meshStandardMaterial color="#263244" />
-              </mesh>
-              <mesh position={[x, 0.3, -0.43]}>
-                <capsuleGeometry args={[0.075, 0.34, 4, 8]} />
-                <meshStandardMaterial color="#263244" />
-              </mesh>
-              <mesh position={[x, 0.075, -0.51]}>
-                <boxGeometry args={[0.17, 0.12, 0.28]} />
-                <meshStandardMaterial color="#171c27" />
-              </mesh>
-            </>
-          ) : (
-            <mesh position={[x, 0.63, 0]}>
-              <capsuleGeometry args={[0.075, 0.8, 4, 8]} />
-              <meshStandardMaterial color="#263244" />
-            </mesh>
-          )}
-        </group>
-      ))}
     </group>
   );
 }
@@ -154,8 +229,8 @@ function Chair({
           roughness={0.9}
         />
       </mesh>
-      <mesh position={[0, 0.85, 0.28]} rotation={[-0.08, 0, 0]}>
-        <boxGeometry args={[0.76, 0.85, 0.18]} />
+      <mesh position={[0, 0.79, 0.28]} rotation={[-0.08, 0, 0]}>
+        <boxGeometry args={[0.76, 0.62, 0.18]} />
         <meshStandardMaterial color="#7d3042" roughness={0.95} />
       </mesh>
       {[-0.44, 0.44].map((x) => (
@@ -207,9 +282,9 @@ function Camera({
     const base = position(m, room.capacity, Date.now() + offset);
     if (mode === "first")
       p.copy(base).add(new THREE.Vector3(0, m.seated ? 1.5 : 1.65, -0.08));
-    else p.set(0, highest + 5, rearZ + 5.8);
+    else p.set(0, highest + 3.4, rearZ + 5.2);
     if (camera instanceof THREE.PerspectiveCamera) {
-      const fov = mode === "first" ? 60 : 30;
+      const fov = mode === "first" ? 60 : 48;
       if (camera.fov !== fov) {
         camera.fov = fov;
         camera.updateProjectionMatrix();
@@ -220,7 +295,7 @@ function Camera({
       (pitch - smoothPitch.current) * (1 - Math.exp(-dt * 6));
     smoothYaw.current +=
       (bodyYaw + yaw - smoothYaw.current) * (1 - Math.exp(-dt * 6));
-    const look = new THREE.Vector3(0, 2.3, -5.7)
+    const look = new THREE.Vector3(0, mode === "first" ? 2.3 : 1.25, -5.7)
       .sub(camera.position)
       .applyAxisAngle(
         new THREE.Vector3(0, 1, 0),
@@ -245,6 +320,14 @@ function Camera({
     el.dataset.yaw = smoothYaw.current.toFixed(2);
     el.dataset.pitch = smoothPitch.current.toFixed(2);
     el.dataset.seated = String(m.seated);
+    const pose = avatarMotion(m, Date.now() + offset);
+    el.dataset.action = pose.waving
+      ? "wave"
+      : pose.walking
+        ? "walk"
+        : pose.sitting === 1
+          ? "sit"
+          : "stand";
     const corners = [
       [-3.35, 4.184, -5.69],
       [3.35, 4.184, -5.69],
@@ -309,6 +392,75 @@ function Camera({
   });
   return null;
 }
+function TheatreInterior() {
+  return (
+    <group>
+      <directionalLight position={[0, 5, 6]} intensity={1.5} color="#a7c5e9" />
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          <pointLight
+            position={[side * 4.4, 3.1, 1.5]}
+            intensity={12}
+            distance={12}
+            color="#ffcb8a"
+          />
+          {[-3.5, 0, 3.5].map((z) => (
+            <group key={z} position={[side * 5.32, 2.3, z]}>
+              <mesh>
+                <boxGeometry args={[0.08, 3.4, 2.6]} />
+                <meshStandardMaterial color="#343248" roughness={0.95} />
+              </mesh>
+              <mesh position={[-side * 0.065, 0.2, 0]}>
+                <boxGeometry args={[0.05, 0.7, 0.07]} />
+                <meshBasicMaterial color="#f7c281" />
+              </mesh>
+              <mesh position={[-side * 0.08, -1.58, 0]}>
+                <boxGeometry args={[0.06, 0.035, 2.6]} />
+                <meshBasicMaterial color="#bf8553" />
+              </mesh>
+            </group>
+          ))}
+          <mesh position={[side * 3.55, 2.3, -5.62]}>
+            <boxGeometry args={[0.16, 4.25, 0.16]} />
+            <meshStandardMaterial
+              color="#c38d52"
+              metalness={0.6}
+              roughness={0.35}
+            />
+          </mesh>
+          <mesh position={[side * 4.55, 2.4, -5.5]}>
+            <boxGeometry args={[1.45, 4.8, 0.25]} />
+            <meshStandardMaterial color="#552b45" roughness={1} />
+          </mesh>
+        </group>
+      ))}
+      {[0.28, 4.32].map((y) => (
+        <mesh key={y} position={[0, y, -5.62]}>
+          <boxGeometry args={[7.25, 0.12, 0.14]} />
+          <meshStandardMaterial
+            color="#b88b58"
+            metalness={0.6}
+            roughness={0.4}
+          />
+        </mesh>
+      ))}
+      {[-3, 0, 3, 6].map((z) => (
+        <group key={z} position={[0, 5.35, z]}>
+          <mesh>
+            <boxGeometry args={[11.2, 0.14, 0.28]} />
+            <meshStandardMaterial color="#302d40" />
+          </mesh>
+          {[-3.5, 3.5].map((x) => (
+            <mesh key={x} position={[x, -0.09, 0]}>
+              <boxGeometry args={[1.5, 0.035, 0.12]} />
+              <meshBasicMaterial color="#f8d3a1" />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
 export default function Cinema({
   room,
   id,
@@ -338,9 +490,10 @@ export default function Cinema({
       camera={{ position: [0, 3.3, 7], fov: 60 }}
       gl={{ antialias: true, alpha: false }}
     >
+      <TheatreInterior />
       <color attach="background" args={["#11151f"]} />
-      <fog attach="fog" args={["#11151f", 12, 25]} />
-      <ambientLight intensity={room.playing ? 0.45 : 0.9} />
+      <fog attach="fog" args={["#11151f", 18, 38]} />
+      <ambientLight intensity={room.playing ? 0.65 : 1.0} />
       <hemisphereLight args={["#c3d1ea", "#18121d", 1.1]} />
       <pointLight
         position={[0, 3, -4]}

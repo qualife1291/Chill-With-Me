@@ -150,3 +150,20 @@ test("look changes belong to member and enforce neck angle limits", () => {
   apply(r, "v", { type: "look", yaw: 20, pitch: 15, bodyYaw: 0 }, 3);
   assert.deepEqual(r.members[1].look, { yaw: 20, pitch: 15, bodyYaw: 0 });
 });
+
+test("member waves are actor-scoped, bounded, and unavailable to nonmembers", () => {
+  const r = createRoom("host", "Host", "Cinema", 2, 1000);
+  requestJoin(r, "guest", "Guest", 1000);
+  apply(r, "host", { type: "accept", id: "guest" }, 1000);
+  apply(r, "guest", { type: "wave" }, 2000);
+  assert.equal(r.members.find((m) => m.id === "guest")?.waveAt, 2000);
+  assert.equal(r.members.find((m) => m.id === "host")?.waveAt, undefined);
+  apply(r, "guest", { type: "wave" }, 2100);
+  assert.equal(r.members.find((m) => m.id === "guest")?.waveAt, 2000);
+  assert.throws(
+    () => apply(r, "outsider", { type: "wave" }, 5000),
+    /FORBIDDEN/,
+  );
+  apply(r, "guest", { type: "wave" }, 4500);
+  assert.equal(r.members.find((m) => m.id === "guest")?.waveAt, 4500);
+});

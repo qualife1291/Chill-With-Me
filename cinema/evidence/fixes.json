@@ -2,6 +2,14 @@
   "passed": true,
   "errors": [],
   "checks": [
+    "blocked localStorage does not break room, chat or voice controls",
+    "autoplay-blocked feedback and user-gesture playback recovery",
+    "cancelled speech callbacks cannot duck audio or show stale warnings",
+    "100-message cap follows latest while preserving scrolled history",
+    "typing focus releases held camera keys",
+    "first/third/light view switches retain video player",
+    "light player fits landscape screen and expanded controls",
+    "wave action persists and is visible to another room member",
     "direct background drag and correct yaw/pitch",
     "drag release and blur cleanup, no player remount",
     "click jitter and right mouse drag ignored",
@@ -25,5 +33,8 @@
     "YouTube recommendation restored to room item",
     "ended advances both sessions to next room queue item"
   ],
-  "limitations": "YouTube and speech APIs stubbed; real device voices and actual YouTube playback require pilot"
+  "limitations": "YouTube and speech APIs stubbed; real device voices and actual YouTube playback require pilot",
+  "date": "2026-11-05",
+  "command": "node tests/fixes.cjs",
+  "target": "local Wrangler"
 }

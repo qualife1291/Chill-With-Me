@@ -1,9 +1,7 @@
-const {
-  chromium,
-} = require("/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright");
+const { chromium, executablePath } = require("./browser-runtime.cjs");
 (async () => {
   const browser = await chromium.launch({
-    executablePath: "/usr/bin/chromium",
+    executablePath,
     headless: true,
     args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
   });

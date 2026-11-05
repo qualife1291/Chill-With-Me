@@ -1,13 +1,11 @@
-const {
-  chromium,
-} = require("/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright");
+const { chromium, executablePath } = require("./browser-runtime.cjs");
 let activeBrowser;
 const baseURL = process.env.CINEMA_TEST_BASE_URL || "http://localhost:8787";
 if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   throw Error("Room regression may only target a local runtime");
 (async () => {
   const browser = await chromium.launch({
-    executablePath: "/usr/bin/chromium",
+    executablePath,
     headless: true,
     args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
   });
@@ -45,13 +43,30 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     p.setDefaultTimeout(35000);
     p.on("pageerror", (e) => errors.push(e.message));
     await p.addInitScript(() => {
+      // Privacy settings may deny storage; the cinema must still be usable.
+      Storage.prototype.getItem = () => {
+        throw new DOMException("Blocked", "SecurityError");
+      };
+      Storage.prototype.setItem = () => {
+        throw new DOMException("Blocked", "SecurityError");
+      };
       window.__spoken = [];
+      window.__utterances = [];
+      const NativeWebSocket = window.WebSocket;
+      window.WebSocket = class extends NativeWebSocket {
+        constructor(...args) {
+          super(...args);
+          if (String(args[0]).includes("/api/rooms/"))
+            window.__roomSocket = this;
+        }
+      };
       Object.defineProperty(window, "speechSynthesis", {
         value: {
           getVoices: () => [{ lang: "vi-VN" }],
           resume() {},
           cancel() {},
           speak(u) {
+            window.__utterances.push(u);
             window.__spoken.push(u.text);
             u.onstart?.();
             setTimeout(() => u.onend?.(), 1500);
@@ -175,11 +190,133 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.waitForTimeout(1700);
   if ((await host.evaluate(() => window.__yt.volume)) !== 80)
     throw Error("volume not restored");
+  await host.evaluate(() => window.__yt.config.events.onAutoplayBlocked());
+  await host
+    .getByText("Trình duyệt đang chặn tự phát.", { exact: false })
+    .waitFor();
+  await host
+    .getByRole("button", { name: "Phát / bắt kịp phòng", exact: true })
+    .click();
+  if (await host.evaluate(() => window.__yt.getPlayerState() !== 1))
+    throw Error("Autoplay recovery did not play");
+  // Events from a cancelled utterance must never duck audio or show a stale error.
+  await host
+    .getByRole("button", { name: "Nghe thử giọng", exact: true })
+    .click();
+  await host.waitForFunction(() => window.__yt.volume === 20);
+  await host.getByRole("button", { name: "Tắt đọc tin", exact: true }).click();
+  await host.waitForFunction(() => window.__yt.volume === 80);
+  await host.evaluate(() => {
+    const u = window.__utterances.at(-1);
+    u.onstart?.();
+    u.onerror?.();
+  });
+  await host.waitForTimeout(100);
+  if (await host.evaluate(() => window.__yt.volume !== 80))
+    throw Error("Cancelled speech callback ducked video again");
+  if (
+    await host
+      .getByText("Thiết bị chưa đọc được giọng.", { exact: false })
+      .count()
+  )
+    throw Error("Cancelled speech callback showed stale error");
+
+  // Exercise capped history with server-shaped WS deltas, without rate-limit bypasses
+  // or hundreds of mutations to the backend. The normal chat above uses the real WS.
+  const injectChat = async (count) =>
+    host.evaluate(
+      async ({ count, testTitle }) => {
+        const lobby = await (await fetch("/api/rooms")).json();
+        const slot = lobby.find((r) => r.title === testTitle).slot;
+        const { room } = await (await fetch(`/api/rooms/${slot}/state`)).json();
+        for (let i = 0; i < count; i++) {
+          window.__roomSocket.dispatchEvent(
+            new MessageEvent("message", {
+              data: JSON.stringify({
+                type: "chat",
+                session: room.session,
+                revision: room.revision,
+                message: {
+                  id: crypto.randomUUID(),
+                  name: "History test",
+                  text: "History " + i,
+                },
+              }),
+            }),
+          );
+        }
+      },
+      { count, testTitle },
+    );
+  console.log("PASS cancelled speech events; checking capped chat history");
+  await injectChat(100);
+  console.log(
+    "History injection",
+    await host.evaluate(() => ({
+      messages: document.querySelectorAll(".chat-history .message").length,
+      socket: window.__roomSocket?.url,
+    })),
+  );
+  await host.waitForFunction(
+    () => document.querySelectorAll(".chat-history .message").length === 100,
+  );
+  await host.locator(".chat-history").evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+    el.dispatchEvent(new Event("scroll"));
+  });
+  await injectChat(1);
+  console.log(
+    "History scroll",
+    await host.locator(".chat-history").evaluate((el) => ({
+      top: el.scrollTop,
+      height: el.scrollHeight,
+      client: el.clientHeight,
+    })),
+  );
+  await host.waitForFunction(() => {
+    const el = document.querySelector(".chat-history");
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 2;
+  });
+  await host.locator(".chat-history").evaluate((el) => {
+    el.scrollTop = 0;
+    el.dispatchEvent(new Event("scroll"));
+  });
+  await injectChat(1);
+  await host.waitForTimeout(100);
+  if (await host.locator(".chat-history").evaluate((el) => el.scrollTop > 2))
+    throw Error("New message stole position while reading history");
+
+  // Switching focus to the composer releases held view keys even without keyup.
+  await host.locator(".scene").focus();
+  await host.keyboard.down("d");
+  await host.waitForTimeout(200);
+  await host.getByPlaceholder("Nói gì với mọi người…").focus();
+  await host.waitForTimeout(1300);
+  const focusYaw = Number(
+    await host.locator(".screen-surface").getAttribute("data-yaw"),
+  );
+  await host.waitForTimeout(600);
+  const focusYawAfter = Number(
+    await host.locator(".screen-surface").getAttribute("data-yaw"),
+  );
+  await host.keyboard.up("d");
+  if (Math.abs(focusYaw - focusYawAfter) > 0.2)
+    throw Error("View keeps turning while typing");
+  await host
+    .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
+    .click();
+
+  console.log("PASS capped chat and typing focus; checking camera regression");
   const viewerControls = await guest.evaluate(
     () => window.__yt.config.playerVars,
   );
   if (viewerControls.controls !== 0 || viewerControls.disablekb !== 1)
     throw Error("Viewer native controls still enabled");
+  await host.waitForFunction(
+    () =>
+      Math.abs(Number(document.querySelector(".screen-surface")?.dataset.yaw)) <
+      0.01,
+  );
   const beforeYaw = Number(
     await host.locator(".screen-surface").getAttribute("data-yaw"),
   );
@@ -189,7 +326,10 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     await host.locator(".screen-surface").getAttribute("data-yaw"),
   );
   if (afterYaw - beforeYaw > 1.2 || afterYaw - beforeYaw < 0.5)
-    throw Error("rotation is not one degree per click");
+    throw Error(
+      "rotation is not one degree per click " +
+        JSON.stringify({ beforeYaw, afterYaw }),
+    );
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -293,12 +433,10 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     () => Number(document.querySelector(".screen-surface")?.dataset.yaw) > 30,
   );
   await host.waitForTimeout(500);
-  const dragPose = await host
-    .locator(".screen-surface")
-    .evaluate((el) => ({
-      yaw: Number(el.dataset.yaw),
-      pitch: Number(el.dataset.pitch),
-    }));
+  const dragPose = await host.locator(".screen-surface").evaluate((el) => ({
+    yaw: Number(el.dataset.yaw),
+    pitch: Number(el.dataset.pitch),
+  }));
   if (Math.abs(dragPose.yaw - 32.4) > 1 || Math.abs(dragPose.pitch - 12.6) > 1)
     throw Error(
       "Direct drag direction/sensitivity wrong " + JSON.stringify(dragPose),
@@ -407,6 +545,77 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .fill("https://youtu.be/jfKfPfyJRdk");
   await again.getByLabel("Link YouTube để bắt đầu").press("Enter");
   await host.waitForFunction(() => window.__yt.video === "jfKfPfyJRdk");
+  await host.setViewportSize({ width: 1440, height: 1000 });
+  const viewButton = host
+    .locator(".cinema-toolbar")
+    .getByRole("button", { name: "Góc nhìn 🎮", exact: true });
+  if ((await viewButton.getAttribute("aria-pressed")) !== "true")
+    await viewButton.click();
+  const originalPlayer = await host.evaluateHandle(() => window.__yt);
+  await host.getByRole("button", { name: "Mắt người", exact: true }).click();
+  await host.waitForFunction(
+    () => document.querySelector(".screen-surface")?.dataset.camera === "first",
+  );
+  await host.getByRole("button", { name: "Chế độ nhẹ", exact: true }).click();
+  await host.locator(".screen-surface.flat").waitFor();
+  await host.setViewportSize({ width: 844, height: 390 });
+  const flatBounds = await host.locator(".screen-surface.flat").boundingBox();
+  if (
+    flatBounds.x < 0 ||
+    flatBounds.y < 60 ||
+    flatBounds.x + flatBounds.width > 844 - 154 ||
+    flatBounds.y + flatBounds.height > 390
+  )
+    throw Error(
+      "Light player clips or overlaps landscape controls " +
+        JSON.stringify(flatBounds),
+    );
+  await host.setViewportSize({ width: 1440, height: 1000 });
+  if (
+    !(await host.evaluate((player) => window.__yt === player, originalPlayer))
+  )
+    throw Error("Light mode remounted video");
+  await host.getByRole("button", { name: "Bật 3D", exact: true }).click();
+  await host
+    .getByRole("button", { name: "Trên cao · sau nhân vật", exact: true })
+    .click();
+  await host.waitForFunction(
+    () => document.querySelector(".screen-surface")?.dataset.camera === "third",
+  );
+  if (
+    !(await host.evaluate((player) => window.__yt === player, originalPlayer))
+  )
+    throw Error("Camera switch remounted video");
+  await originalPlayer.dispose();
+  await host.getByRole("button", { name: "Vẫy tay", exact: true }).click();
+  await host.waitForFunction(
+    () => document.querySelector(".screen-surface")?.dataset.action === "wave",
+  );
+  await host.waitForTimeout(650);
+  await host.screenshot({ path: "evidence/wave-desktop.png" });
+  const waving = await host.evaluate(async (testTitle) => {
+    const rooms = await (await fetch("/api/rooms")).json();
+    const slot = rooms.find((r) => r.title === testTitle).slot;
+    return (
+      await (await fetch(`/api/rooms/${slot}/state`)).json()
+    ).room.members.find((m) => m.waveAt);
+  }, testTitle);
+  if (!waving?.waveAt)
+    throw Error("Wave was not persisted in shared room state");
+  await guest.waitForFunction(async (id) => {
+    const rooms = await (await fetch("/api/rooms")).json();
+    for (const summary of rooms.filter((r) => r.open)) {
+      const state = await (
+        await fetch(`/api/rooms/${summary.slot}/state`)
+      ).json();
+      if (state.room?.members.some((m) => m.id === id && m.waveAt)) return true;
+    }
+    return false;
+  }, waving.id);
+
+  await host.waitForFunction(
+    () => document.querySelector(".screen-surface")?.dataset.action === "sit",
+  );
   await host.screenshot({ path: "evidence/fixes-desktop.png", fullPage: true });
   await host.setViewportSize({ width: 390, height: 844 });
   await host.screenshot({ path: "evidence/fixes-mobile.png", fullPage: true });
@@ -425,6 +634,14 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
         passed: !errors.length,
         errors,
         checks: [
+          "blocked localStorage does not break room, chat or voice controls",
+          "autoplay-blocked feedback and user-gesture playback recovery",
+          "cancelled speech callbacks cannot duck audio or show stale warnings",
+          "100-message cap follows latest while preserving scrolled history",
+          "typing focus releases held camera keys",
+          "first/third/light view switches retain video player",
+          "light player fits landscape screen and expanded controls",
+          "wave action persists and is visible to another room member",
           "direct background drag and correct yaw/pitch",
           "drag release and blur cleanup, no player remount",
           "click jitter and right mouse drag ignored",

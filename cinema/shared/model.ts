@@ -39,6 +39,7 @@ export const commandSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("sit"), instant: z.boolean().optional() }),
   z.object({ type: z.literal("ping") }),
+  z.object({ type: z.literal("wave") }),
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export type Member = {
@@ -47,6 +48,7 @@ export type Member = {
   seat: number;
   seated: boolean;
   sitAt?: number;
+  waveAt?: number;
   joinedAt: number;
   deadline?: number;
   connectionId?: string;
@@ -178,7 +180,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   const member = r.members.find((m) => m.id === actor);
   if (!member) throw Error("FORBIDDEN");
   if (
-    !["chat", "sit", "leave", "ping", "look"].includes(c.type) &&
+    !["chat", "sit", "leave", "ping", "look", "wave"].includes(c.type) &&
     actor !== r.host
   )
     throw Error("HOST_ONLY");
@@ -190,6 +192,9 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       text: c.text.normalize("NFC"),
     });
     r.messages = r.messages.slice(-100);
+  } else if (c.type === "wave") {
+    if (member.waveAt !== undefined && now - member.waveAt < 2400) return;
+    member.waveAt = now;
   } else if (c.type === "look") {
     member.look = { yaw: c.yaw, pitch: c.pitch, bodyYaw: c.bodyYaw };
   } else if (c.type === "sit") {

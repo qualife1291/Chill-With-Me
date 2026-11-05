@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-05",
+  "target": "local Wrangler only",
+  "command": "node tests/capacity.cjs",
+  "passed": true,
+  "rooms": 3,
+  "members_per_room": 10,
+  "authenticated_websockets": 30,
+  "broadcast_all_members_ms": [
+    121,
+    87,
+    83
+  ],
+  "http_requests_measured": 92,
+  "http_p50_ms": 21.2,
+  "http_p95_ms": 29.2,
+  "overflow_rejected": true,
+  "limitations": "Short backend smoke test, not sustained load or a real media/device/rendering benchmark. Uses 30 independent browser contexts with real session cookies and WebSockets. Test rooms closed by runner."
+}
