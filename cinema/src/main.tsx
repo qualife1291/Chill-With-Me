@@ -1,3 +1,6 @@
+import InvitationControls from "./InvitationControls";
+import PlaylistImport from "./PlaylistImport";
+import { useRoomClock } from "./useRoomClock";
 import { useModalFocus } from "./useModalFocus";
 import { FileShare } from "./FileShare";
 import { mediaLabel, FILE_ACCEPT } from "../shared/media";
@@ -26,7 +29,6 @@ import {
   LogOut,
   Check,
   X,
-  Link,
   Volume2,
   Info,
   MessageCircle,
@@ -43,9 +45,10 @@ import { useHeadDrag } from "./useHeadDrag";
 import "./style.css";
 import { useReducedMotion } from "./useReducedMotion";
 const Lobby = lazy(() => import("./Lobby"));
-const Cinema = lazy(() => import("./Cinema"));
+const Cinema = React.memo(lazy(() => import("./Cinema")));
 const demo = new URLSearchParams(location.search).has("demo");
 const invitedSlot = Number(new URLSearchParams(location.search).get("room"));
+const invitedKey = new URLSearchParams(location.hash.slice(1)).get("invite");
 const invitedSession = new URLSearchParams(location.search).get("session");
 type Snapshot = {
   status: string;
@@ -54,6 +57,7 @@ type Snapshot = {
   session?: string;
 };
 type Summary = {
+  private?: boolean;
   slot: number;
   open: boolean;
   title?: string;
@@ -61,6 +65,10 @@ type Summary = {
   count?: number;
 };
 const errors: Record<string, string> = {
+  INVITE_REQUIRED: "Phòng riêng cần link mời hợp lệ từ chủ phòng.",
+  NOT_PRIVATE_ROOM: "Phòng này không dùng lời mời riêng.",
+  IMPORT_TOO_LARGE: "Danh sách tối đa 16 KB.",
+  IMPORT_TOO_MANY: "Mỗi lần nhập tối đa 20 link.",
   INVITE_EXPIRED: "Phiên phòng trong link mời đã kết thúc. Hãy xin link mới.",
   ROOM_FULL: "Phòng đã đủ chỗ.",
   TARGET_OFFLINE: "Người nhận quyền cần đang kết nối.",
@@ -108,6 +116,7 @@ function App() {
     [name, setName] = useState(""),
     [title, setTitle] = useState("Tối cùng chúng mình"),
     [capacity, setCapacity] = useState(6),
+    [visibility, setVisibility] = useState<"public" | "private">("public"),
     [error, setError] = useState(""),
     [tab, setTab] = useState("chat"),
     [camera, setCamera] = useState("third"),
@@ -122,9 +131,10 @@ function App() {
     [light, setLight] = useState(false),
     [message, setMessage] = useState(""),
     [url, setUrl] = useState(""),
-    [offset, setOffset] = useState(0),
     [connection, setConnection] = useState("Đang kết nối"),
     [tts, setTts] = useState(false);
+  const clock = useRoomClock(room?.session),
+    offset = clock.offset;
   const [queueBusy, setQueueBusy] = useState(false);
   const [queueNotice, setQueueNotice] = useState("");
   const [avatar, setAvatar] = useState<"male" | "female">("male");
@@ -151,6 +161,11 @@ function App() {
     files.setRoom(status === "joined" ? room : null, id);
   }, [files, room, status, id]);
   useEffect(() => () => files.dispose(), [files]);
+  const queueDrag = useRef<{
+    id: string;
+    revision: number;
+    session: string;
+  } | null>(null);
   const controlQueue = useRef<Promise<void>>(Promise.resolve());
   const liveLook = useRef(
     new Map<
@@ -167,6 +182,30 @@ function App() {
   const latestRoom = useRef(room);
   latestRoom.current = room;
   const surface = useRef<HTMLDivElement>(null);
+  const sidePanel = useRef<HTMLElement>(null),
+    infoPanel = useRef<HTMLDivElement>(null),
+    panelOpener = useRef<HTMLElement | null>(null),
+    previousPanel = useRef("");
+  useLayoutEffect(() => {
+    if (panel) {
+      const node = panel === "info" ? infoPanel.current : sidePanel.current;
+      const input =
+        panel === "info"
+          ? null
+          : node?.querySelector<HTMLElement>(".composer input") ||
+            node?.querySelector<HTMLElement>(
+              'input:not([type="file"]):not(:disabled)',
+            ) ||
+            node?.querySelector<HTMLElement>("button:not(:disabled)");
+      (input || node)?.focus();
+    } else if (
+      previousPanel.current &&
+      panelOpener.current?.isConnected &&
+      !panelOpener.current.closest("[inert]")
+    )
+      panelOpener.current.focus();
+    previousPanel.current = panel;
+  }, [panel]);
   const approval = useRef<HTMLElement>(null),
     quickModal = useRef<HTMLElement>(null);
   const isHost = room?.host === id && status === "joined";
@@ -225,7 +264,7 @@ function App() {
       if ("speechSynthesis" in window) speechSynthesis.cancel();
       setError("Bạn đã rời phòng hoặc phòng đã đóng.");
     }
-    if (v.serverTime) setOffset(v.serverTime - Date.now());
+    if (v.serverTime) clock.fallback(v.serverTime, v.room?.session);
   };
   useEffect(() => {
     if (demo) {
@@ -261,6 +300,7 @@ function App() {
       chatSocket.current = socket;
       socket.onopen = () => {
         setConnection("Đã kết nối");
+        clock.connect(socket!);
         files.transport(true);
       };
       socket.onmessage = (e) => {
@@ -269,6 +309,10 @@ function App() {
           return;
         }
         const v = JSON.parse(e.data);
+        if (v.type === "clock") {
+          clock.pong(v, socket!);
+          return;
+        }
         if (v.type === "file-error") {
           files.relayError(v.fileId);
           return;
@@ -319,6 +363,7 @@ function App() {
         else if (v.status) receive(v);
       };
       socket.onclose = (e) => {
+        clock.disconnect(socket);
         files.transport(false);
         if (stop) return;
         if (e.code === 4002) {
@@ -351,6 +396,7 @@ function App() {
       clearInterval(poll);
       if (chatSocket.current === socket) chatSocket.current = null;
       files.transport(false);
+      clock.disconnect(socket);
       socket?.close();
     };
   }, [slot, status]);
@@ -373,7 +419,15 @@ function App() {
     setTts(speech.enable());
     try {
       if (demo) {
-        const r = createRoom(id, name, title, capacity, Date.now(), avatar);
+        const r = createRoom(
+          id,
+          name,
+          title,
+          capacity,
+          Date.now(),
+          avatar,
+          visibility,
+        );
         apply(r, id, { type: "sit" }, Date.now());
         setRoom(r);
         setStatus("joined");
@@ -382,10 +436,13 @@ function App() {
         const v = await api(
           `/rooms/${n}/${create ? "create" : "join"}`,
           create
-            ? { name, title, capacity, avatar }
+            ? { name, title, capacity, avatar, visibility }
             : {
                 name,
                 avatar,
+                ...(n === invitedSlot && invitedKey
+                  ? { inviteKey: invitedKey }
+                  : {}),
                 ...(n === invitedSlot && invitedSession
                   ? { session: invitedSession }
                   : {}),
@@ -699,6 +756,8 @@ function App() {
       </header>
       <main
         data-members={room?.members.length}
+        data-clock-rtt={clock.rtt ?? ""}
+        data-clock-calibrated={clock.calibrated}
         className={
           status === "joined" && room
             ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""}`
@@ -777,7 +836,9 @@ function App() {
                       <b>{["Hổ phách", "Đêm xanh", "Nhung tím"][n - 1]}</b>
                       <small>
                         {summary?.open
-                          ? `${summary.count || 0}/${summary.capacity} ghế · đang mở`
+                          ? summary.private
+                            ? "Phòng riêng · cần lời mời"
+                            : `${summary.count || 0}/${summary.capacity} ghế · đang mở`
                           : "Sẵn sàng đón bạn"}
                       </small>
                     </button>
@@ -832,6 +893,18 @@ function App() {
                 />
               </label>
               <label>
+                Quyền riêng tư
+                <select
+                  value={visibility}
+                  onChange={(e) =>
+                    setVisibility(e.target.value as "public" | "private")
+                  }
+                >
+                  <option value="public">Công khai</option>
+                  <option value="private">Riêng tư</option>
+                </select>
+              </label>
+              <label>
                 Số ghế
                 <select
                   value={capacity}
@@ -882,11 +955,13 @@ function App() {
                           {s.open ? "Đang mở" : "Sẵn sàng đón bạn"}
                         </span>
                         <span className="muted">
-                          {s.count || 0}/{s.capacity || capacity} ghế
+                          {s.private
+                            ? "Chỉ vào bằng lời mời"
+                            : `${s.count || 0}/${s.capacity || capacity} ghế`}
                         </span>
                       </div>
                       <h3>
-                        {s.title ||
+                        {(s.private ? "Phòng riêng tư" : s.title) ||
                           [
                             "Một buổi tối ấm áp",
                             "Góc nhỏ sau giờ làm",
@@ -895,7 +970,9 @@ function App() {
                       </h3>
                       <p>
                         {s.open
-                          ? "Gửi yêu cầu để chủ phòng duyệt bạn vào."
+                          ? s.private
+                            ? "Tên phòng và danh sách người xem được ẩn. Thành viên có thể vào lại."
+                            : "Gửi yêu cầu để chủ phòng duyệt bạn vào."
                           : "Tạo phòng và phát ngay, không cần đợi đủ người."}
                       </p>
                       <button
@@ -904,9 +981,11 @@ function App() {
                         onClick={() => void enter(s.slot, !s.open)}
                       >
                         {s.open
-                          ? s.slot === invitedSlot
-                            ? "Vào phòng được mời"
-                            : "Xin vào phòng"
+                          ? s.private
+                            ? "Vào phòng riêng"
+                            : s.slot === invitedSlot
+                              ? "Vào phòng được mời"
+                              : "Xin vào phòng"
                           : "Tạo phòng"}
                         <ArrowRight size={17} />
                       </button>
@@ -968,7 +1047,9 @@ function App() {
                     title={label}
                     aria-pressed={panel === k}
                     aria-expanded={panel === k}
-                    onClick={() => {
+                    aria-controls={k === "info" ? "room-info" : "room-panel"}
+                    onClick={(e) => {
+                      panelOpener.current = e.currentTarget;
                       setPanel((v) => (v === k ? "" : k));
                       if (k !== "info") setTab(k);
                     }}
@@ -1009,7 +1090,19 @@ function App() {
                 <Maximize size={18} aria-hidden="true" />
               </button>
             </nav>
-            <div className="room-heading">
+            <div
+              className="room-heading"
+              id="room-info"
+              ref={infoPanel}
+              tabIndex={-1}
+              aria-label="Thông tin phòng"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.stopPropagation();
+                  setPanel("");
+                }
+              }}
+            >
               <div>
                 <p className="eyebrow">
                   PHÒNG 0{slot} ·{" "}
@@ -1023,26 +1116,23 @@ function App() {
                   đang khóa.
                 </p>
               )}
+              <p className="muted" role="status">
+                {clock.calibrated
+                  ? `Độ trễ kết nối đo được: ${Math.round(clock.rtt!)} ms`
+                  : "Đang đo độ trễ để đồng bộ thời gian…"}
+              </p>
               <div className="actions">
                 <span>
                   <Users size={17} />
                   {room.members.length}/{room.capacity} người
+                  {room.visibility === "private" ? " · riêng tư" : ""}
                 </span>
-                <button
-                  onClick={() => {
-                    void navigator.clipboard
-                      ?.writeText(
-                        `${location.origin}/?room=${slot}&session=${room.session}`,
-                      )
-                      .then(() =>
-                        setError("Đã sao chép link mời đúng phòng " + slot),
-                      )
-                      .catch(() => setError("Không sao chép được link."));
-                  }}
-                >
-                  <Link size={16} />
-                  Mời bạn
-                </button>
+                <InvitationControls
+                  room={room}
+                  slot={slot!}
+                  host={!!host}
+                  onCommand={command}
+                />
                 <button
                   onClick={() => {
                     if (
@@ -1135,6 +1225,7 @@ function App() {
                       }
                     >
                       <Player
+                        serverNow={clock.serverNow}
                         files={files}
                         isHost={!!host}
                         onControl={(c) => command(c)}
@@ -1327,6 +1418,7 @@ function App() {
                           }}
                         />
                       </label>
+
                       <p className="muted">
                         Giữ tab mở để chia sẻ trực tiếp. Nếu mạng chặn kết nối,
                         người xem có thể nhận qua phòng với file tối đa 25 MB.
@@ -1350,6 +1442,23 @@ function App() {
                         </button>
                       </div>
                     </form>
+                    <PlaylistImport
+                      busy={quickBusy}
+                      onImport={async (urls) => {
+                        setQuickBusy(true);
+                        try {
+                          await command({
+                            type: "import",
+                            urls,
+                            mode: "start",
+                            generation: room.generation,
+                            expectedQueueRevision: room.queueRevision || 0,
+                          });
+                        } finally {
+                          setQuickBusy(false);
+                        }
+                      }}
+                    />
                   </section>
                 </div>
               )}
@@ -1396,6 +1505,22 @@ function App() {
                 )}
               <aside
                 className="sidebar panel"
+                id="room-panel"
+                ref={sidePanel}
+                tabIndex={-1}
+                aria-label={
+                  panel === "chat"
+                    ? "Bảng chat"
+                    : panel === "queue"
+                      ? "Bảng playlist"
+                      : "Bảng thành viên"
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    setPanel("");
+                  }
+                }}
                 hidden={!panel || panel === "info"}
               >
                 <button
@@ -1419,6 +1544,7 @@ function App() {
                       key={k}
                       onClick={() => {
                         setTab(k);
+                        setPanel(k as "chat" | "queue" | "people");
                         if (k === "people") setApprovalDismissed(false);
                       }}
                     >
@@ -1570,6 +1696,26 @@ function App() {
                       </div>
                     </form>
                     {host && (
+                      <PlaylistImport
+                        busy={queueBusy}
+                        onImport={async (urls) => {
+                          await queueAction(
+                            {
+                              type: "import",
+                              urls,
+                              mode: "queue",
+                              generation: room.generation,
+                              expectedQueueRevision: room.queueRevision || 0,
+                            },
+                            () =>
+                              setQueueNotice(
+                                `Đã thêm ${urls.length} mục vào playlist.`,
+                              ),
+                          );
+                        }}
+                      />
+                    )}
+                    {host && (
                       <label className="file-picker">
                         Thêm video / nhạc từ máy · tối đa 100 MB
                         <input
@@ -1599,7 +1745,60 @@ function App() {
                       </div>
                     ) : (
                       room.queue.map((q, i) => (
-                        <div className="queue-item" key={q.id}>
+                        <div
+                          className="queue-item"
+                          key={q.id}
+                          draggable={!!host && !queueBusy}
+                          onDragStart={(e) => {
+                            if (
+                              !host ||
+                              queueBusy ||
+                              (e.target as HTMLElement).closest("button")
+                            ) {
+                              e.preventDefault();
+                              return;
+                            }
+                            queueDrag.current = {
+                              id: q.id,
+                              revision: room.queueRevision || 0,
+                              session: room.session,
+                            };
+                            e.dataTransfer.effectAllowed = "move";
+                            e.dataTransfer.setData("text/plain", q.id);
+                          }}
+                          onDragEnd={() => {
+                            queueDrag.current = null;
+                          }}
+                          onDragOver={(e) => {
+                            if (host && queueDrag.current) {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = "move";
+                            }
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const drag = queueDrag.current;
+                            queueDrag.current = null;
+                            if (
+                              !host ||
+                              !drag ||
+                              drag.session !== room.session ||
+                              drag.id !== e.dataTransfer.getData("text/plain")
+                            )
+                              return;
+                            void queueAction({
+                              type: "move",
+                              id: drag.id,
+                              beforeId:
+                                room.queue.findIndex(
+                                  (item) => item.id === drag.id,
+                                ) < i
+                                  ? room.queue[i + 1]?.id || null
+                                  : q.id,
+                              expectedQueueRevision: drag.revision,
+                            });
+                          }}
+                        >
                           <span className="index">{i + 1}</span>
                           <div>
                             <b>Video</b>

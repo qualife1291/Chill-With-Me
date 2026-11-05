@@ -9,7 +9,10 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "cf:types": "wrangler types",
     "worker:check": "wrangler deploy --dry-run",
-    "serve": "wrangler dev"
+    "serve": "wrangler dev",
+    "check:worker": "tsc --noEmit --skipLibCheck --strict --target ES2022 --module ESNext --moduleResolution Bundler worker/index.ts worker-configuration.d.ts",
+    "check:docs": "node tools/check-doc-links.mjs",
+    "verify:local": "node tools/verify-local.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.0.0",

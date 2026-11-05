@@ -5,32 +5,32 @@
     {
       "path": "index.html",
       "bytes": 424,
-      "sha256": "853876c42f48fc7ed92b138fd44c47412b9ae2bb1157707883d8c47ccde90405"
+      "sha256": "276e223f68b6586e6764f0697705e3fa57554edd36e906824a37d7f5e716855a"
     },
     {
-      "path": "assets/Cinema-Dke3tdLq.js",
+      "path": "assets/Cinema-QH801B9g.js",
       "bytes": 12867,
-      "sha256": "a072951bd0f4688976321d6c26cbe30da04f59e7766248cd371fd2e1973113cf"
+      "sha256": "a499d87806943d6b8c1b104fa658b93ea93c8f767374790c2d67c5eca0973ac8"
     },
     {
-      "path": "assets/Lobby-FtJqSW-8.js",
+      "path": "assets/Lobby-D2vnhOZb.js",
       "bytes": 5247,
-      "sha256": "884c706c06a551a93c0f7fa88f9aaf6251f84846b27ed0cd05c372d773d27ee2"
+      "sha256": "25e181ccf1bf613a709043c24f8ac665e58cf26d87555bec91be708ffc299c31"
     },
     {
-      "path": "assets/ModelBoundary-iJHQPiOr.js",
-      "bytes": 934962,
-      "sha256": "b79d2ed1ef3afa979f9a7a79fb0e4571ff8699291622e6dd4d8dc645c7ab298c"
+      "path": "assets/ModelBoundary-Z7_VaqrZ.js",
+      "bytes": 935028,
+      "sha256": "ffd7414d353852829fcfb75a78d0a01f331e8fd9d5f14d75999bffa1409162ce"
     },
     {
-      "path": "assets/index-BDwlFo55.js",
-      "bytes": 341293,
-      "sha256": "d2ba274e8295aa37734f0040f7be58eb29154c8982ba3b61f8554a3f1d1d1c20"
+      "path": "assets/index-BrY4-j6b.css",
+      "bytes": 25527,
+      "sha256": "db540f2b7447200014040485afa90cafcf0ce1d998f201acdd13b8ddd2cef11b"
     },
     {
-      "path": "assets/index-Cllvdzsi.css",
-      "bytes": 23305,
-      "sha256": "00b3a679ad3b384dc0ccacbf7def6706bbda164f4741854df1c255a4ce7cb6ae"
+      "path": "assets/index-sBsVDTz0.js",
+      "bytes": 377232,
+      "sha256": "7ce506efd5b3b584b9f4f96e3969b5e32115d6689ebf8a25a857834860f5ef51"
     },
     {
       "path": "models/LICENSE.txt",
@@ -53,6 +53,6 @@
       "sha256": "cf5cd5f3b0cd87dd173058cbc9382c037f709e1a9b0c2dc515d6c9f4f08e615d"
     }
   ],
-  "roomSlots": 3,
-  "compression": "gzip encodeBody manual; fetch decoded each response once and bytes matched dist"
+  "missingModel404": true,
+  "roomSlots": 3
 }

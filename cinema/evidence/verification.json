@@ -1,49 +1,160 @@
 {
-  "date": "2026-11-02",
-  "build": "PASS",
-  "frontend_typecheck": "PASS",
-  "worker_typecheck": "PASS",
-  "unit_tests": {
-    "passed": 7,
-    "failed": 0
-  },
-  "api_integration": "PASS: Origin, pending privacy, concurrent capacity, host ACL, idempotency, stale generation/session, kick",
-  "worker_bundle_dry_run": "PASS before final frontend polish; no publication",
-  "browser_ui": {
-    "passed": true,
-    "errors": [],
-    "checks": [
-      "lobby",
-      "3D canvas mounted",
-      "sit transition",
-      "camera switch",
-      "safe chat text",
-      "320/390px no horizontal overflow",
-      "six fallback seats"
-    ],
-    "scope": "Local demo; no actual YouTube playback measured"
-  },
-  "browser_realtime": {
-    "passed": true,
-    "errors": [],
-    "checks": [
-      "independent browser sessions",
-      "host create",
-      "guest pending",
-      "host accepts",
-      "WebSocket chat delivery",
-      "kick closes guest access",
-      "host closes room"
-    ],
-    "scope": "Local Wrangler runtime; no external video playback"
-  },
-  "not_verified": [
-    "real YouTube playback/ads/drift",
-    "30-user soak",
-    "mobile physical devices",
-    "GPU thermal budgets",
-    "production quota/billing",
-    "NVIDIA inference"
+  "passed": true,
+  "date": "2026-11-05T16:08:07.758Z",
+  "target": "local Wrangler only",
+  "stages": [
+    {
+      "name": "frontend build",
+      "passed": true,
+      "milliseconds": 8780,
+      "log": "/tmp/cinema-verify-cxS9vg/0-frontend_build.log"
+    },
+    {
+      "name": "unit assets.test.ts",
+      "passed": true,
+      "milliseconds": 99,
+      "log": "/tmp/cinema-verify-cxS9vg/1-unit_assets_test_ts.log"
+    },
+    {
+      "name": "unit avatar.test.ts",
+      "passed": true,
+      "milliseconds": 182,
+      "log": "/tmp/cinema-verify-cxS9vg/2-unit_avatar_test_ts.log"
+    },
+    {
+      "name": "unit camera.test.ts",
+      "passed": true,
+      "milliseconds": 164,
+      "log": "/tmp/cinema-verify-cxS9vg/3-unit_camera_test_ts.log"
+    },
+    {
+      "name": "unit lifecycle.test.ts",
+      "passed": true,
+      "milliseconds": 187,
+      "log": "/tmp/cinema-verify-cxS9vg/4-unit_lifecycle_test_ts.log"
+    },
+    {
+      "name": "unit media.test.ts",
+      "passed": true,
+      "milliseconds": 178,
+      "log": "/tmp/cinema-verify-cxS9vg/5-unit_media_test_ts.log"
+    },
+    {
+      "name": "unit model.test.ts",
+      "passed": true,
+      "milliseconds": 185,
+      "log": "/tmp/cinema-verify-cxS9vg/6-unit_model_test_ts.log"
+    },
+    {
+      "name": "unit playlist.test.ts",
+      "passed": true,
+      "milliseconds": 143,
+      "log": "/tmp/cinema-verify-cxS9vg/7-unit_playlist_test_ts.log"
+    },
+    {
+      "name": "unit projection.test.ts",
+      "passed": true,
+      "milliseconds": 90,
+      "log": "/tmp/cinema-verify-cxS9vg/8-unit_projection_test_ts.log"
+    },
+    {
+      "name": "unit roadmap.test.ts",
+      "passed": true,
+      "milliseconds": 150,
+      "log": "/tmp/cinema-verify-cxS9vg/9-unit_roadmap_test_ts.log"
+    },
+    {
+      "name": "Worker types",
+      "passed": true,
+      "milliseconds": 2035,
+      "log": "/tmp/cinema-verify-cxS9vg/10-Worker_types.log"
+    },
+    {
+      "name": "document links",
+      "passed": true,
+      "milliseconds": 153,
+      "log": "/tmp/cinema-verify-cxS9vg/11-document_links.log"
+    },
+    {
+      "name": "Worker dry run",
+      "passed": true,
+      "milliseconds": 1266,
+      "log": "/tmp/cinema-verify-cxS9vg/12-Worker_dry_run.log"
+    },
+    {
+      "name": "api.integration.mjs",
+      "passed": true,
+      "milliseconds": 359,
+      "log": "/tmp/cinema-verify-cxS9vg/13-api_integration_mjs.log"
+    },
+    {
+      "name": "playlist.integration.mjs",
+      "passed": true,
+      "milliseconds": 308,
+      "log": "/tmp/cinema-verify-cxS9vg/14-playlist_integration_mjs.log"
+    },
+    {
+      "name": "roadmap.integration.mjs",
+      "passed": true,
+      "milliseconds": 419,
+      "log": "/tmp/cinema-verify-cxS9vg/15-roadmap_integration_mjs.log"
+    },
+    {
+      "name": "relay-security.cjs",
+      "passed": true,
+      "milliseconds": 1866,
+      "log": "/tmp/cinema-verify-cxS9vg/16-relay-security_cjs.log"
+    },
+    {
+      "name": "UI views avatars chat voice",
+      "passed": true,
+      "milliseconds": 93902,
+      "log": "/tmp/cinema-verify-cxS9vg/17-UI_views_avatars_chat_voice.log"
+    },
+    {
+      "name": "media.cjs",
+      "passed": true,
+      "milliseconds": 46813,
+      "log": "/tmp/cinema-verify-cxS9vg/18-media_cjs.log"
+    },
+    {
+      "name": "roadmap.cjs",
+      "passed": true,
+      "milliseconds": 29880,
+      "log": "/tmp/cinema-verify-cxS9vg/19-roadmap_cjs.log"
+    },
+    {
+      "name": "render-capacity.cjs",
+      "passed": true,
+      "milliseconds": 13860,
+      "log": "/tmp/cinema-verify-cxS9vg/20-render-capacity_cjs.log"
+    },
+    {
+      "name": "capacity 3 rooms 30 sockets",
+      "passed": true,
+      "milliseconds": 12362,
+      "log": "/tmp/cinema-verify-cxS9vg/21-capacity_3_rooms_30_sockets.log"
+    },
+    {
+      "name": "embedded bundle",
+      "passed": true,
+      "milliseconds": 136,
+      "log": "/tmp/cinema-verify-cxS9vg/22-embedded_bundle.log"
+    },
+    {
+      "name": "embedded local config",
+      "passed": true,
+      "milliseconds": 43,
+      "log": "/tmp/cinema-verify-cxS9vg/23-embedded_local_config.log"
+    },
+    {
+      "name": "embedded asset bytes",
+      "passed": true,
+      "milliseconds": 217,
+      "log": "/tmp/cinema-verify-cxS9vg/24-embedded_asset_bytes.log"
+    }
   ],
-  "deployment": "NOT_DEPLOYED"
+  "artifacts": "/tmp/cinema-verify-cxS9vg",
+  "limitations": "UI mocks YouTube/device speech; native media uses real generated codecs; single software renderer; no physical-device, production/WAN/quota or full-voice certification.",
+  "individualLogicCases": 52
 }

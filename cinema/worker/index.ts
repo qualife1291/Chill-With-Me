@@ -8,6 +8,8 @@ import { fileSignalSchema } from "../shared/fileSignal";
 import { DurableObject } from "cloudflare:workers";
 import {
   apply,
+  visibilitySchema,
+  roomSummary,
   avatarSchema,
   connectMember,
   disconnectMember,
@@ -24,17 +26,19 @@ const joinSchema = z.object({
   name: z.string().trim().min(1).max(32),
   avatar: avatarSchema.default("male"),
   session: z.string().optional(),
+  inviteKey: z.string().uuid().optional(),
 });
 const createSchema = joinSchema.extend({
   title: z.string().trim().min(1).max(32),
   capacity: z.number().int().min(2).max(10),
+  visibility: visibilitySchema.default("public"),
 });
 const error = (code: string, status = 400) =>
   Response.json(
     { error: code },
     { status, headers: { "Cache-Control": "no-store" } },
   );
-async function body(req: Request) {
+async function body(req: Request, allowImport = false) {
   if (!req.body) throw Error("EMPTY_BODY");
   const reader = req.body.getReader();
   let data = "",
@@ -44,13 +48,16 @@ async function body(req: Request) {
     const { value, done } = await reader.read();
     if (done) break;
     bytes += value.length;
-    if (bytes > 4096) {
+    if (bytes > (allowImport ? 40960 : 4096)) {
       await reader.cancel();
       throw Error("PAYLOAD_TOO_LARGE");
     }
     data += dec.decode(value, { stream: true });
   }
-  return JSON.parse(data + dec.decode());
+  const value = JSON.parse(data + dec.decode());
+  if (bytes > 4096 && value?.command?.type !== "import")
+    throw Error("PAYLOAD_TOO_LARGE");
+  return value;
 }
 async function identity(req: Request) {
   const cookie = req.headers
@@ -174,28 +181,26 @@ export class RoomSlot extends DurableObject<Env> {
         r = null;
         this.send();
       }
-      if (action === "summary")
-        return Response.json(
-          r
-            ? {
-                open: true,
-                title: r.title,
-                capacity: r.capacity,
-                count: r.members.length,
-              }
-            : { open: false },
-        );
+      if (action === "summary") return Response.json(roomSummary(r));
       if (!id) return error("NO_SESSION", 401);
       if (req.method === "POST") {
         this.limit(id);
-        const data = await body(req);
+        const data = await body(req, action === "command");
         this.cleanup(Date.now());
         r = this.read();
         if (r) r.pending = r.pending.filter((p) => now - p.at < 120000);
         if (action === "create") {
           if (r) throw Error("SLOT_BUSY");
           const c = createSchema.parse(data);
-          r = createRoom(id, c.name, c.title, c.capacity, now, c.avatar);
+          r = createRoom(
+            id,
+            c.name,
+            c.title,
+            c.capacity,
+            now,
+            c.avatar,
+            c.visibility,
+          );
           this.save(r);
           this.schedule();
         } else {
@@ -204,7 +209,7 @@ export class RoomSlot extends DurableObject<Env> {
             const c = joinSchema.parse(data);
             if (c.session && c.session !== r.session)
               throw Error("INVITE_EXPIRED");
-            requestJoin(r, id, c.name, now, c.avatar);
+            requestJoin(r, id, c.name, now, c.avatar, c.inviteKey);
             this.save(r);
           } else if (action === "cancel") {
             const c = z.object({ session: z.string() }).parse(data);
@@ -382,6 +387,31 @@ export class RoomSlot extends DurableObject<Env> {
         lastLookAt?: number;
       };
       const raw = JSON.parse(message);
+      if (raw.type === "clock") {
+        const probe = z.object({ nonce: z.string().uuid() }).parse(raw),
+          r = this.read();
+        if (
+          !r ||
+          r.session !== a.session ||
+          !r.members.some(
+            (m) => m.id === a.id && m.connectionId === a.connectionId,
+          )
+        )
+          throw Error("FORBIDDEN");
+        const limited = a as typeof a & { lastClockAt?: number };
+        if (Date.now() - (limited.lastClockAt || 0) < 200) return;
+        limited.lastClockAt = Date.now();
+        ws.serializeAttachment(limited);
+        ws.send(
+          JSON.stringify({
+            type: "clock",
+            nonce: probe.nonce,
+            session: r.session,
+            serverTime: Date.now(),
+          }),
+        );
+        return;
+      }
       if (raw.type === "file-signal") {
         signalFileId =
           typeof raw.fileId === "string" ? raw.fileId.slice(0, 36) : "";

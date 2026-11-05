@@ -1,8 +1,10 @@
+> Tài liệu lịch sử; không phải trạng thái source hiện tại. Tiếp tục từ [PROJECT_STATE](../../PROJECT_STATE.md).
+
 # Kế hoạch phát triển rạp xem chung — v3
 
 Cập nhật: 01/11/2026. Bản này thay thế quyết định tự host/VPS của v1 sau khi người dùng xác nhận không có máy server và yêu cầu chi phí miễn phí. Tài liệu v1 được giữ tại `docs/archive/KE_HOACH_V1_TU_HOST.md` chỉ để tham chiếu lịch sử.
 
-> **Cập nhật v3 ngày02/11/2026:** [Đặc tả rạp3D hiện hành](docs/THIET_KE_RAP_3D_V3.md) có ưu tiên nếu phần v2 bên dưới khác biệt. Giới hạn50/150, timeline2D và playlist ngoài MVP đã bị thay thế; số liệu budget cũ chỉ còn tham khảo.
+> **Cập nhật v3 ngày02/11/2026:** [Đặc tả rạp3D hiện hành](../THIET_KE_RAP_3D_V3.md) có ưu tiên nếu phần v2 bên dưới khác biệt. Giới hạn50/150, timeline2D và playlist ngoài MVP đã bị thay thế; số liệu budget cũ chỉ còn tham khảo.
 
 ## 1. Mục tiêu và ràng buộc đã chốt
 
@@ -26,11 +28,11 @@ Nhân bản giọng tiếng Việt miễn phí có source phù hợp, nhưng tà
 
 | Tài liệu | Nội dung |
 |---|---|
-| [Stack và kiến trúc](docs/STACK_VA_KIEN_TRUC.md) | Quyết định công nghệ, room actor, admission, timeline, protocol, dữ liệu, TTS pipeline |
-| [Timeline, backlog, nghiệm thu](docs/TIMELINE_BACKLOG_VA_NGHIEM_THU.md) | Mốc 7–9 tuần, task IDs, dependencies, gate, test và deploy |
-| [Ngân sách free tier](docs/NGAN_SACH_FREE_TIER.md) | Quota đã tra, mô hình tải, giới hạn TTS, ngăn phát sinh phí |
+| [Stack và kiến trúc](STACK_VA_KIEN_TRUC_V2.md) | Quyết định công nghệ, room actor, admission, timeline, protocol, dữ liệu, TTS pipeline |
+| [Timeline, backlog, nghiệm thu](TIMELINE_BACKLOG_V2.md) | Mốc 7–9 tuần, task IDs, dependencies, gate, test và deploy |
+| [Ngân sách free tier](../NGAN_SACH_FREE_TIER.md) | Quota đã tra, mô hình tải, giới hạn TTS, ngăn phát sinh phí |
 | [Quét source](BAO_CAO_QUET_SOURCE_VA_TOI_UU.md) | Các repo và đoạn code đã đọc, license, hướng tái sử dụng |
-| [Source snapshot manifest](SOURCE_SCAN_MANIFEST.json) | Tree/commit SHA của lần khảo sát |
+| [Source snapshot manifest](../../SOURCE_SCAN_MANIFEST.json) | Tree/commit SHA của lần khảo sát |
 
 ## 4. Stack chốt để làm prototype
 
@@ -119,21 +121,21 @@ Skills đã dùng cho nghiên cứu: cloud-environment-runtime; vercel:create-a-
 
 ## Bổ sung nghiên cứu NVIDIA NIM — 01/11/2026
 
-Đã thêm [nghiên cứu NIM, source và kế hoạch kiểm thử chi tiết](docs/NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md), [corpus](testing/nim/corpus.json) và [smoke harness](scripts/nim-smoke.mjs). Magpie là ứng viên đánh giá preset/clone, chưa có kết quả inference vì thiếu credential. NVIDIA API trial chỉ dành cho thử nghiệm theo terms đã đọc, không chọn làm backend production miễn phí. Kiểm chứng codec là gate bắt buộc vì WAV PCM có egress cao hơn giả định Opus.
+Đã thêm [nghiên cứu NIM, source và kế hoạch kiểm thử chi tiết](../NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md), [corpus](../../testing/nim/corpus.json) và [smoke harness](../../scripts/nim-smoke.mjs). Magpie là ứng viên đánh giá preset/clone, chưa có kết quả inference vì thiếu credential. NVIDIA API trial chỉ dành cho thử nghiệm theo terms đã đọc, không chọn làm backend production miễn phí. Kiểm chứng codec là gate bắt buộc vì WAV PCM có egress cao hơn giả định Opus.
 
 ## Bộ review và thiết kế02/11/2026
 
-- [Review tổng thể, findings và backlog bổ sung](docs/REVIEW_TONG_THE_VA_KE_HOACH_BAN_GIAO.md).
-- [UI/UX, nguồn đồ họa và license](docs/UI_UX_VA_TAI_NGUYEN.md).
-- [Bản bố cục tương tác cục bộ](design/cinema-preview.html).
-- [Threat model, bảo mật, riêng tư và vận hành](docs/BAO_MAT_VA_VAN_HANH.md).
+- [Review tổng thể, findings và backlog bổ sung](REVIEW_VA_BAN_GIAO_2026-11-02.md).
+- [UI/UX, nguồn đồ họa và license](../UI_UX_VA_TAI_NGUYEN.md).
+- [Bản bố cục tương tác cục bộ](../../design/cinema-preview.html).
+- [Threat model, bảo mật, riêng tư và vận hành](../BAO_MAT_VA_VAN_HANH.md).
 
 Preview dùng dữ liệu giả, không có backend. Timeline có reserve33–47ngày công nếu tính thêm3–5ngày thiết kế/hardening ngoài baseline. Full cloning vẫn phụ thuộc provider production0đ được xác minh.
 
 ## Quy tắc phát và kế hoạch đồ họa mới nhất
 
-Host được phát ngay khi ở một mình; người mới được duyệt vào xem tiếp timeline hiện tại. Không đợi đủ2người hoặc animation. [Kế hoạch đồ họa, bố cục và công nghệ](docs/DO_HOA_VA_CONG_NGHE_RAP_3D.md) mô tả renderer/playerDOM, camera, assets, hiệu năng và phân rã triển khai mới nhất; các ước lượng cũ là lịch sử.
+Host được phát ngay khi ở một mình; người mới được duyệt vào xem tiếp timeline hiện tại. Không đợi đủ2người hoặc animation. [Kế hoạch đồ họa, bố cục và công nghệ](../DO_HOA_VA_CONG_NGHE_RAP_3D.md) mô tả renderer/playerDOM, camera, assets, hiệu năng và phân rã triển khai mới nhất; các ước lượng cũ là lịch sử.
 
 ## Đã bắt đầu implementation —02/11/2026
 
-[Review và trạng thái triển khai hiện hành](docs/KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) · [Source và hướng dẫn chạy](cinema/README.md). Đã có app alpha/backendcục bộ; các đoạn trước nói chưa cósource là trạng thái lịch sử. Chưa có publicdeployment hoặc cloneproduction.
+[Review và trạng thái triển khai hiện hành](../KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) · [Source và hướng dẫn chạy](../../cinema/README.md). Đã có app alpha/backendcục bộ; các đoạn trước nói chưa cósource là trạng thái lịch sử. Chưa có publicdeployment hoặc cloneproduction.

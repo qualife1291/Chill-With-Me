@@ -1,3 +1,5 @@
+> Tài liệu lịch sử; không phải trạng thái source hiện tại. Tiếp tục từ [PROJECT_STATE](../../PROJECT_STATE.md).
+
 # Quét source và phương án không thuê dịch vụ
 
 > **Cập nhật v2 sau khi người dùng xác nhận không có máy server:** kết quả quét source ở mục 1–4 vẫn là bằng chứng khảo sát. Khuyến nghị local ở mục 5–6 và bước cần máy ở mục 10 đã bị thay thế bởi `docs/STACK_VA_KIEN_TRUC.md`. Phần giới hạn HF CPU miễn phí ở mục 7 cần đọc cùng `docs/NGAN_SACH_FREE_TIER.md`: CPU Basic không phí theo giờ nhưng tạo compute Space hiện có điều kiện paid plan; ZeroGPU free là nhánh có điều kiện riêng. Cấu hình snapshot timer và CPU quota TTS ở mục 8–9 chỉ là mô hình cũ, không phải cấu hình chốt. Hướng mới ưu tiên tham khảo Together/DO hơn fork WatchParty nguyên bản.

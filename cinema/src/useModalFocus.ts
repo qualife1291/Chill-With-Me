@@ -1,6 +1,6 @@
 import { useLayoutEffect, type RefObject } from "react";
 const selector =
-  'button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href],[tabindex]:not([tabindex="-1"])';
+  'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),summary,a[href],[tabindex]:not([tabindex="-1"])';
 /** Contain focus and pointer access while a modal is mounted, then restore its opener. */
 export function useModalFocus(
   ref: RefObject<HTMLElement | null>,

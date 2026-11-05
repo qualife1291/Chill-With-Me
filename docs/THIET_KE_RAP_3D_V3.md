@@ -1,3 +1,5 @@
+> Đặc tả sản phẩm gốc ngày 02/11/2026; các câu về trạng thái triển khai bên dưới là lịch sử tại ngày đó. Source, test và deploy hiện tại: [PROJECT_STATE](../PROJECT_STATE.md).
+
 # Rạp 3D v3 — đặc tả sản phẩm và luồng tương tác
 
 Ngày02/11/2026. **Đây là đặc tả hiện hành**, thay thế lựa chọn UI2D làm giao diện chính, giới hạn50người/phòng và việc để playlist ngoài MVP ở các bản trước. Chưa có scene3D hoặc backend được triển khai. Preview2D cũ chỉ là tham khảo bố cục chat.

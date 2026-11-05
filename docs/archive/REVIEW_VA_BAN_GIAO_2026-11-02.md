@@ -1,16 +1,18 @@
+> Tài liệu lịch sử; không phải trạng thái source hiện tại. Tiếp tục từ [PROJECT_STATE](../../PROJECT_STATE.md).
+
 # Review tổng thể và kế hoạch bàn giao — cập nhật 05/11/2026
 
 ## Tổng quan hiện tại
 
 Ứng dụng realtime đã có source, test local và bản alpha cũ trên Cloudflare. Source mới có sảnh 3D, model nam/nữ CC0, rig animation, bốn camera, xoay đầu đồng bộ, chat/voice thiết bị, host reorder và viewer suggestions. Bản source mới chưa được deploy vì thiếu Cloudflare credential.
 
-Xem [bảng nghiệm thu hiện hành](KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) để phân biệt **đã có code/test local**, **cần thiết bị/provider/quyền triển khai**, và **backlog full scope**. Số liệu và report chuẩn ở [PROJECT_STATE](../PROJECT_STATE.md). Không gọi toàn bộ plan hoàn tất hoặc các gate production đã đạt.
+Xem [bảng nghiệm thu hiện hành](../KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) để phân biệt **đã có code/test local**, **cần thiết bị/provider/quyền triển khai**, và **backlog full scope**. Số liệu và report chuẩn ở [PROJECT_STATE](../../PROJECT_STATE.md). Không gọi toàn bộ plan hoàn tất hoặc các gate production đã đạt.
 
 ## Review lịch sử ngày 02/11/2026
 
 Phần dưới ghi quyết định trước khi source hiện tại được triển khai; các câu “chưa có app” và số liệu 50/150 không mô tả phiên bản hiện tại.
 
-> **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
+> **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](../THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
 
 ## Kết luận tại ngày 02/11/2026
 
@@ -18,13 +20,13 @@ Có đủ nền tài liệu để bắt đầu prototype core. Chưa có cơ s�
 
 ## Bộ tài liệu hiện hành
 
-1. [Kế hoạch sản phẩm](../KE_HOACH_RAP_XEM_CHUNG.md).
-2. [Kiến trúc](STACK_VA_KIEN_TRUC.md) và [ngân sách](NGAN_SACH_FREE_TIER.md).
-3. [UI/UX và nguồn tài nguyên](UI_UX_VA_TAI_NGUYEN.md), [bản bố cục tương tác](../design/cinema-preview.html), [tokens](../design/tokens.css).
-4. [Bảo mật và vận hành](BAO_MAT_VA_VAN_HANH.md).
-5. [NIM và kiểm thử](NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md).
-6. [Timeline/backlog](TIMELINE_BACKLOG_VA_NGHIEM_THU.md).
-7. [Khảo sát source lịch sử](../BAO_CAO_QUET_SOURCE_VA_TOI_UU.md) và [snapshot](../SOURCE_SCAN_MANIFEST.json). Khuyến nghị local/server cũ trong báo cáo này không còn áp dụng.
+1. [Kế hoạch sản phẩm](KE_HOACH_RAP_XEM_CHUNG.md).
+2. [Kiến trúc](STACK_VA_KIEN_TRUC_V2.md) và [ngân sách](../NGAN_SACH_FREE_TIER.md).
+3. [UI/UX và nguồn tài nguyên](../UI_UX_VA_TAI_NGUYEN.md), [bản bố cục tương tác](../../design/cinema-preview.html), [tokens](../../design/tokens.css).
+4. [Bảo mật và vận hành](../BAO_MAT_VA_VAN_HANH.md).
+5. [NIM và kiểm thử](../NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md).
+6. [Timeline/backlog](TIMELINE_BACKLOG_V2.md).
+7. [Khảo sát source lịch sử](BAO_CAO_QUET_SOURCE_VA_TOI_UU.md) và [snapshot](../../SOURCE_SCAN_MANIFEST.json). Khuyến nghị local/server cũ trong báo cáo này không còn áp dụng.
 
 ## Findings và quyết định thống nhất
 

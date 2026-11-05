@@ -1,3 +1,4 @@
+import { parsePlaylist, MAX_IMPORT_ITEMS, MAX_IMPORT_BYTES } from "./playlist";
 import { z } from "zod";
 import {
   parseMediaURL,
@@ -5,6 +6,7 @@ import {
   supportedMimes,
   type MediaSource,
 } from "./media";
+export const visibilitySchema = z.enum(["public", "private"]);
 export const avatarSchema = z.enum(["male", "female"]);
 export type AvatarStyle = z.infer<typeof avatarSchema>;
 export const nameSchema = z.string().trim().min(1).max(32);
@@ -30,6 +32,27 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("transfer"), id: z.string() }),
   z.object({ type: z.literal("successor"), id: z.string().nullable() }),
   z.object({ type: z.literal("close") }),
+  z.object({ type: z.literal("rotate-invite") }),
+  z.object({
+    type: z.literal("import"),
+    urls: z
+      .array(z.string().max(2048))
+      .min(1)
+      .max(MAX_IMPORT_ITEMS)
+      .refine(
+        (urls) =>
+          new TextEncoder().encode(urls.join("\n")).length <= MAX_IMPORT_BYTES,
+      ),
+    mode: z.enum(["start", "queue"]),
+    generation: z.number().int().min(0),
+    expectedQueueRevision: z.number().int().min(0),
+  }),
+  z.object({
+    type: z.literal("move"),
+    id: z.string().max(100),
+    beforeId: z.string().max(100).nullable(),
+    expectedQueueRevision: z.number().int().min(0),
+  }),
   z.object({ type: z.literal("add"), url: z.string().max(2048) }),
   z.object({
     type: z.literal("file"),
@@ -104,6 +127,8 @@ export type Suggestion = {
   at: number;
 };
 export type Room = {
+  visibility?: z.infer<typeof visibilitySchema>;
+  inviteKey?: string;
   session: string;
   title: string;
   capacity: number;
@@ -187,10 +212,13 @@ export function createRoom(
   capacity: number,
   now: number,
   avatar: AvatarStyle = "male",
+  visibility: z.infer<typeof visibilitySchema> = "public",
 ): Room {
   seats(capacity);
   return {
     session: crypto.randomUUID(),
+    visibility: visibilitySchema.parse(visibility),
+    ...(visibility === "private" ? { inviteKey: crypto.randomUUID() } : {}),
     title: nameSchema.parse(title),
     capacity,
     host: id,
@@ -226,10 +254,13 @@ export function requestJoin(
   name: string,
   now: number,
   avatar: AvatarStyle = "male",
+  inviteKey?: string,
 ) {
   if (r.banned.includes(id)) throw Error("BANNED");
   if (r.members.some((m) => m.id === id)) return;
   if (r.pending.some((m) => m.id === id)) return;
+  if (r.visibility === "private" && (!r.inviteKey || inviteKey !== r.inviteKey))
+    throw Error("INVITE_REQUIRED");
   if (r.members.length >= r.capacity) throw Error("ROOM_FULL");
   if (r.pending.length >= 20) throw Error("REQUEST_QUEUE_FULL");
   r.pending.push({
@@ -315,6 +346,48 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       bumpQueue();
     }
     r.suggestions = (r.suggestions || []).filter((s) => s.id !== c.id);
+  } else if (c.type === "rotate-invite") {
+    if (r.visibility !== "private") throw Error("NOT_PRIVATE_ROOM");
+    r.inviteKey = crypto.randomUUID();
+    r.pending = [];
+  } else if (c.type === "import") {
+    checkQueue(c.expectedQueueRevision);
+    const parsed = parsePlaylist(c.urls);
+    if (c.mode === "start") {
+      if (c.generation !== r.generation) throw Error("STALE_GENERATION");
+      if (r.current || r.queue.length) throw Error("VIDEO_ALREADY_SELECTED");
+    }
+    if (r.queue.length + parsed.items.length > 50) throw Error("QUEUE_FULL");
+    const items = parsed.items.map((item) => ({
+      id: crypto.randomUUID(),
+      ...item,
+    }));
+    if (c.mode === "start") {
+      r.current = items.shift()!;
+      r.generation++;
+      r.position = 0;
+      r.anchor = now;
+      r.playing = true;
+      delete r.queueEndedAt;
+    }
+    r.queue.push(...items);
+    bumpQueue();
+  } else if (c.type === "move") {
+    checkQueue(c.expectedQueueRevision);
+    const index = r.queue.findIndex((i) => i.id === c.id);
+    if (
+      index < 0 ||
+      (c.beforeId !== null && !r.queue.some((i) => i.id === c.beforeId))
+    )
+      throw Error("INVALID_QUEUE_ITEM");
+    if (c.id === c.beforeId) return;
+    const item = r.queue.splice(index, 1)[0];
+    const destination =
+      c.beforeId === null
+        ? r.queue.length
+        : r.queue.findIndex((i) => i.id === c.beforeId);
+    r.queue.splice(destination, 0, item);
+    bumpQueue();
   } else if (c.type === "reorder") {
     checkQueue(c.expectedQueueRevision);
     const index = r.queue.findIndex((i) => i.id === c.id);
@@ -444,7 +517,24 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   }
   r.revision++;
 }
+export function roomSummary(r: Room | null) {
+  if (!r) return { open: false };
+  if (r.visibility === "private") return { open: true, private: true };
+  return {
+    open: true,
+    title: r.title,
+    capacity: r.capacity,
+    count: r.members.length,
+  };
+}
 export function view(r: Room, id: string) {
+  if (
+    r.visibility === "private" &&
+    !r.members.some((m) => m.id === id) &&
+    !r.pending.some((m) => m.id === id)
+  )
+    return { status: "removed" };
+  const { inviteKey, ...publicRoom } = r;
   if (!r.members.some((m) => m.id === id))
     return {
       status: r.pending.some((p) => p.id === id) ? "pending" : "removed",
@@ -454,7 +544,8 @@ export function view(r: Room, id: string) {
   return {
     status: "joined",
     room: {
-      ...r,
+      ...publicRoom,
+      ...(id === r.host && inviteKey ? { inviteKey } : {}),
       members: r.members.map(({ connectionId, lastSuggestedAt, ...m }) => ({
         ...m,
         online: !!connectionId,

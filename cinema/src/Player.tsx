@@ -46,9 +46,11 @@ function YouTubePlayerView({
   isHost,
   onControl,
   speaking,
+  serverNow,
 }: {
   room: Room;
   offset: number;
+  serverNow?: () => number;
   onEnded: () => void;
   isHost: boolean;
   onControl: (c: Command) => Promise<void>;
@@ -66,8 +68,15 @@ function YouTubePlayerView({
       state: number;
     } | null>(null),
     duck = useRef<{ original: number; applied: number } | null>(null);
-  const latest = useRef({ room, offset, onEnded, isHost, onControl });
-  latest.current = { room, offset, onEnded, isHost, onControl };
+  const latest = useRef({
+    room,
+    offset,
+    onEnded,
+    isHost,
+    onControl,
+    serverNow,
+  });
+  latest.current = { room, offset, onEnded, isHost, onControl, serverNow };
   const [error, setError] = useState(""),
     [ready, setReady] = useState(false);
   const current = !!room.current;
@@ -116,12 +125,15 @@ function YouTubePlayerView({
                 endedGeneration.current !== r.generation
               ) {
                 endedGeneration.current = r.generation;
-                quietUntil.current = Date.now() + 1200;
+                quietUntil.current = performance.now() + 1200;
                 p.pauseVideo();
                 if (latest.current.isHost) latest.current.onEnded();
                 return;
               }
-              if (latest.current.isHost && Date.now() > quietUntil.current) {
+              if (
+                latest.current.isHost &&
+                performance.now() > quietUntil.current
+              ) {
                 if (e.data === 2 && r.playing)
                   latest.current.onControl({
                     type: "pause",
@@ -154,14 +166,14 @@ function YouTubePlayerView({
     const sync = () => {
       const { room: r, offset: o, isHost: host } = latest.current;
       if (!r.current) return;
-      const t = target(r, Date.now() + o);
+      const t = target(r, latest.current.serverNow?.() ?? Date.now() + o);
       if (
         loaded.current !== r.generation ||
         (p.getVideoData().video_id &&
           p.getVideoData().video_id !== r.current.videoId)
       ) {
         loaded.current = r.generation;
-        quietUntil.current = Date.now() + 1200;
+        quietUntil.current = performance.now() + 1200;
         lastSample.current = null;
         setError("");
         const v = { videoId: r.current.videoId, startSeconds: t };
@@ -174,14 +186,14 @@ function YouTubePlayerView({
         p.getPlayerState() !== 3 &&
         Math.abs(p.getCurrentTime() - t) > 1.5
       ) {
-        quietUntil.current = Date.now() + 800;
+        quietUntil.current = performance.now() + 800;
         p.seekTo(t, true);
       }
       if (r.playing && ![1, 3].includes(p.getPlayerState())) {
-        quietUntil.current = Date.now() + 800;
+        quietUntil.current = performance.now() + 800;
         p.playVideo();
       } else if (!r.playing && p.getPlayerState() === 1) {
-        quietUntil.current = Date.now() + 800;
+        quietUntil.current = performance.now() + 800;
         p.pauseVideo();
       }
     };
@@ -201,14 +213,17 @@ function YouTubePlayerView({
         p.getVideoData().video_id &&
         p.getVideoData().video_id !== r.current.videoId
       ) {
-        quietUntil.current = Date.now() + 1200;
+        quietUntil.current = performance.now() + 1200;
         p.loadVideoById({
           videoId: r.current.videoId,
-          startSeconds: target(r, Date.now() + latest.current.offset),
+          startSeconds: target(
+            r,
+            latest.current.serverNow?.() ?? Date.now() + latest.current.offset,
+          ),
         });
         return;
       }
-      const now = Date.now(),
+      const now = performance.now(),
         position = p.getCurrentTime(),
         state = p.getPlayerState(),
         before = lastSample.current;
@@ -225,7 +240,14 @@ function YouTubePlayerView({
         before.position + (before.state === 1 ? (now - before.time) / 1000 : 0);
       if (
         Math.abs(position - expected) > 1.5 ||
-        Math.abs(position - target(r, now + latest.current.offset)) > 3
+        Math.abs(
+          position -
+            target(
+              r,
+              latest.current.serverNow?.() ??
+                Date.now() + latest.current.offset,
+            ),
+        ) > 3
       ) {
         quietUntil.current = now + 500;
         controlPending.current = true;
@@ -279,7 +301,11 @@ function YouTubePlayerView({
             if (!p) return;
             if (!latest.current.isHost)
               p.seekTo(
-                target(latest.current.room, Date.now() + latest.current.offset),
+                target(
+                  latest.current.room,
+                  latest.current.serverNow?.() ??
+                    Date.now() + latest.current.offset,
+                ),
                 true,
               );
             if (latest.current.room.playing) p.playVideo();

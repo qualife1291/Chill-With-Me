@@ -11,6 +11,7 @@ import type { FileShare } from "./FileShare";
 export type PlayerProps = {
   room: Room;
   offset: number;
+  serverNow?: () => number;
   isHost: boolean;
   onEnded: () => void;
   onControl: (c: Command) => Promise<void>;
@@ -45,7 +46,7 @@ export default function NativePlayer(props: PlayerProps) {
       (host && nativePending.current > 0)
     )
       return;
-    const t = target(r, Date.now() + offset);
+    const t = target(r, latest.current.serverNow?.() ?? Date.now() + offset);
     if (
       force ||
       (!host &&

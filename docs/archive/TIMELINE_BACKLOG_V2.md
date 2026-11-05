@@ -1,9 +1,11 @@
+> Tài liệu lịch sử; không phải trạng thái source hiện tại. Tiếp tục từ [PROJECT_STATE](../../PROJECT_STATE.md).
+
 # Timeline, backlog và tiêu chí nghiệm thu v2
 
-> Trạng thái implementation cập nhật 05/11/2026 nằm ở [plan hiện hành](KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) và [PROJECT_STATE](../PROJECT_STATE.md). Timeline v2 dưới đây là lịch sử; các gate full-scope chưa đạt vẫn còn, không phải báo cáo “đã hoàn tất”.
+> Trạng thái implementation cập nhật 05/11/2026 nằm ở [plan hiện hành](../KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) và [PROJECT_STATE](../../PROJECT_STATE.md). Timeline v2 dưới đây là lịch sử; các gate full-scope chưa đạt vẫn còn, không phải báo cáo “đã hoàn tất”.
 
 
-> **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
+> **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](../THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
 
 Ước lượng cho một full-stack có kinh nghiệm, hỗ trợ QA/ML bán thời gian. Ngày công không đồng nghĩa ngày lịch; không giả định có nhiều agent/dev làm song song. Chưa cam kết ngày phát hành khi cổng tài nguyên TTS còn mở.
 
@@ -107,12 +109,12 @@ Tại mốc tài liệu 02/11, mới có nghiên cứu/kế hoạch và chưa c�
 
 ## G0/QA bổ sung: NVIDIA NIM
 
-[Chi tiết 7–9 ngày công kiểm thử](NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md), chồng một phần vào G0/QA hiện tại, chưa cộng cứng vào tổng. Ba gate độc lập: preset Việt, clone đạt chất lượng, provider được phép production0đ. Không dùng kết quả dry-run thay benchmark. Thời gian chờ quyền Zeroshot chưa xác định.
+[Chi tiết 7–9 ngày công kiểm thử](../NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md), chồng một phần vào G0/QA hiện tại, chưa cộng cứng vào tổng. Ba gate độc lập: preset Việt, clone đạt chất lượng, provider được phép production0đ. Không dùng kết quả dry-run thay benchmark. Thời gian chờ quyền Zeroshot chưa xác định.
 
 ## Review UI/security02/11/2026
 
-Dự phòng thiết kế/usability/license và hardening/privacy thêm3–5ngày nếu chưa nằm trong các milestone: baseline30–42, có reserve33–47ngày công. Xem [review tổng thể](REVIEW_TONG_THE_VA_KE_HOACH_BAN_GIAO.md), [UI/UX](UI_UX_VA_TAI_NGUYEN.md), [bảo mật](BAO_MAT_VA_VAN_HANH.md). Không cộng đôi thời gian NIM.
+Dự phòng thiết kế/usability/license và hardening/privacy thêm3–5ngày nếu chưa nằm trong các milestone: baseline30–42, có reserve33–47ngày công. Xem [review tổng thể](REVIEW_VA_BAN_GIAO_2026-11-02.md), [UI/UX](../UI_UX_VA_TAI_NGUYEN.md), [bảo mật](../BAO_MAT_VA_VAN_HANH.md). Không cộng đôi thời gian NIM.
 
 ### Bổ sung mới nhất
 
-[Kế hoạch đồ họa và công nghệ3D](DO_HOA_VA_CONG_NGHE_RAP_3D.md) cập nhật bố cục, asset pipeline, latejoin không chờ và timeline. Host một mình phát được;2chỉ là capacity nhỏ nhất.
+[Kế hoạch đồ họa và công nghệ3D](../DO_HOA_VA_CONG_NGHE_RAP_3D.md) cập nhật bố cục, asset pipeline, latejoin không chờ và timeline. Host một mình phát được;2chỉ là capacity nhỏ nhất.

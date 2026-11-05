@@ -1,6 +1,8 @@
+> Tài liệu lịch sử; không phải trạng thái source hiện tại. Tiếp tục từ [PROJECT_STATE](../../PROJECT_STATE.md).
+
 # Stack và kiến trúc v2 — cloud miễn phí, không có máy server
 
-> **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
+> **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](../THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
 
 Cập nhật 01/11/2026. Đây là quyết định thiết kế; chưa có implementation/deployment hay benchmark.
 
@@ -157,12 +159,12 @@ Test harness chuyển từ Socket.IO trong kế hoạch v1 sang WebSocket native
 
 ## Bổ sung adapter NVIDIA NIM
 
-Thêm adapter NIM cho môi trường đánh giá nội bộ, dùng secret server-side, discovery locale/voice và contract version trước inference. Không đưa API trial hoặc audio trial vào production. Chi tiết [gate và protocol thử](NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md). HTTP offline WAV là đường smoke ban đầu; streaming PCM/gRPC là hạng mục chưa thực hiện. Không mặc định Multilingual endpoint hỗ trợ cloning.
+Thêm adapter NIM cho môi trường đánh giá nội bộ, dùng secret server-side, discovery locale/voice và contract version trước inference. Không đưa API trial hoặc audio trial vào production. Chi tiết [gate và protocol thử](../NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md). HTTP offline WAV là đường smoke ban đầu; streaming PCM/gRPC là hạng mục chưa thực hiện. Không mặc định Multilingual endpoint hỗ trợ cloning.
 
 ## Quyết định review02/11/2026
 
-[Bảo mật/vận hành](BAO_MAT_VA_VAN_HANH.md) quy định session/CSRF/Origin, upload PCM và TTL. Signed audio URL là bearer capability sống tối đa60s; revoke chặn cấp URL mới, không thu hồi bản đã tải. Room riêng mặc định là đề xuất thiết kế hiện hành. [UI/UX](UI_UX_VA_TAI_NGUYEN.md) quy định trạng thái và giới hạn dùng chung với server.
+[Bảo mật/vận hành](../BAO_MAT_VA_VAN_HANH.md) quy định session/CSRF/Origin, upload PCM và TTL. Signed audio URL là bearer capability sống tối đa60s; revoke chặn cấp URL mới, không thu hồi bản đã tải. Room riêng mặc định là đề xuất thiết kế hiện hành. [UI/UX](../UI_UX_VA_TAI_NGUYEN.md) quy định trạng thái và giới hạn dùng chung với server.
 
 ### Bổ sung mới nhất
 
-[Kế hoạch đồ họa và công nghệ3D](DO_HOA_VA_CONG_NGHE_RAP_3D.md) cập nhật bố cục, asset pipeline, latejoin không chờ và timeline. Host một mình phát được;2chỉ là capacity nhỏ nhất.
+[Kế hoạch đồ họa và công nghệ3D](../DO_HOA_VA_CONG_NGHE_RAP_3D.md) cập nhật bố cục, asset pipeline, latejoin không chờ và timeline. Host một mình phát được;2chỉ là capacity nhỏ nhất.

@@ -7,9 +7,9 @@
     "renderedFrames": 0
   },
   "animation": {
-    "elapsed": 3075.60000000149,
-    "rendererFrames": 9,
-    "rafP50": 314.69999999925494,
-    "rafP95": 412.6000000014901
+    "elapsed": 3010.39999999851,
+    "rendererFrames": 8,
+    "rafP50": 350.5999999977648,
+    "rafP95": 486.0999999977648
   }
 }

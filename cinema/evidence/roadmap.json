@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "checks": [
+    "private lobby/state hide title, capacity, member count, epoch and capability",
+    "bulk start textarea participates in modal keyboard loop",
+    "invalid batch retains input and cannot partially publish",
+    "atomic bulk start deduplicates and calibrates authenticated RTT probes",
+    "private fragment capability admits only to pending; never sent in navigation/referrer",
+    "approved viewer sees no invitation capability or host invitation control",
+    "host rotates invitation, revokes pending/old links and keeps approved membership",
+    "nonmodal panel focuses composer; Escape restores its toolbar opener",
+    "a two-minute client wall-clock step does not generate a spurious host seek",
+    "drag queue order synchronizes without replacing current native iframe or timeline",
+    "last-position drag works and stale revision is rejected",
+    "mixed-provider bulk append reaches the viewer without resetting playback",
+    "room resume bootstraps time from HTTP before WS, even with a skewed client clock",
+    "private room and importer remain within a 390px viewport"
+  ],
+  "pageErrors": [],
+  "limits": "YouTube mocked; local authenticated sessions. RTT unit tests cover monotonic timing, not WAN drift guarantees."
+}

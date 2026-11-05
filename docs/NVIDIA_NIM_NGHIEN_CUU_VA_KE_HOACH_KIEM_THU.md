@@ -27,7 +27,7 @@ Ngày khảo sát: 01/11/2026. Phạm vi: đọc chat tiếng Việt bằng pres
 | [VoxCPM2](https://github.com/OpenBMB/VoxCPM) | Đã đọc README: Việt trong 30 ngôn ngữ, clone, 2B, Apache2 | Đối chứng chất lượng; không lấy tốc độ RTX4090 quảng bá làm độ trễ hosted free |
 | [Watchparty](https://github.com/howardchung/watchparty), [Together](https://github.com/chtnnh/together), [OpenTogetherTube](https://github.com/dyc3/opentogethertube) | Đã quét source ở báo cáo trước: sync, room, roles, fanout | Học core xem chung; không repo nào tự giải quyết inference cloning miễn phí. OTT AGPL3 cần xét khi tái sử dụng code |
 
-Xem thêm [báo cáo quét source](../BAO_CAO_QUET_SOURCE_VA_TOI_UU.md). Kết quả đọc branch hiện hành phải được pin commit trước implementation; không coi branch URL là snapshot bất biến.
+Xem thêm [báo cáo quét source](archive/BAO_CAO_QUET_SOURCE_VA_TOI_UU.md). Kết quả đọc branch hiện hành phải được pin commit trước implementation; không coi branch URL là snapshot bất biến.
 
 ## 3. Trạng thái kiểm thử hiện tại
 
@@ -173,8 +173,8 @@ Con số ~2.000clip/tháng trong kế hoạch trước giả định Opus32kbps,
 - [NIM HTTP26.10](https://docs.nvidia.com/nim/speech/26.10.0/reference/api-references/tts/http-tts.html): multipart, discovery, WAV offline và LPCM streaming; hosted phải xác minh contract/version.
 - [NIM voice list](https://docs.nvidia.com/nim/speech/latest/tts/voices.html): tham chiếu voice; runtime discovery là nguồn chọn thực tế.
 - [NVIDIA FAQ](https://forums.developer.nvidia.com/t/nvidia-nim-faq/300317): cách truy cập Developer/API Catalog; quota phụ thuộc dịch vụ/tài khoản.
-- [Kiến trúc dự án](STACK_VA_KIEN_TRUC.md), [timeline tổng](TIMELINE_BACKLOG_VA_NGHIEM_THU.md), [ngân sách](NGAN_SACH_FREE_TIER.md).
+- [Kiến trúc dự án](archive/STACK_VA_KIEN_TRUC_V2.md), [timeline tổng](archive/TIMELINE_BACKLOG_V2.md), [ngân sách](NGAN_SACH_FREE_TIER.md).
 
 ## Thống nhất sau review02/11/2026
 
-App giới hạn120 code points NFC/tin TTS,500 cho chat. Pilot6người và MOS3,5 chỉ để shortlist; full release dùng10–20người tự nguyện, ≥80% chấp nhận, độ rõ≥4/5, báo từng nhóm. Signed audio URL đã cấp có TTL tối đa60s, không thu hồi audio đã tải; kiểm tra quyền chặn cấp URL mới sau revoke. Xem [review tổng thể](REVIEW_TONG_THE_VA_KE_HOACH_BAN_GIAO.md).
+App giới hạn120 code points NFC/tin TTS,500 cho chat. Pilot6người và MOS3,5 chỉ để shortlist; full release dùng10–20người tự nguyện, ≥80% chấp nhận, độ rõ≥4/5, báo từng nhóm. Signed audio URL đã cấp có TTL tối đa60s, không thu hồi audio đã tải; kiểm tra quyền chặn cấp URL mới sau revoke. Xem [review tổng thể](archive/REVIEW_VA_BAN_GIAO_2026-11-02.md).

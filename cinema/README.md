@@ -1,121 +1,93 @@
-# Cinema runtime
+# Runtime commands and limits
 
-Read [`../PROJECT_STATE.md`](../PROJECT_STATE.md) for current status. Historical implementation notes: [`../docs/archive/IMPLEMENTATION_NOTES_2026-11-03.md`](../docs/archive/IMPLEMENTATION_NOTES_2026-11-03.md).
+Resume/status: [PROJECT_STATE](../PROJECT_STATE.md). Code map/invariants: [architecture](../docs/ARCHITECTURE.md). [Roadmap](../docs/KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) owns unresolved gates; archive files are historical.
 
-## Local development (Node 22+)
+## Develop
+
+Node 22+:
 
 ```bash
 npm ci
 npm run build
-npm run serve
+npm run serve -- --local --ip 127.0.0.1 --port 8787
 ```
 
-Open the Wrangler URL (usually `http://localhost:8787`). Use two separate browser profiles for realtime. `/?demo` is local simulation only. Optional frontend HMR: keep Wrangler on 8787 and run `npm run dev` in another terminal.
+Use separate browser profiles for separate members. `/?demo` is a local simulation. Optional Vite HMR: `npm run dev` while Wrangler supplies the API. Never run room mutation tests on production.
 
-## Checks
+## Verify
+
+With local Wrangler on 8787 and **all three slots free**:
+
+```bash
+npm run verify:local
+```
+
+The runner builds once, waits for that build, then runs individual logic cases, strict Worker types, document paths, dry-run, API/playlist/private/bulk/relay security, UI/3D/chat/device speech, real native media, roadmap UI, one-renderer/ten-avatar smoke, 30 backend sockets and embedded asset/gzip equality **sequentially**. It stops on failure and preserves existing occupied rooms. It starts a local embedded Worker on 8788 if needed and stops only that process when finished. Do not edit source or rebuild while it runs.
+
+Requirements: ffmpeg, Chromium and Playwright. `tests/browser-runtime.cjs` uses local Playwright or the managed cloud runtime; `PLAYWRIGHT_MODULE_PATH`/`CHROMIUM_EXECUTABLE_PATH` can select an existing install. Outside that environment, install QA tools without changing app dependencies:
+
+```bash
+npm install --no-save --package-lock=false playwright
+npx playwright install chromium
+```
+
+Screenshots/logs go to a temporary directory printed by the runner; JSON evidence stays in `evidence/`. `verification.json` is the aggregate result, not a production certification. Per-feature reports: `fixes.json`, `media.json`, `roadmap.json`, `render-capacity.json`, `capacity.json`, `artifact.json`. A failed/stale report is not a release pass. Historical `browser.cjs`/`realtime.cjs` predate the current UI; use `fixes.cjs`.
+
+Targeted commands:
 
 ```bash
 npm test
-npm run cf:types
-npx tsc --noEmit --skipLibCheck --target ES2022 --module ESNext --moduleResolution Bundler worker/index.ts worker-configuration.d.ts
+npm run check:worker
+npm run check:docs
 npm run worker:check
+node tests/roadmap.integration.mjs  # private/API bulk/idempotency/body limits, slot 2
+node tests/roadmap.cjs              # private/import/drag/clock/panel UI, slot 2
+node tests/media.cjs                # native codecs/control/cleanup, slot 3
+node tests/relay-security.cjs       # binary ACL/cursor/size/stale item, slot 2
+node tests/render-capacity.cjs      # run alone; ten models, one software renderer
 ```
 
-To see the individual test results in the research environment:
+GitHub `Source checks` checks build/logic/types/docs/dry-run on Node 22/24. It does not run physical devices or the local full-browser runner. CI configuration and an observed remote CI pass are separate facts.
+
+## Media and storage
+
+| Input | Behavior / limit |
+| --- | --- |
+| YouTube | Native interactive iframe; host controls; stable across camera changes |
+| Direct HTTPS | MP4/WebM/Ogg/MOV/M4V/MP3/M4A/WAV extensions, signed query allowed; browser codec/provider rules apply |
+| Local file | ≤100 MiB each, ≤250 MiB sender-held total; sender keeps tab/file open; playback after full receipt, catches up |
+| Direct file sharing | Ordered reliable WebRTC, public STUN, no TURN; NAT/UDP policy can prevent connection |
+| Explicit room relay | ≤25 MiB; 16 KiB binary chunks/256 KiB ack window; authenticated current owner/recipient/item, exact cursor/size and timeouts |
+| Drive | Try native download URL; sharing/quota/confirmation/CORS may block it. Preview fallback is explicitly **unsynchronized**, with no ended/Next API |
+| Playlist import | ≤20 links/16 KiB; plain text/TXT/static M3U, one URL per line; dedupe within batch; atomic validation; no HLS segment playlists |
+
+Files are not transcoded, compressed or upscaled. MOV is a container: H.264/AAC MOV was tested; HEVC/ProRes depend on the browser. Unknown embed sites, arbitrary extensionless URLs, HLS/DASH playback and universal download proxying are unsupported. The supplied Drive sample downloaded as H.264/AAC MP4, but actual browser playback failed CORS; download/share a permitted file or use a direct media URL for synchronized playback.
+
+SQLite holds one room JSON row, bounded metadata/queue/chat, ≤200 command ID/timestamp records and short throttles. **No file bytes, blob table, R2 bucket or recordings.** End/Next removes old media metadata without creating played history. Queue removal/leave/close also prune Blob URLs, file/chunk references, native media resources and transfer connections/cursors. Reload loses file handles: the original owner reselects the same file. Relay consumes Worker/DO resources; sustained throughput/quota is unmeasured.
+
+## Release
+
+Cloudflare credentials go through secure Environment settings, never source/chat. Deployment is already authorized for the existing target, but current runtime has no Cloudflare auth. Once ready:
 
 ```bash
-node --import tsx tests/model.test.ts
-node --import tsx tests/lifecycle.test.ts
-node --import tsx tests/projection.test.ts
-node --import tsx tests/avatar.test.ts
-node --import tsx tests/camera.test.ts
-node --import tsx tests/assets.test.ts
-node --import tsx tests/playlist.test.ts
-node --import tsx tests/media.test.ts
+CLOUDFLARE_ACCOUNT_ID=966c7ceee358485648b935a07877ec45 npx wrangler deploy --config wrangler.jsonc
 ```
 
-With local Wrangler running and room slots free:
+Target Worker `cung-xem-cinema-alpha`, binding `ROOMS`/class `RoomSlot`, migration `v1`. New optional room metadata needs no schema reset; legacy rooms remain public. Do not change billing, use a temporary account or reset rooms. After deploy, compare public HTML/assets/models with the tested artifact and read room summaries only. Push alone does not deploy. A rollback drill requires actual account access and a verified healthy version; inspect deployment/version history before selecting a rollback, preserving room data.
+
+Optional embedded release:
 
 ```bash
-node tests/api.integration.mjs
-node tests/playlist.integration.mjs
-node tests/fixes.cjs
-node tests/capacity.cjs
-```
-
-Browser scripts prefer a local Playwright installation, then the cloud runtime installation. Set `PLAYWRIGHT_MODULE_PATH` and `CHROMIUM_EXECUTABLE_PATH` to override these; without a system Chromium they use Playwright’s browser. Keep generated evidence outside the checkout: create `/workspace/review-chill/evidence`, change to `/workspace/review-chill`, then run `node /workspace/Chill-With-Me/cinema/tests/fixes.cjs`. The local Worker must already be running. They mock YouTube and speech, while exercising the local backend and real DOM iframe geometry. Never run destructive room tests on production. Older `browser.cjs`/`realtime.cjs` predate the fullscreen UI; `fixes.cjs` is the current regression suite.
-
-## Deployment
-
-After Cloudflare authentication: `npm run build` then `npx wrangler deploy`. Config: `wrangler.jsonc`; SQLite migration `v1`; `ROOMS` binding. Change Worker name for an independent deployment. GitHub push alone does not deploy.
-
-The current public alpha instead uses `scripts-bundle.mjs` and the connected Cloudflare API. That script embeds gzip assets; preserve `encodeBody: "manual"`. Requests for these assets count against Worker quota. Static Assets through Wrangler is the intended regular deployment path.
-
-No production credentials or voice recordings belong in Git. The room geometry is procedural; installed KayKit avatar files and their CC0 license are under public/models. The asset catalog marks installed models separately from candidates.
-
-## Quality checks and device pilot
-
-The 3D lobby previews three doors and the selected male/female character. Room avatars use KayKit rigged GLB models with native idle/walk/sit clips and a bounded wave overlay; each member has an independent cloned skeleton. Original procedural avatars remain the per-model failure/loading fallback. Camera presets: first-person, overview, shoulder and social side view. Camera position/aim/lens interpolate and respect reduced-motion settings; every preset retains the same native YouTube player.
-
-`node tests/capacity.cjs` requires all three **local** slots free. It opens 30 independent cookie sessions/WebSockets, verifies room capacity and chat broadcast, rejects an extra guest, and closes its own rooms. Its timing excludes real video, 3D rendering, WAN latency and sustained-load behavior.
-
-Before calling the alpha production-ready, run on actual iOS Safari and Android Chrome: join using separate devices, tap playback after autoplay is blocked, test pause/seek/reconnect/background/foreground, an embed-restricted video and an ad, then select a Vietnamese voice, read several chat messages, stop speech midway and confirm video volume restores. Test touch dragging, first-person/overview/light views and landscape controls. Automated YouTube/speech mocks do not prove those device behaviors.
-
-## Avatar files and reproducible preparation
-
-Runtime files live in `public/models/`: `male.glb` (Knight), `female.glb` (Mage), original `LICENSE.txt` and `manifest.json`. Source: KayKit Adventurers 1.0 by Kay Lousberg, CC0. The manifest pins the upstream commit, source/optimized SHA-256 checksums, tool versions and size budgets. Each model is under 350 KB on disk and approximately 131 KB gzip. Models are served by this app, without a third-party runtime CDN. New/pending member records retain avatar choice; missing values from older sessions default to male. Voice selection remains independent from avatar choice.
-
-No asset tooling is needed for ordinary `npm ci` / build. To regenerate assets, download the two source URLs in the manifest into a temporary directory. Install offline tooling outside the app checkout:
-
-```bash
-npm install --prefix /tmp/cinema-model-tools --no-audit --no-fund @gltf-transform/core@4.2.1 @gltf-transform/functions@4.2.1 @gltf-transform/extensions@4.5.1
-AVATAR_TOOLS=/tmp/cinema-model-tools node tools/prepare-avatars.mjs /path/to/original-glbs
-```
-
-The tool verifies the expected original checksums, retains five needed clips, removes weapons/loose accessories, and optimizes/prunes the GLB data. Keep the manifest/checksums and model tests aligned when intentionally changing this pipeline.
-
-## Embedded release verification
-
-`scripts-bundle.mjs` now includes all recursive dist files, including GLB, manifest and license; it preserves manual gzip encoding and GLB MIME. For local validation of the embedded API deployment variant:
-
-```bash
-npm run build
 node scripts-bundle.mjs
 node tools/embedded-config.mjs
 npx wrangler dev --local --config .wrangler/embedded-check.json --port 8788 --persist-to .wrangler/embedded-state
-# In another terminal, from cinema/:
 node tests/artifact.integration.mjs
 ```
 
-Use `wrangler.jsonc` for regular Static Assets deployment. The generated embedded-check config is for local tests only. Deployment target remains Worker `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, SQLite `RoomSlot`, migration `v1`. No data reset or new migration is needed for optional avatar metadata.
+Preserve `encodeBody: "manual"`; embedded assets consume Worker requests. Regular Static Assets deployment is preferred. Generated artifacts/state are ignored by Git.
 
-The current cloud session lacks Cloudflare authentication. A noninteractive deployment requires `CLOUDFLARE_API_TOKEN`, entered securely in Environment settings, scoped to the existing account with the needed Workers permissions. Never put its value in source or chat. Once configured, deploy from cinema/ with `CLOUDFLARE_ACCOUNT_ID=966c7ceee358485648b935a07877ec45 npx wrangler deploy --config wrangler.jsonc`, then verify production HTML/assets/models and room summaries read-only. Never run room mutation tests against production.
+KayKit GLB provenance/checksums/license: `public/models/manifest.json`. The offline preparation tool lives in `tools/prepare-avatars.mjs`; keep tools outside app dependencies and update hashes/tests intentionally.
 
-## Playlist approval and ordering
+## Limits of evidence
 
-Hosts can move queued items up/down using keyboard-accessible 44px buttons; the current video/timeline is unchanged. Viewers can suggest at most three pending videos, with a 10-second per-member cooldown. Only the host may approve/reject; approval appends once through the existing commandId idempotency path. Reorder and current-client removal carry a queue revision, so a stale operation reports a conflict, fetches a fresh snapshot and waits for a new user action. It never silently replays the edit. Invalid submits retain the URL. Older room JSON defaults to an empty suggestion list and queue revision zero.
-
-`node tests/playlist.integration.mjs` uses local slot 2, preserves pre-existing rooms and closes its own test room. `tests/playlist.test.ts` covers roles, cooldown/bounds, duplicate acceptance, stale/full queue behavior and cleanup on leave/kick/expiry. The browser report also records the actual foreground idle-render frame count while mocked video continues to advance; that is an on-demand rendering check, not a real-device FPS certification.
-
-Head-control cancellation is verified for held D-pad blur and secondary-button pad dragging. Rig gaze interpolates in elapsed time and snaps to its exact target at rest; reduced-motion bypasses the interpolation. The browser suite checks changed/non-neutral head bones and matching diagnostics in the peer renderer. Current roadmap completion/gaps: [implementation plan](../docs/KE_HOACH_TRIEN_KHAI_HIEN_HANH.md).
-
-## Shared video and audio files
-
-The player accepts YouTube, public Google Drive file links, and direct HTTPS `.mp4`, `.webm`, `.ogv`, `.mov`, `.m4v`, `.mp3`, `.m4a`, `.ogg`, `.wav` URLs (including signed query strings). Other embed sites, HLS/DASH playlists and arbitrary URLs without a media extension are not supported. MOV is a container: H.264/AAC MOV was verified in Chromium; HEVC/ProRes and other codecs depend on the browser and are rejected visibly when unsupported. Media is never recompressed or upscaled; playback uses the original bytes and native browser buffering/range requests.
-
-Hosts can select a local file to start or append to the queue. Files are limited to 100 MiB each and 250 MiB total held by the sender. Keep the sender tab open. The client attempts an ordered/reliable WebRTC DataChannel transfer with a public STUN server; no TURN service is configured. If UDP/NAT/policy prevents that, viewers can choose **Nhận qua phòng** for files up to 25 MiB. This explicit fallback relays 16 KiB binary chunks through authenticated room WebSockets, with 256 KiB acknowledgment windows, exact sequential offsets, size/session/owner/recipient checks and timeouts. Relay traffic consumes Worker/DO resources; production quotas and sustained multi-room file throughput have not been established. Playback begins after the receiver has the complete file, then catches up with the room. Use a public streaming URL for larger or long media.
-
-The Worker stores **metadata only**, in the existing single room JSON row. There is no file/blob table, R2 bucket or upload object. `Next`/native `ended` replaces/removes the current item from persisted state, without adding a played-file history. The clients revoke the old Blob URL, release file/chunk references, stop the previous native media element and close transfer connections. Queue removal, leaving/closing a room and membership changes also prune resources. A reload loses local file handles: the original owner must select the same file again; completed recipients may keep playing until the item changes. Expiry/close clears the room state. The small command dedupe table remains bounded to 200 IDs and contains no file bytes or media metadata.
-
-Google Drive may refuse browser playback because of CORS, download confirmation, quota or sharing rules. The supplied sample downloaded as a 9,610,467-byte H.264/AAC MP4, but actual Chromium playback was denied by missing CORS. The app offers an explicit Drive preview fallback: **each person controls that preview independently; it has no room synchronization or automatic ended/Next API**. Download a permitted file and share it locally, or use a direct public media URL, for the synchronized native player. Do not treat preview playback as synchronized.
-
-Additional local checks (never target production):
-
-```bash
-node tests/media.cjs             # slot 3; ffmpeg + Chromium required
-node tests/relay-security.cjs    # slot 2; binary transfer ACL/order/size/expiry
-node tests/render-capacity.cjs   # slot 2; one real renderer, ten models; run alone
-node --import tsx tests/media.test.ts
-```
-
-`media.cjs` decodes real generated WebM, MP3 and H.264 MOV in two isolated browser profiles, compares received bytes by SHA-256, checks native play/pause/seek/ended, mixed queue, speech-volume duck/restore, Blob URL revocation and removal from persisted room state. Drive failure/preview uses a controlled fixture. Managed Chromium disables non-proxied WebRTC UDP, so successful file transfer is verified through the explicit room relay; WAN WebRTC/TURN connectivity is not certified. `evidence/media.json` and `evidence/render-capacity.json` record these boundaries. The render smoke verifies idle stops rendering, and records software-renderer frame timings; its pass flag is not a physical-device FPS gate.
+UI tests mock YouTube/device speech. Native tests decode generated WebM, MP3 and H.264 MOV, compare transferred bytes and exercise play/pause/seek/ended, speech-volume duck/restore and DB/Blob cleanup. Managed Chromium blocks non-proxied UDP, so relay delivery is verified separately from WebRTC/WAN connectivity. Ten SwiftShader avatars and 30 backend sockets do not certify device FPS, thermal behavior, WAN drift or sustained media quota. Actual iOS/Android YouTube ads/autoplay, touch, voice quality, production eviction/rollback/privacy operations and full voice-provider gates remain open.
