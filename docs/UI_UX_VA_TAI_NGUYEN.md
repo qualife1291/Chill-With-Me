@@ -1,8 +1,20 @@
-# Thiết kế trải nghiệm, giao diện và tài nguyên — cập nhật02/11/2026
+# Thiết kế trải nghiệm, giao diện và tài nguyên — cập nhật 05/11/2026
+
+## UI/UX đã triển khai — 05/11/2026
+
+- Sảnh 3D có chọn cửa bằng chuột/bàn phím, thông tin chỗ ngồi và xem trước nhân vật nam/nữ; có chế độ nhẹ. Model KayKit có rig và CC0, manifest/hash tại `cinema/public/models`.
+- Bốn camera, xoay đầu bằng kéo/vuốt/WASD/mũi tên/D-pad, ngoái thân, về giữa; camera mượt/reduced-motion, giữ nguyên YouTube iframe.
+- Chat theo tin mới mà không kéo người đang đọc lịch sử; cảnh báo voice/autoplay, ổn định volume duck/restore. Không voice call/cloning.
+- Host sắp xếp bằng nút có keyboard/touch 44px; viewer gửi đề xuất để host duyệt. URL được giữ khi lỗi, các thao tác cũ được báo và cập nhật lại danh sách.
+- Layout mobile/landscape và idle demand-render có browser checks; usability/thiết bị thật/WCAG tổng thể chưa được nghiệm thu. Tham chiếu [plan hiện hành](KE_HOACH_TRIEN_KHAI_HIEN_HANH.md), [state/evidence](../PROJECT_STATE.md).
+
+## Specification lịch sử ngày 02/11
+
+Phần dưới là phương án/HTML preview trước implementation; không dùng các câu “chưa có app realtime” hoặc capacity 50 làm trạng thái hiện tại.
 
 > **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
 
-Trạng thái: specification và bản bố cục HTML để review; chưa có app realtime. [Xem bản bố cục](../design/cinema-preview.html). Tên tạm “Cùng Xem”; chưa kiểm tra thương hiệu/domain. Phạm vi giữ nguyên 3 phòng, 50 chỗ/phòng, YouTube, chat và TTS có điều kiện; không gọi mic trực tiếp.
+Trạng thái tại ngày 02/11: specification và bản bố cục HTML để review; khi đó chưa có app realtime. [Xem bản bố cục](../design/cinema-preview.html). Tên tạm “Cùng Xem”; chưa kiểm tra thương hiệu/domain. Phạm vi giữ nguyên 3 phòng, 50 chỗ/phòng, YouTube, chat và TTS có điều kiện; không gọi mic trực tiếp.
 
 ## 1. Tham khảo và lựa chọn
 

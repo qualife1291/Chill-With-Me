@@ -1,5 +1,8 @@
 # Timeline, backlog và tiêu chí nghiệm thu v2
 
+> Trạng thái implementation cập nhật 05/11/2026 nằm ở [plan hiện hành](KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) và [PROJECT_STATE](../PROJECT_STATE.md). Timeline v2 dưới đây là lịch sử; các gate full-scope chưa đạt vẫn còn, không phải báo cáo “đã hoàn tất”.
+
+
 > **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
 
 Ước lượng cho một full-stack có kinh nghiệm, hỗ trợ QA/ML bán thời gian. Ngày công không đồng nghĩa ngày lịch; không giả định có nhiều agent/dev làm song song. Chưa cam kết ngày phát hành khi cổng tài nguyên TTS còn mở.
@@ -100,7 +103,7 @@ Backup/export schema/state có giới hạn, không dump sample giọng vào rep
 
 PRD; ADR stack/free hosting; event schema; data ownership; TTS provider contract; quota spreadsheet; source/license manifest; báo cáo G0; benchmark report; QA matrix; deploy/rollback guide; privacy/retention; hướng dẫn host và người xem.
 
-Ở hiện tại chỉ tài liệu nghiên cứu/kế hoạch đã được tạo. Chưa có source ứng dụng, URL deploy hoặc kết quả benchmark.
+Tại mốc tài liệu 02/11, mới có nghiên cứu/kế hoạch và chưa có source/URL/benchmark. Trạng thái mới đã được cập nhật trong plan hiện hành và PROJECT_STATE, không dùng câu lịch sử này làm trạng thái triển khai.
 
 ## G0/QA bổ sung: NVIDIA NIM
 

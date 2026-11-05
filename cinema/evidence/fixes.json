@@ -1,5 +1,13 @@
 {
   "passed": true,
+  "performance": {
+    "foreground": true,
+    "idleFrames": 0,
+    "windowMs": 1205,
+    "videoTimeAdvanced": 1.2060000000000013,
+    "mediaMocked": true,
+    "hardwareFpsBenchmark": false
+  },
   "errors": [],
   "checks": [
     "3D lobby door preview works by keyboard without entering rooms",
@@ -9,6 +17,13 @@
     "male/female rigged GLB models load and selected avatar survives approval",
     "avatar choice previews the loaded female model in lobby",
     "idle rig head rotation does not accumulate across refreshed snapshots",
+    "viewer suggestion requires host approval; viewer cannot reorder",
+    "keyboard reorder syncs to guest without replacing current playback",
+    "failed playlist submit preserves URL; mobile queue controls are 44px",
+    "idle 3D scene stops continuous rendering while video remains active",
+    "stale playlist action reports conflict, refreshes and is not replayed",
+    "held D-pad stops after window blur and ignores right-button pad drag",
+    "smoothed host rig head settles exactly and matches the avatar in guest renderer",
     "blocked localStorage does not break room, chat or voice controls",
     "autoplay-blocked feedback and user-gesture playback recovery",
     "cancelled speech callbacks cannot duck audio or show stale warnings",

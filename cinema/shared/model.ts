@@ -30,7 +30,24 @@ export const commandSchema = z.discriminatedUnion("type", [
     pitch: z.number().min(-45).max(35),
     bodyYaw: z.union([z.literal(0), z.literal(180)]),
   }),
-  z.object({ type: z.literal("remove"), id: z.string() }),
+  z.object({
+    type: z.literal("remove"),
+    id: z.string(),
+    expectedQueueRevision: z.number().int().min(0).optional(),
+  }),
+  z.object({
+    type: z.literal("reorder"),
+    id: z.string(),
+    direction: z.enum(["up", "down"]),
+    expectedQueueRevision: z.number().int().min(0),
+  }),
+  z.object({ type: z.literal("suggest"), url: z.string().max(300) }),
+  z.object({
+    type: z.literal("review-suggestion"),
+    id: z.string(),
+    accept: z.boolean(),
+    expectedQueueRevision: z.number().int().min(0),
+  }),
   z.object({ type: z.literal("next"), generation: z.number().int() }),
   z.object({ type: z.literal("play"), generation: z.number().int() }),
   z.object({ type: z.literal("pause"), generation: z.number().int() }),
@@ -52,6 +69,7 @@ export type Member = {
   sitAt?: number;
   waveAt?: number;
   avatar?: AvatarStyle;
+  lastSuggestedAt?: number;
   joinedAt: number;
   deadline?: number;
   connectionId?: string;
@@ -59,6 +77,13 @@ export type Member = {
   look?: { yaw: number; pitch: number; bodyYaw: 0 | 180 };
 };
 export type Item = { id: string; videoId: string };
+export type Suggestion = {
+  id: string;
+  videoId: string;
+  memberId: string;
+  name: string;
+  at: number;
+};
 export type Room = {
   session: string;
   title: string;
@@ -70,6 +95,8 @@ export type Room = {
   pending: { id: string; name: string; at: number; avatar?: AvatarStyle }[];
   banned: string[];
   queue: Item[];
+  queueRevision?: number;
+  suggestions?: Suggestion[];
   current: Item | null;
   generation: number;
   queueEndedAt?: number;
@@ -162,6 +189,8 @@ export function createRoom(
     pending: [],
     banned: [],
     queue: [],
+    queueRevision: 0,
+    suggestions: [],
     current: null,
     generation: 0,
     playing: false,
@@ -196,10 +225,19 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   const member = r.members.find((m) => m.id === actor);
   if (!member) throw Error("FORBIDDEN");
   if (
-    !["chat", "sit", "leave", "ping", "look", "wave"].includes(c.type) &&
+    !["chat", "sit", "leave", "ping", "look", "wave", "suggest"].includes(
+      c.type,
+    ) &&
     actor !== r.host
   )
     throw Error("HOST_ONLY");
+  const checkQueue = (expected: number | undefined) => {
+    if (expected !== undefined && expected !== (r.queueRevision || 0))
+      throw Error("STALE_QUEUE");
+  };
+  const bumpQueue = () => {
+    r.queueRevision = (r.queueRevision || 0) + 1;
+  };
   if (c.type === "ping") return;
   if (c.type === "chat") {
     r.messages.push({
@@ -208,6 +246,50 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       text: c.text.normalize("NFC"),
     });
     r.messages = r.messages.slice(-100);
+  } else if (c.type === "suggest") {
+    const suggestions = r.suggestions || [];
+    const vid = videoId(c.url);
+    if (
+      suggestions.filter((s) => s.memberId === actor).length >= 3 ||
+      suggestions.length >= 30
+    )
+      throw Error("SUGGESTION_LIMIT");
+    if (
+      member.lastSuggestedAt !== undefined &&
+      now - member.lastSuggestedAt < 10000
+    )
+      throw Error("SUGGESTION_COOLDOWN");
+    if (suggestions.some((s) => s.memberId === actor && s.videoId === vid))
+      throw Error("DUPLICATE_SUGGESTION");
+    r.suggestions = [
+      ...suggestions,
+      {
+        id: crypto.randomUUID(),
+        videoId: vid,
+        memberId: actor,
+        name: member.name,
+        at: now,
+      },
+    ];
+    member.lastSuggestedAt = now;
+  } else if (c.type === "review-suggestion") {
+    const proposed = (r.suggestions || []).find((s) => s.id === c.id);
+    if (!proposed) throw Error("INVALID_SUGGESTION");
+    if (c.accept) {
+      checkQueue(c.expectedQueueRevision);
+      if (r.queue.length >= 50) throw Error("QUEUE_FULL");
+      r.queue.push({ id: crypto.randomUUID(), videoId: proposed.videoId });
+      bumpQueue();
+    }
+    r.suggestions = (r.suggestions || []).filter((s) => s.id !== c.id);
+  } else if (c.type === "reorder") {
+    checkQueue(c.expectedQueueRevision);
+    const index = r.queue.findIndex((i) => i.id === c.id);
+    if (index < 0) throw Error("INVALID_QUEUE_ITEM");
+    const next = index + (c.direction === "up" ? -1 : 1);
+    if (next < 0 || next >= r.queue.length) return;
+    [r.queue[index], r.queue[next]] = [r.queue[next], r.queue[index]];
+    bumpQueue();
   } else if (c.type === "wave") {
     if (member.waveAt !== undefined && now - member.waveAt < 2400) return;
     member.waveAt = now;
@@ -219,6 +301,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   } else if (c.type === "leave") {
     if (actor === r.host) throw Error("HOST_CLOSE_REQUIRED");
     r.members = r.members.filter((m) => m.id !== actor);
+    r.suggestions = (r.suggestions || []).filter((s) => s.memberId !== actor);
   } else if (c.type === "transfer" || c.type === "successor") {
     if (c.type === "successor" && c.id === null) {
       delete r.successor;
@@ -252,6 +335,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   else if (c.type === "kick") {
     if (c.id === r.host) throw Error("CANNOT_KICK_HOST");
     r.members = r.members.filter((m) => m.id !== c.id);
+    r.suggestions = (r.suggestions || []).filter((s) => s.memberId !== c.id);
     if (!r.banned.includes(c.id)) {
       if (r.banned.length >= 100) throw Error("BAN_LIMIT");
       r.banned.push(c.id);
@@ -262,6 +346,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     const vid = videoId(c.url);
     delete r.queueEndedAt;
     r.current = { id: crypto.randomUUID(), videoId: vid };
+    bumpQueue();
     r.generation++;
     r.position = 0;
     r.anchor = now;
@@ -269,12 +354,18 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   } else if (c.type === "add") {
     if (r.queue.length >= 50) throw Error("QUEUE_FULL");
     r.queue.push({ id: crypto.randomUUID(), videoId: videoId(c.url) });
-  } else if (c.type === "remove")
-    r.queue = r.queue.filter((i) => i.id !== c.id);
-  else if (c.type === "next") {
+    bumpQueue();
+  } else if (c.type === "remove") {
+    checkQueue(c.expectedQueueRevision);
+    const remaining = r.queue.filter((i) => i.id !== c.id);
+    if (remaining.length === r.queue.length) return;
+    r.queue = remaining;
+    bumpQueue();
+  } else if (c.type === "next") {
     if (c.generation !== r.generation) throw Error("STALE_GENERATION");
     const previous = r.current;
     r.current = r.queue.shift() || null;
+    bumpQueue();
     if (previous && !r.current) r.queueEndedAt = now;
     if (r.current) delete r.queueEndedAt;
     r.generation++;
@@ -303,7 +394,7 @@ export function view(r: Room, id: string) {
     status: "joined",
     room: {
       ...r,
-      members: r.members.map(({ connectionId, ...m }) => ({
+      members: r.members.map(({ connectionId, lastSuggestedAt, ...m }) => ({
         ...m,
         online: !!connectionId,
       })),
@@ -358,6 +449,9 @@ export function sweep(r: Room, now: number) {
   );
   if (expired.length) {
     r.members = r.members.filter((m) => !expired.includes(m));
+    r.suggestions = (r.suggestions || []).filter((s) =>
+      r.members.some((m) => m.id === s.memberId),
+    );
     if (expired.some((m) => m.id === r.host)) {
       const next = r.members.find(
         (m) => m.id === r.successor && m.connectionId,

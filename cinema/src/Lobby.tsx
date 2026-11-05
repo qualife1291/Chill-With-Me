@@ -27,6 +27,7 @@ function LobbyCamera({
     else camera.position.lerp(target, 1 - Math.exp(-dt * 4));
     camera.lookAt(aim);
     gl.domElement.dataset.preview = String(selected);
+    gl.domElement.dataset.renderFrame = String(gl.info.render.frame);
     gl.domElement.dataset.settled = String(
       camera.position.distanceTo(target) < 0.005,
     );
@@ -215,6 +216,7 @@ export default function Lobby({
               m={member}
               capacity={2}
               offset={0}
+              reducedMotion={reduced}
               look={{ yaw: 0, pitch: 0, bodyYaw: 180 }}
             />
           </Suspense>

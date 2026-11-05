@@ -46,3 +46,10 @@ export function avatarPosition(m: Member, capacity: number, now: number) {
   }
   return { x: s.x * smooth((t - 0.55) / 0.45), y: s.y, z: s.z };
 }
+
+// Time-based visual smoothing; snap at rest so on-demand rendering can go idle.
+export function smoothHeadAngle(current: number, target: number, dt: number) {
+  const next =
+    current + (target - current) * (1 - Math.exp(-Math.max(0, dt) * 14));
+  return Math.abs(next - target) < 0.005 ? target : next;
+}

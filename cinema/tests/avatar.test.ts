@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { avatarMotion, avatarPosition } from "../shared/avatar";
+import {
+  avatarMotion,
+  avatarPosition,
+  smoothHeadAngle,
+} from "../shared/avatar";
 import { seats, type Member } from "../shared/model";
 
 test("avatar path is continuous at aisle/row transition for every seat", () => {
@@ -36,4 +40,21 @@ test("walk finishes before sit; wave expires and idle stops requesting frames", 
   assert.equal(avatarMotion(m, 9400).waving, false);
   assert.equal(avatarMotion(m, 9400).moving, false);
   assert.equal(avatarMotion({ ...m, seated: false }, 2000).moving, false);
+});
+
+test("head interpolation is bounded, time-based and reaches an exact idle state", () => {
+  for (const dt of [1 / 30, 1 / 60, 1 / 120]) {
+    let angle = -75;
+    for (let i = 0; i < Math.ceil(2 / dt); i++) {
+      const next = smoothHeadAngle(angle, 75, dt);
+      assert(next >= angle && next <= 75);
+      angle = next;
+    }
+    assert.equal(angle, 75);
+    assert.equal(smoothHeadAngle(angle, 75, dt), 75);
+  }
+  assert.equal(smoothHeadAngle(0, 75, 0), 0);
+  assert(
+    smoothHeadAngle(0, 75, 1 / 60) > 0 && smoothHeadAngle(0, 75, 1 / 60) < 75,
+  );
 });

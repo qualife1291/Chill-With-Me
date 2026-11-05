@@ -3,24 +3,31 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
-import { avatarMotion, avatarPosition } from "../shared/avatar";
+import {
+  avatarMotion,
+  avatarPosition,
+  smoothHeadAngle,
+} from "../shared/avatar";
 import type { Member } from "../shared/model";
 export default function ModelAvatar({
   m,
   capacity,
   offset,
   look,
+  reducedMotion = false,
 }: {
   m: Member;
   capacity: number;
   offset: number;
   look: { yaw: number; pitch: number; bodyYaw: number };
+  reducedMotion?: boolean;
 }) {
   const style = m.avatar || "male";
   const gltf = useLoader(GLTFLoader, `/models/${style}.glb`);
   const { invalidate, gl } = useThree();
   const group = useRef<THREE.Group>(null);
   const initialized = useRef(false);
+  const gaze = useRef({ yaw: look.yaw, pitch: look.pitch });
   const overlays = useRef(new Map<THREE.Bone, THREE.Quaternion>());
   const rig = useMemo(() => {
     const scene = cloneSkeleton(gltf.scene);
@@ -70,6 +77,7 @@ export default function ModelAvatar({
     look.yaw,
     look.pitch,
     look.bodyYaw,
+    reducedMotion,
     invalidate,
   ]);
   const math = useMemo(
@@ -131,6 +139,15 @@ export default function ModelAvatar({
         entry.action.setEffectiveWeight(weight);
       }
     };
+    gaze.current.yaw = reducedMotion
+      ? look.yaw
+      : smoothHeadAngle(gaze.current.yaw, look.yaw, dt);
+    gaze.current.pitch = reducedMotion
+      ? look.pitch
+      : smoothHeadAngle(gaze.current.pitch, look.pitch, dt);
+    const gazeMoving =
+      gaze.current.yaw !== look.yaw || gaze.current.pitch !== look.pitch;
+    gl.domElement.dataset[style + "GazeSettled"] = String(!gazeMoving);
     const elapsed = now - (m.sitAt || 0);
     if (pose.walking) {
       const entry = rig.actions.Walking_A;
@@ -155,15 +172,16 @@ export default function ModelAvatar({
       const bone = rig.bones.get(name);
       if (bone) overlays.current.set(bone, bone.quaternion.clone());
     }
-    rotate(
-      rig.bones.get("head"),
-      new THREE.Vector3(0, 1, 0),
-      (-look.yaw * Math.PI) / 180,
-    );
+    // Apply pitch then yaw, matching the camera and fallback rig's YXZ basis.
     rotate(
       rig.bones.get("head"),
       new THREE.Vector3(1, 0, 0),
-      (-look.pitch * Math.PI) / 180,
+      (-gaze.current.pitch * Math.PI) / 180,
+    );
+    rotate(
+      rig.bones.get("head"),
+      new THREE.Vector3(0, 1, 0),
+      (-gaze.current.yaw * Math.PI) / 180,
     );
     if (pose.waving) {
       rotate(
@@ -186,7 +204,7 @@ export default function ModelAvatar({
         : m.seated
           ? "sit"
           : "stand";
-    if (pose.moving || Math.abs(delta) > 0.001) invalidate();
+    if (pose.moving || gazeMoving || Math.abs(delta) > 0.001) invalidate();
   });
   return (
     <group ref={group} name={"avatar-" + m.id}>

@@ -71,6 +71,14 @@ const errors: Record<string, string> = {
   VIDEO_ALREADY_SELECTED:
     "Phòng đã có video. Hãy dùng playlist để thêm mục tiếp theo.",
   NO_VIDEO: "Chưa có video đang phát.",
+  STALE_QUEUE:
+    "Playlist vừa thay đổi. Danh sách đã được cập nhật; hãy chọn lại thao tác.",
+  QUEUE_FULL: "Playlist đã đủ 50 video. Hãy xóa bớt trước khi thêm.",
+  INVALID_QUEUE_ITEM: "Video này không còn trong playlist.",
+  INVALID_SUGGESTION: "Đề xuất này đã được xử lý.",
+  SUGGESTION_LIMIT: "Bạn được giữ tối đa 3 đề xuất chờ duyệt.",
+  SUGGESTION_COOLDOWN: "Hãy chờ 10 giây giữa hai lần đề xuất.",
+  DUPLICATE_SUGGESTION: "Bạn đã đề xuất video này rồi.",
 };
 async function api(path: string, data?: unknown) {
   const r = await fetch("/api" + path, {
@@ -111,6 +119,8 @@ function App() {
     [offset, setOffset] = useState(0),
     [connection, setConnection] = useState("Đang kết nối"),
     [tts, setTts] = useState(false);
+  const [queueBusy, setQueueBusy] = useState(false);
+  const [queueNotice, setQueueNotice] = useState("");
   const [avatar, setAvatar] = useState<"male" | "female">("male");
   const [previewSlot, setPreviewSlot] = useState(
     invitedSlot >= 1 && invitedSlot <= 3 ? invitedSlot : 1,
@@ -378,7 +388,7 @@ function App() {
       report(e);
     }
   }
-  async function command(c: Command) {
+  async function command(c: Command, onSuccess?: () => void) {
     if (c.type === "chat" && !demo) {
       await sendChat(c);
       return;
@@ -412,11 +422,27 @@ function App() {
         } else await send();
       }
     } catch (e) {
+      if (e instanceof Error && e.message === "STALE_QUEUE" && !demo)
+        await api(`/rooms/${slot}/state`)
+          .then(receive)
+          .catch(() => {});
       report(e);
+      return;
+    }
+    onSuccess?.();
+  }
+  async function queueAction(c: Command, onSuccess?: () => void) {
+    setQueueBusy(true);
+    setQueueNotice("");
+    try {
+      await command(c, onSuccess);
+    } finally {
+      setQueueBusy(false);
     }
   }
   useEffect(() => {
     setPendingMessages([]);
+    setQueueNotice("");
   }, [room?.session]);
   useEffect(() => {
     setApprovalDismissed(false);
@@ -1455,32 +1481,47 @@ function App() {
                 ) : tab === "queue" ? (
                   <div className="tab-content">
                     <h3>Tiếp theo trong buổi chiếu</h3>
-                    {host && (
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          void command({ type: "add", url });
-                          setUrl("");
-                        }}
-                      >
-                        <label htmlFor="url">Link video YouTube</label>
-                        <div className="composer">
-                          <input
-                            id="url"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            placeholder="https://youtu.be/…"
-                            required
-                          />
-                          <button className="primary" aria-label="Thêm video">
-                            <Plus size={16} />
-                          </button>
-                        </div>
-                      </form>
-                    )}
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void queueAction(
+                          { type: host ? "add" : "suggest", url },
+                          () => {
+                            setUrl("");
+                            setQueueNotice(
+                              host
+                                ? "Đã thêm video vào playlist."
+                                : "Đã gửi đề xuất. Chủ phòng sẽ duyệt trước khi thêm.",
+                            );
+                          },
+                        );
+                      }}
+                    >
+                      <label htmlFor="url">
+                        {host ? "Link video YouTube" : "Đề xuất video YouTube"}
+                      </label>
+                      <div className="composer">
+                        <input
+                          id="url"
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                          placeholder="https://youtu.be/…"
+                          required
+                        />
+                        <button
+                          className="primary"
+                          disabled={queueBusy || !url.trim()}
+                          aria-label={host ? "Thêm video" : "Gửi đề xuất"}
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </form>
+                    {queueNotice && <p role="status">{queueNotice}</p>}
                     {!host && (
                       <p className="muted">
-                        Chủ phòng quản lý playlist trong bản alpha.
+                        Bạn có thể gửi tối đa 3 đề xuất chờ duyệt. Chủ phòng
+                        quyết định video nào được thêm.
                       </p>
                     )}
                     {room.queue.length === 0 ? (
@@ -1497,17 +1538,117 @@ function App() {
                             <small>{q.videoId}</small>
                           </div>
                           {host && (
-                            <button
-                              aria-label="Xóa video"
-                              onClick={() =>
-                                void command({ type: "remove", id: q.id })
-                              }
-                            >
-                              <X size={16} />
-                            </button>
+                            <div className="queue-actions">
+                              <button
+                                aria-label={`Đưa video ${i + 1} lên`}
+                                disabled={queueBusy || i === 0}
+                                onClick={() =>
+                                  void queueAction({
+                                    type: "reorder",
+                                    id: q.id,
+                                    direction: "up",
+                                    expectedQueueRevision:
+                                      room.queueRevision || 0,
+                                  })
+                                }
+                              >
+                                ↑
+                              </button>
+                              <button
+                                aria-label={`Đưa video ${i + 1} xuống`}
+                                disabled={
+                                  queueBusy || i === room.queue.length - 1
+                                }
+                                onClick={() =>
+                                  void queueAction({
+                                    type: "reorder",
+                                    id: q.id,
+                                    direction: "down",
+                                    expectedQueueRevision:
+                                      room.queueRevision || 0,
+                                  })
+                                }
+                              >
+                                ↓
+                              </button>
+                              <button
+                                aria-label="Xóa video"
+                                disabled={queueBusy}
+                                onClick={() =>
+                                  void queueAction({
+                                    type: "remove",
+                                    id: q.id,
+                                    expectedQueueRevision:
+                                      room.queueRevision || 0,
+                                  })
+                                }
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
                           )}
                         </div>
                       ))
+                    )}
+                    {(room.suggestions || []).some(
+                      (s) => host || s.memberId === id,
+                    ) && (
+                      <section
+                        className="suggestion-list"
+                        aria-label="Đề xuất video"
+                      >
+                        <h3>
+                          {host ? "Đề xuất chờ duyệt" : "Đề xuất của bạn"}
+                        </h3>
+                        {(room.suggestions || [])
+                          .filter((s) => host || s.memberId === id)
+                          .map((s) => (
+                            <article className="suggestion-item" key={s.id}>
+                              <b>{s.name}</b>
+                              <small>{s.videoId}</small>
+                              {host ? (
+                                <div className="suggestion-actions">
+                                  <button
+                                    disabled={queueBusy}
+                                    onClick={() =>
+                                      void queueAction(
+                                        {
+                                          type: "review-suggestion",
+                                          id: s.id,
+                                          accept: true,
+                                          expectedQueueRevision:
+                                            room.queueRevision || 0,
+                                        },
+                                        () =>
+                                          setQueueNotice(
+                                            "Đã thêm đề xuất vào playlist.",
+                                          ),
+                                      )
+                                    }
+                                  >
+                                    Thêm đề xuất
+                                  </button>
+                                  <button
+                                    disabled={queueBusy}
+                                    onClick={() =>
+                                      void queueAction({
+                                        type: "review-suggestion",
+                                        id: s.id,
+                                        accept: false,
+                                        expectedQueueRevision:
+                                          room.queueRevision || 0,
+                                      })
+                                    }
+                                  >
+                                    Bỏ qua
+                                  </button>
+                                </div>
+                              ) : (
+                                <small>Đang chờ chủ phòng duyệt</small>
+                              )}
+                            </article>
+                          ))}
+                      </section>
                     )}
                   </div>
                 ) : (
@@ -1656,13 +1797,24 @@ function TurnButton({
     };
     frame.current = requestAnimationFrame(tick);
   };
-  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  useEffect(() => {
+    const hidden = () => {
+      if (document.hidden) stop();
+    };
+    window.addEventListener("blur", stop);
+    document.addEventListener("visibilitychange", hidden);
+    return () => {
+      stop();
+      window.removeEventListener("blur", stop);
+      document.removeEventListener("visibilitychange", hidden);
+    };
+  }, []);
   return (
     <button
       style={{ touchAction: "none" }}
       aria-label={label}
       onPointerDown={(e) => {
-        if (e.button !== 0) return;
+        if (e.button !== 0 || !e.isPrimary) return;
         e.preventDefault();
         e.currentTarget.focus({ preventScroll: true });
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -1695,27 +1847,21 @@ function TurnButton({
 }
 
 function HeadPad({ onTurn }: { onTurn: (x: number, y: number) => void }) {
-  const drag = useRef<{ x: number; y: number } | null>(null);
+  const pad = useHeadDrag(
+    (dx, dy) => onTurn((dx * 11) / 9, (dy * 11) / 9),
+    true,
+  );
   return (
     <div
       className="head-pad"
       role="group"
+      tabIndex={0}
       aria-label="Điều khiển đầu"
+      {...pad.handlers}
       onPointerDown={(e) => {
-        if ((e.target as HTMLElement).closest("button")) return;
-        e.currentTarget.setPointerCapture(e.pointerId);
-        drag.current = { x: e.clientX, y: e.clientY };
+        e.stopPropagation();
+        pad.handlers.onPointerDown(e);
       }}
-      onPointerMove={(e) => {
-        if (!drag.current) return;
-        onTurn(
-          (e.clientX - drag.current.x) * 0.22,
-          (drag.current.y - e.clientY) * 0.22,
-        );
-        drag.current = { x: e.clientX, y: e.clientY };
-      }}
-      onPointerUp={() => (drag.current = null)}
-      onPointerCancel={() => (drag.current = null)}
     >
       <span className="pad-up">
         <TurnButton

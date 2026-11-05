@@ -1602,3 +1602,45 @@ body.cinema-active {
   padding: 0;
   flex: 0 0 16px;
 }
+.queue-item .queue-actions {
+  display: flex;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.queue-item .queue-actions button {
+  padding: 6px;
+  width: 44px;
+  min-height: 44px;
+}
+.queue-item > div:not(.queue-actions) {
+  min-width: 0;
+}
+.queue-item > div:not(.queue-actions) small {
+  overflow-wrap: anywhere;
+}
+.suggestion-list {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+.suggestion-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.suggestion-item b,
+.suggestion-item small {
+  display: block;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+.suggestion-item small {
+  color: var(--muted);
+}
+.suggestion-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.suggestion-actions button {
+  min-height: 44px;
+}

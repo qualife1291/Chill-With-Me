@@ -21,7 +21,7 @@ npx tsc --noEmit --skipLibCheck --target ES2022 --module ESNext --moduleResoluti
 npm run worker:check
 ```
 
-To see all 28 individual test results in the research environment:
+To see all 35 individual test results in the research environment:
 
 ```bash
 node --import tsx tests/model.test.ts
@@ -30,12 +30,14 @@ node --import tsx tests/projection.test.ts
 node --import tsx tests/avatar.test.ts
 node --import tsx tests/camera.test.ts
 node --import tsx tests/assets.test.ts
+node --import tsx tests/playlist.test.ts
 ```
 
 With local Wrangler running and room slots free:
 
 ```bash
 node tests/api.integration.mjs
+node tests/playlist.integration.mjs
 node tests/fixes.cjs
 node tests/capacity.cjs
 ```
@@ -87,3 +89,11 @@ node tests/artifact.integration.mjs
 Use `wrangler.jsonc` for regular Static Assets deployment. The generated embedded-check config is for local tests only. Deployment target remains Worker `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, SQLite `RoomSlot`, migration `v1`. No data reset or new migration is needed for optional avatar metadata.
 
 The current cloud session lacks Cloudflare authentication. A noninteractive deployment requires `CLOUDFLARE_API_TOKEN`, entered securely in Environment settings, scoped to the existing account with the needed Workers permissions. Never put its value in source or chat. Once configured, deploy from cinema/ with `CLOUDFLARE_ACCOUNT_ID=966c7ceee358485648b935a07877ec45 npx wrangler deploy --config wrangler.jsonc`, then verify production HTML/assets/models and room summaries read-only. Never run room mutation tests against production.
+
+## Playlist approval and ordering
+
+Hosts can move queued items up/down using keyboard-accessible 44px buttons; the current video/timeline is unchanged. Viewers can suggest at most three pending videos, with a 10-second per-member cooldown. Only the host may approve/reject; approval appends once through the existing commandId idempotency path. Reorder and current-client removal carry a queue revision, so a stale operation reports a conflict, fetches a fresh snapshot and waits for a new user action. It never silently replays the edit. Invalid submits retain the URL. Older room JSON defaults to an empty suggestion list and queue revision zero.
+
+`node tests/playlist.integration.mjs` uses local slot 2, preserves pre-existing rooms and closes its own test room. `tests/playlist.test.ts` covers roles, cooldown/bounds, duplicate acceptance, stale/full queue behavior and cleanup on leave/kick/expiry. The browser report also records the actual foreground idle-render frame count while mocked video continues to advance; that is an on-demand rendering check, not a real-device FPS certification.
+
+Head-control cancellation is verified for held D-pad blur and secondary-button pad dragging. Rig gaze interpolates in elapsed time and snaps to its exact target at rest; reduced-motion bypasses the interpolation. The browser suite checks changed/non-neutral head bones and matching diagnostics in the peer renderer. Current roadmap completion/gaps: [implementation plan](../docs/KE_HOACH_TRIEN_KHAI_HIEN_HANH.md).

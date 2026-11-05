@@ -1,8 +1,18 @@
-# Review tổng thể và kế hoạch bàn giao — 02/11/2026
+# Review tổng thể và kế hoạch bàn giao — cập nhật 05/11/2026
+
+## Tổng quan hiện tại
+
+Ứng dụng realtime đã có source, test local và bản alpha cũ trên Cloudflare. Source mới có sảnh 3D, model nam/nữ CC0, rig animation, bốn camera, xoay đầu đồng bộ, chat/voice thiết bị, host reorder và viewer suggestions. Bản source mới chưa được deploy vì thiếu Cloudflare credential.
+
+Xem [bảng nghiệm thu hiện hành](KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) để phân biệt **đã có code/test local**, **cần thiết bị/provider/quyền triển khai**, và **backlog full scope**. Số liệu và report chuẩn ở [PROJECT_STATE](../PROJECT_STATE.md). Không gọi toàn bộ plan hoàn tất hoặc các gate production đã đạt.
+
+## Review lịch sử ngày 02/11/2026
+
+Phần dưới ghi quyết định trước khi source hiện tại được triển khai; các câu “chưa có app” và số liệu 50/150 không mô tả phiên bản hiện tại.
 
 > **V3 supersedes,02/11/2026:** [Đặc tả hiện hành](THIET_KE_RAP_3D_V3.md): rạp3D, host chọn2–10ghế,3phòng/tối đa30người; playlist và approval/kick trong MVP. Các mức50/150, lựa chọn2D-only và timeline cũ bên dưới là baseline lịch sử, không phải yêu cầu mới. Budget/quality/security còn áp dụng khi không xung đột; xem v3 để biết luồng, số liệu và timeline thay thế.
 
-## Kết luận
+## Kết luận tại ngày 02/11/2026
 
 Có đủ nền tài liệu để bắt đầu prototype core. Chưa có cơ sở gọi sản phẩm hoàn chỉnh, đã deploy, chịu tải150 người hoặc cloning production0đ. Đã review tài liệu hiện hành, source scan manifest, smoke script NIM và chuẩn bị UI; không audit toàn bộ code upstream.
 

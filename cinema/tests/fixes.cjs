@@ -387,6 +387,56 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
   await host.waitForTimeout(1000);
+  await host.bringToFront();
+  const turnButton = await host
+    .getByRole("button", { name: "Quay phải", exact: true })
+    .boundingBox();
+  await host.mouse.move(
+    turnButton.x + turnButton.width / 2,
+    turnButton.y + turnButton.height / 2,
+  );
+  await host.mouse.down();
+  await host.waitForFunction(
+    () => Number(document.querySelector(".screen-surface")?.dataset.yaw) > 2,
+  );
+  await host.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await host.waitForTimeout(1300);
+  const padStop = Number(
+    await host.locator(".screen-surface").getAttribute("data-yaw"),
+  );
+  await host.waitForTimeout(900);
+  const padAfter = Number(
+    await host.locator(".screen-surface").getAttribute("data-yaw"),
+  );
+  await host.mouse.up();
+  if (padStop > 60 || Math.abs(padAfter - padStop) > 0.3)
+    throw Error("Held D-pad keeps turning after window blur");
+  await host
+    .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
+    .click();
+  await host.waitForFunction(
+    () =>
+      Math.abs(Number(document.querySelector(".screen-surface")?.dataset.yaw)) <
+      0.01,
+  );
+  const padCenter = await host.locator(".pad-center").boundingBox();
+  await host.mouse.move(
+    padCenter.x + padCenter.width / 2,
+    padCenter.y + padCenter.height / 2,
+  );
+  await host.mouse.down({ button: "right" });
+  await host.mouse.move(
+    padCenter.x + padCenter.width / 2 + 30,
+    padCenter.y + padCenter.height / 2,
+  );
+  await host.mouse.up({ button: "right" });
+  await host.waitForTimeout(200);
+  if (
+    Math.abs(
+      Number(await host.locator(".screen-surface").getAttribute("data-yaw")),
+    ) > 0.1
+  )
+    throw Error("Right-button pad drag turned head");
   await host.evaluate(() => {
     window.__yt.video = "ZZZZZZZZZZZ";
   });
@@ -478,6 +528,9 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.evaluate(() => {
     window.__originalYt = window.__yt;
   });
+  const neutralRigGaze = await host
+    .locator(".scene canvas")
+    .getAttribute("data-female-gaze");
   await host.mouse.move(50, 170);
   await host.mouse.down();
   await host.mouse.move(230, 100, { steps: 12 });
@@ -498,6 +551,11 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     throw Error("Drag stuck after release");
   await host.mouse.move(450, 180);
   await host.waitForTimeout(400);
+  await host.waitForFunction(
+    () =>
+      document.querySelector(".scene canvas")?.dataset.femaleGazeSettled ===
+      "true",
+  );
   const gazeBefore = await host
     .locator(".scene canvas")
     .getAttribute("data-female-gaze");
@@ -522,10 +580,21 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   const gazeAfter = await host
     .locator(".scene canvas")
     .getAttribute("data-female-gaze");
+  if (!neutralRigGaze || gazeBefore === neutralRigGaze)
+    throw Error("Drag changed camera but not avatar head bone");
   if (gazeBefore !== gazeAfter)
     throw Error(
       "Idle rig accumulated head rotation " + gazeBefore + " -> " + gazeAfter,
     );
+  if (!gazeAfter) throw Error("Host rig gaze is unavailable");
+  await guest.waitForFunction(
+    (expected) =>
+      document.querySelector(".scene canvas")?.dataset.femaleGaze ===
+        expected &&
+      document.querySelector(".scene canvas")?.dataset.femaleGazeSettled ===
+        "true",
+    gazeAfter,
+  );
   const stoppedYaw = Number(
     await host.locator(".screen-surface").getAttribute("data-yaw"),
   );
@@ -713,6 +782,197 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     const s = document.querySelector(".screen-surface");
     return s?.dataset.camera === "third" && s.dataset.transitioning === "false";
   });
+  const queuePlayer = await host.evaluateHandle(() => window.__yt);
+  await openPanel(host, "Playlist");
+  await openPanel(guest, "Playlist");
+  await host
+    .getByLabel("Link video YouTube", { exact: true })
+    .fill("https://evil.test/not-youtube");
+  await host.getByRole("button", { name: "Thêm video", exact: true }).click();
+  await host
+    .getByRole("alert")
+    .filter({ hasText: "Hãy nhập link video YouTube hợp lệ." })
+    .waitFor();
+  if (
+    (await host
+      .getByLabel("Link video YouTube", { exact: true })
+      .inputValue()) !== "https://evil.test/not-youtube"
+  )
+    throw Error("Rejected playlist URL was lost");
+  await host
+    .getByRole("button", { name: "Đóng thông báo", exact: true })
+    .click();
+  await host
+    .getByLabel("Link video YouTube", { exact: true })
+    .fill("https://youtu.be/5qap5aO4i9A");
+  await host.getByRole("button", { name: "Thêm video", exact: true }).click();
+  await host.waitForFunction(
+    () => document.querySelectorAll(".queue-item").length === 1,
+  );
+  await guest
+    .getByLabel("Đề xuất video YouTube", { exact: true })
+    .fill("https://youtu.be/dQw4w9WgXcQ");
+  await guest.getByRole("button", { name: "Gửi đề xuất", exact: true }).click();
+  await host
+    .locator(".suggestion-item")
+    .filter({ hasText: "dQw4w9WgXcQ" })
+    .waitFor();
+  if (
+    await guest
+      .getByRole("button", { name: "Đưa video 1 xuống", exact: true })
+      .count()
+  )
+    throw Error("Viewer received reorder controls");
+  if ((await host.locator(".queue-item").count()) !== 1)
+    throw Error("Suggestion entered queue without approval");
+  await host.getByRole("button", { name: "Thêm đề xuất", exact: true }).click();
+  await host.waitForFunction(
+    () => document.querySelectorAll(".queue-item").length === 2,
+  );
+  await host
+    .getByRole("button", { name: "Đưa video 2 lên", exact: true })
+    .focus();
+  await host.keyboard.press("Enter");
+  await host.waitForFunction(() =>
+    document.querySelector(".queue-item")?.textContent.includes("dQw4w9WgXcQ"),
+  );
+  await guest.waitForFunction(() =>
+    document.querySelector(".queue-item")?.textContent.includes("dQw4w9WgXcQ"),
+  );
+  let staleEdits = 0,
+    queueRefreshes = 0;
+  const queueRefresh = (req) => {
+    if (req.method() === "GET" && /\/api\/rooms\/[123]\/state$/.test(req.url()))
+      queueRefreshes++;
+  };
+  host.on("request", queueRefresh);
+  const staleQueueRoute = async (route) => {
+    const body = route.request().postDataJSON();
+    if (
+      body?.command?.type === "reorder" &&
+      body.command.direction === "down"
+    ) {
+      staleEdits++;
+      if (staleEdits === 1)
+        return route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "STALE_QUEUE" }),
+        });
+    }
+    await route.continue();
+  };
+  await host.route("**/api/rooms/*/command", staleQueueRoute);
+  await host
+    .getByRole("button", { name: "Đưa video 1 xuống", exact: true })
+    .click();
+  await host
+    .getByRole("alert")
+    .filter({ hasText: "Playlist vừa thay đổi" })
+    .waitFor();
+  if (
+    staleEdits !== 1 ||
+    queueRefreshes < 1 ||
+    !(await host
+      .locator(".queue-item")
+      .first()
+      .textContent()
+      .then((t) => t.includes("dQw4w9WgXcQ")))
+  )
+    throw Error("Stale queue action was silently replayed");
+  await host.unroute("**/api/rooms/*/command", staleQueueRoute);
+  host.off("request", queueRefresh);
+  await host
+    .getByRole("button", { name: "Đóng thông báo", exact: true })
+    .click();
+  await host
+    .getByRole("button", { name: "Đưa video 1 xuống", exact: true })
+    .click();
+  await host.waitForFunction(() =>
+    document.querySelector(".queue-item")?.textContent.includes("5qap5aO4i9A"),
+  );
+  await host.setViewportSize({ width: 390, height: 844 });
+  await host.screenshot({
+    path: "evidence/playlist-mobile.png",
+    fullPage: true,
+  });
+  if (
+    await host.evaluate(() => document.documentElement.scrollWidth > innerWidth)
+  )
+    throw Error("Playlist controls overflow phone");
+  for (const button of await host.locator(".queue-actions button").all()) {
+    const r = await button.boundingBox();
+    if (r.width < 44 || r.height < 44)
+      throw Error("Playlist touch targets too small");
+  }
+  await host.setViewportSize({ width: 1440, height: 1000 });
+  await host
+    .locator(".queue-item")
+    .filter({ hasText: "dQw4w9WgXcQ" })
+    .getByRole("button", { name: "Xóa video", exact: true })
+    .click();
+  await host.waitForFunction(
+    () => document.querySelectorAll(".queue-item").length === 1,
+  );
+  await host.getByRole("button", { name: "Xóa video", exact: true }).click();
+  await host.waitForFunction(
+    () => document.querySelectorAll(".queue-item").length === 0,
+  );
+  if (
+    !(await host.evaluate(
+      (player) => window.__yt === player && window.__yt.video === "jfKfPfyJRdk",
+      queuePlayer,
+    ))
+  )
+    throw Error("Queue editing replaced current playback");
+  await queuePlayer.dispose();
+  await openPanel(host, "Chat");
+  await openPanel(guest, "Chat");
+  await host.waitForFunction(
+    () =>
+      document.querySelector(".screen-surface")?.dataset.transitioning ===
+      "false",
+  );
+  await host.bringToFront();
+  await host.waitForTimeout(1500);
+  const idleForeground = await host.evaluate(
+    () => document.visibilityState === "visible" && document.hasFocus(),
+  );
+  if (!idleForeground)
+    throw Error("Idle measurement requires a visible focused tab");
+  if (
+    (await host.locator(".scene canvas").getAttribute("data-render-frame")) ===
+    null
+  )
+    throw Error("Renderer frame counter unavailable");
+  const videoBefore = await host.evaluate(() => window.__yt.getCurrentTime());
+  const idleBefore = Number(
+    await host.locator(".scene canvas").getAttribute("data-render-frame"),
+  );
+  const idleStarted = performance.now();
+  await host.waitForTimeout(1200);
+  const idleAfter = Number(
+    await host.locator(".scene canvas").getAttribute("data-render-frame"),
+  );
+  const idleWindowMs = performance.now() - idleStarted;
+  if (
+    !Number.isFinite(idleBefore) ||
+    !Number.isFinite(idleAfter) ||
+    idleAfter - idleBefore > 3
+  )
+    throw Error(
+      "Idle scene keeps rendering " + JSON.stringify({ idleBefore, idleAfter }),
+    );
+  const videoAfter = await host.evaluate(() => window.__yt.getCurrentTime());
+  if (
+    videoAfter - videoBefore < 1 ||
+    (await host.evaluate(() => window.__yt.getPlayerState())) !== 1
+  )
+    throw Error("Idle measurement did not keep video playing");
+  console.log("PASS idle demand render", {
+    frames: idleAfter - idleBefore,
+    windowMs: Math.round(idleWindowMs),
+  });
   await host.getByRole("button", { name: "Vẫy tay", exact: true }).click();
   await host.waitForFunction(
     () => document.querySelector(".screen-surface")?.dataset.action === "wave",
@@ -758,6 +1018,14 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     JSON.stringify(
       {
         passed: !errors.length,
+        performance: {
+          foreground: idleForeground,
+          idleFrames: idleAfter - idleBefore,
+          windowMs: Math.round(idleWindowMs),
+          videoTimeAdvanced: videoAfter - videoBefore,
+          mediaMocked: true,
+          hardwareFpsBenchmark: false,
+        },
         errors,
         checks: [
           "3D lobby door preview works by keyboard without entering rooms",
@@ -767,6 +1035,13 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
           "male/female rigged GLB models load and selected avatar survives approval",
           "avatar choice previews the loaded female model in lobby",
           "idle rig head rotation does not accumulate across refreshed snapshots",
+          "viewer suggestion requires host approval; viewer cannot reorder",
+          "keyboard reorder syncs to guest without replacing current playback",
+          "failed playlist submit preserves URL; mobile queue controls are 44px",
+          "idle 3D scene stops continuous rendering while video remains active",
+          "stale playlist action reports conflict, refreshes and is not replayed",
+          "held D-pad stops after window blur and ignores right-button pad drag",
+          "smoothed host rig head settles exactly and matches the avatar in guest renderer",
           "blocked localStorage does not break room, chat or voice controls",
           "autoplay-blocked feedback and user-gesture playback recovery",
           "cancelled speech callbacks cannot duck audio or show stale warnings",

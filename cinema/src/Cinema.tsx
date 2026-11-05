@@ -288,7 +288,7 @@ function Camera({
   mode: string;
   offset: number;
 }) {
-  const { camera, size, invalidate } = useThree();
+  const { camera, size, invalidate, gl } = useThree();
   useEffect(() => {
     invalidate();
   }, [
@@ -306,6 +306,7 @@ function Camera({
   const smoothYaw = useRef(0),
     smoothPitch = useRef(0);
   useFrame((_, dt) => {
+    gl.domElement.dataset.renderFrame = String(gl.info.render.frame);
     const m = room.members.find((m) => m.id === id);
     if (!m) return;
     const now = Date.now() + offset;
@@ -639,6 +640,7 @@ export default function Cinema({
             m={m}
             capacity={room.capacity}
             offset={offset}
+            reducedMotion={reducedMotion}
             look={
               m.id === id
                 ? { yaw, pitch, bodyYaw }

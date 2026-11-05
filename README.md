@@ -8,7 +8,7 @@ Rạp xem YouTube cùng nhau: 3 phòng, mỗi phòng 2–10 người; video đ�
 
 ## Tính năng
 
-- Chủ phòng phát ngay; người vào sau xem tiếp timeline. Host duyệt vào/kick và điều khiển phát, tua, chuyển playlist.
+- Chủ phòng phát ngay; người vào sau xem tiếp timeline. Host duyệt vào/kick, phát/tua và sắp xếp playlist; người xem gửi đề xuất video để host duyệt.
 - Rạp phủ màn hình; bảng chat, thành viên, playlist chỉ hiện khi bấm. Ghế phân tầng, hai góc camera và đầu nhân vật đồng bộ.
 - Source mới có kéo chuột/vuốt nền rạp để nhìn quanh, D-pad/WASD, nút về giữa và toolbar gọn. Trạng thái đã deploy hay chưa: xem `PROJECT_STATE.md`.
 - Bắt buộc host nhập link đầu tiên; hết playlist có nhắc thêm link. TTS giảm âm video khi đọc; không có gọi mic, NIM production hoặc clone giọng.
@@ -34,4 +34,4 @@ Lệnh test/deploy: [`cinema/README.md`](cinema/README.md). Tài liệu tham kh�
 
 ## Giới hạn
 
-28 test logic đã đạt. Browser regression dùng YouTube/speech mô phỏng; không thay thế pilot video thật, quảng cáo, autoplay/iOS và giọng tiếng Việt trên thiết bị. Chưa benchmark 30 người, chưa cam kết drift dưới 1 giây hay miễn phí vô hạn. Free tier có quota. Khóa API và dữ liệu giọng không nằm trong repo; push GitHub không tự deploy.
+35 test logic đã đạt. Browser regression dùng YouTube/speech mô phỏng; không thay thế pilot video thật, quảng cáo, autoplay/iOS và giọng tiếng Việt trên thiết bị. Chưa benchmark 30 người, chưa cam kết drift dưới 1 giây hay miễn phí vô hạn. Free tier có quota. Khóa API và dữ liệu giọng không nằm trong repo; push GitHub không tự deploy.
