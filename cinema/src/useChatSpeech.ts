@@ -11,6 +11,23 @@ export function useChatSpeech(room: Room | null, enabled: boolean) {
       return "";
     }
   });
+  const [rate, setRateState] = useState(() => {
+    try {
+      const n = Number(localStorage.getItem("cinema-speech-rate"));
+      return n >= 0.75 && n <= 1.25 ? n : 0.95;
+    } catch {
+      return 0.95;
+    }
+  });
+  const rateRef = useRef(rate);
+  rateRef.current = rate;
+  const setRate = (value: number) => {
+    const bounded = Math.min(1.25, Math.max(0.75, value));
+    setRateState(bounded);
+    try {
+      localStorage.setItem("cinema-speech-rate", String(bounded));
+    } catch {}
+  };
   const choices = useRef<SpeechSynthesisVoice[]>([]),
     selected = useRef(voiceURI);
   selected.current = voiceURI;
@@ -75,7 +92,7 @@ export function useChatSpeech(room: Room | null, enabled: boolean) {
     const u = new SpeechSynthesisUtterance(queue.current.shift()!);
     u.lang = "vi-VN";
     u.voice = voice;
-    u.rate = 0.95;
+    u.rate = rateRef.current;
     u.pitch = 1;
     const finish = () => {
       if (!active.current || ticket !== serial.current) return;
@@ -158,6 +175,8 @@ export function useChatSpeech(room: Room | null, enabled: boolean) {
     voices,
     voiceURI,
     selectVoice,
+    rate,
+    setRate,
     announce,
   };
 }

@@ -1614,6 +1614,19 @@ function App() {
                           ))}
                         </select>
                       </label>
+                      <label>
+                        Tốc độ đọc · {speech.rate.toFixed(2)}×
+                        <input
+                          type="range"
+                          min="0.75"
+                          max="1.25"
+                          step="0.05"
+                          value={speech.rate}
+                          onChange={(e) =>
+                            speech.setRate(Number(e.target.value))
+                          }
+                        />
+                      </label>
                       <button
                         onClick={() => {
                           setTts(speech.enable());

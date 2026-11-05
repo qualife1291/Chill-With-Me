@@ -557,7 +557,7 @@ export default function Cinema({
       <hemisphereLight args={["#c3d1ea", "#18121d", 1.1]} />
       <pointLight
         position={[0, 3, -4]}
-        intensity={18}
+        intensity={12}
         color="#a8bce6"
         distance={14}
       />
@@ -577,6 +577,33 @@ export default function Cinema({
           emissiveIntensity={0}
         />
       </mesh>
+      {/* Static emissive trim: no extra shadow maps or animation loop. */}
+      {[-3.5, 3.5].map((x) => (
+        <mesh key={"screen-edge" + x} position={[x, 2.3, -5.72]}>
+          <boxGeometry args={[0.035, 4.05, 0.035]} />
+          <meshBasicMaterial color={room.playing ? "#9baac9" : "#e4c9a3"} />
+        </mesh>
+      ))}
+      {[0.28, 4.32].map((y) => (
+        <mesh key={"screen-halo" + y} position={[0, y, -5.72]}>
+          <boxGeometry args={[7.03, 0.035, 0.035]} />
+          <meshBasicMaterial color="#b4a0c7" />
+        </mesh>
+      ))}
+      {[-5.32, 5.32].map((x) => (
+        <group key={"cove" + x}>
+          <mesh position={[x, 3.8, 0]}>
+            <boxGeometry args={[0.04, 0.035, 10]} />
+            <meshBasicMaterial color="#b29b80" />
+          </mesh>
+          {[-2, 0, 2, 4].map((z) => (
+            <mesh key={z} position={[x, 0.12, z]}>
+              <boxGeometry args={[0.045, 0.06, 0.32]} />
+              <meshBasicMaterial color="#cda875" />
+            </mesh>
+          ))}
+        </group>
+      ))}
       {[-5.5, 5.5].map((x) => (
         <mesh key={x} position={[x, 2, 0]}>
           <boxGeometry args={[0.2, 4, 12]} />
