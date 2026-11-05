@@ -1,0 +1,25 @@
+{
+  "pass": true,
+  "checks": [
+    "modal keyboard containment and inert background",
+    "invalid local codec rejected before publish",
+    "local file metadata and real host decode",
+    "two isolated browser profiles transfer exact file bytes via bounded authenticated room relay (managed Chromium blocks WebRTC UDP)",
+    "native host pause replicates",
+    "native host seek replicates",
+    "native host play replicates",
+    "native media ducks and restores device speech volume",
+    "camera leaves native video mounted",
+    "guest cannot control room",
+    "real ended advances mixed playlist exactly once",
+    "finished local file Blob URL revoked after provider transition",
+    "real local MP3 decode and shared playback",
+    "real H.264 MOV decode; ended MP3 metadata removed from persisted room",
+    "direct HTTPS MP3 link decodes and plays",
+    "final ended removes file metadata and clears playback",
+    "phone modal layout does not overflow",
+    "controlled Drive failure offers explicit unsynchronized preview; no fake sync claim"
+  ],
+  "fileBytes": 1788258,
+  "pageErrors": []
+}

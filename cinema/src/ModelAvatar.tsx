@@ -28,7 +28,6 @@ export default function ModelAvatar({
   const group = useRef<THREE.Group>(null);
   const initialized = useRef(false);
   const gaze = useRef({ yaw: look.yaw, pitch: look.pitch });
-  const overlays = useRef(new Map<THREE.Bone, THREE.Quaternion>());
   const rig = useMemo(() => {
     const scene = cloneSkeleton(gltf.scene);
     scene.updateMatrixWorld(true);
@@ -54,6 +53,15 @@ export default function ModelAvatar({
     });
     return { scene, scale, floor: -bounds.min.y, mixer, actions, bones };
   }, [gltf]);
+  const overlays = useMemo(() => {
+    const entries = new Map<THREE.Bone, THREE.Quaternion>();
+    for (const name of ["head", "upperarmr", "lowerarmr"]) {
+      const bone = rig.bones.get(name);
+      if (bone) entries.set(bone, bone.quaternion.clone());
+    }
+    return entries;
+  }, [rig]);
+  const actionEntries = useMemo(() => Object.values(rig.actions), [rig]);
   useEffect(() => {
     gl.domElement.dataset[style + "Model"] = "ready";
     invalidate();
@@ -87,6 +95,9 @@ export default function ModelAvatar({
       base: new THREE.Quaternion(),
       delta: new THREE.Quaternion(),
       axis: new THREE.Vector3(),
+      x: new THREE.Vector3(1, 0, 0),
+      y: new THREE.Vector3(0, 1, 0),
+      z: new THREE.Vector3(0, 0, 1),
     }),
     [],
   );
@@ -127,8 +138,7 @@ export default function ModelAvatar({
       root.rotation.y = desired;
       initialized.current = true;
     } else root.rotation.y += delta * (1 - Math.exp(-dt * 10));
-    for (const { action } of Object.values(rig.actions))
-      action.setEffectiveWeight(0);
+    for (const { action } of actionEntries) action.setEffectiveWeight(0);
     const play = (name: string, time: number, weight = 1) => {
       const entry = rig.actions[name];
       if (entry) {
@@ -165,31 +175,19 @@ export default function ModelAvatar({
     } else play(m.seated ? "Sit_Chair_Idle" : "Idle", 0);
     // AnimationMixer may skip identical values; undo last frame's procedural
     // offsets first so head/hand rotations never accumulate on an idle clip.
-    overlays.current.forEach((q, bone) => bone.quaternion.copy(q));
+    overlays.forEach((q, bone) => bone.quaternion.copy(q));
     rig.mixer.update(0);
-    overlays.current.clear();
-    for (const name of ["head", "upperarmr", "lowerarmr"]) {
-      const bone = rig.bones.get(name);
-      if (bone) overlays.current.set(bone, bone.quaternion.clone());
-    }
+    overlays.forEach((q, bone) => q.copy(bone.quaternion));
     // Apply pitch then yaw, matching the camera and fallback rig's YXZ basis.
     rotate(
       rig.bones.get("head"),
-      new THREE.Vector3(1, 0, 0),
+      math.x,
       (-gaze.current.pitch * Math.PI) / 180,
     );
-    rotate(
-      rig.bones.get("head"),
-      new THREE.Vector3(0, 1, 0),
-      (-gaze.current.yaw * Math.PI) / 180,
-    );
+    rotate(rig.bones.get("head"), math.y, (-gaze.current.yaw * Math.PI) / 180);
     if (pose.waving) {
-      rotate(
-        rig.bones.get("upperarmr"),
-        new THREE.Vector3(0, 0, 1),
-        -pose.wave * 2.3,
-      );
-      rotate(rig.bones.get("lowerarmr"), new THREE.Vector3(0, 0, 1), pose.hand);
+      rotate(rig.bones.get("upperarmr"), math.z, -pose.wave * 2.3);
+      rotate(rig.bones.get("lowerarmr"), math.z, pose.hand);
     }
     const head = rig.bones.get("head");
     if (head)

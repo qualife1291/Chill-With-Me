@@ -21,7 +21,7 @@ npx tsc --noEmit --skipLibCheck --target ES2022 --module ESNext --moduleResoluti
 npm run worker:check
 ```
 
-To see all 35 individual test results in the research environment:
+To see the individual test results in the research environment:
 
 ```bash
 node --import tsx tests/model.test.ts
@@ -31,6 +31,7 @@ node --import tsx tests/avatar.test.ts
 node --import tsx tests/camera.test.ts
 node --import tsx tests/assets.test.ts
 node --import tsx tests/playlist.test.ts
+node --import tsx tests/media.test.ts
 ```
 
 With local Wrangler running and room slots free:
@@ -97,3 +98,24 @@ Hosts can move queued items up/down using keyboard-accessible 44px buttons; the 
 `node tests/playlist.integration.mjs` uses local slot 2, preserves pre-existing rooms and closes its own test room. `tests/playlist.test.ts` covers roles, cooldown/bounds, duplicate acceptance, stale/full queue behavior and cleanup on leave/kick/expiry. The browser report also records the actual foreground idle-render frame count while mocked video continues to advance; that is an on-demand rendering check, not a real-device FPS certification.
 
 Head-control cancellation is verified for held D-pad blur and secondary-button pad dragging. Rig gaze interpolates in elapsed time and snaps to its exact target at rest; reduced-motion bypasses the interpolation. The browser suite checks changed/non-neutral head bones and matching diagnostics in the peer renderer. Current roadmap completion/gaps: [implementation plan](../docs/KE_HOACH_TRIEN_KHAI_HIEN_HANH.md).
+
+## Shared video and audio files
+
+The player accepts YouTube, public Google Drive file links, and direct HTTPS `.mp4`, `.webm`, `.ogv`, `.mov`, `.m4v`, `.mp3`, `.m4a`, `.ogg`, `.wav` URLs (including signed query strings). Other embed sites, HLS/DASH playlists and arbitrary URLs without a media extension are not supported. MOV is a container: H.264/AAC MOV was verified in Chromium; HEVC/ProRes and other codecs depend on the browser and are rejected visibly when unsupported. Media is never recompressed or upscaled; playback uses the original bytes and native browser buffering/range requests.
+
+Hosts can select a local file to start or append to the queue. Files are limited to 100 MiB each and 250 MiB total held by the sender. Keep the sender tab open. The client attempts an ordered/reliable WebRTC DataChannel transfer with a public STUN server; no TURN service is configured. If UDP/NAT/policy prevents that, viewers can choose **Nhận qua phòng** for files up to 25 MiB. This explicit fallback relays 16 KiB binary chunks through authenticated room WebSockets, with 256 KiB acknowledgment windows, exact sequential offsets, size/session/owner/recipient checks and timeouts. Relay traffic consumes Worker/DO resources; production quotas and sustained multi-room file throughput have not been established. Playback begins after the receiver has the complete file, then catches up with the room. Use a public streaming URL for larger or long media.
+
+The Worker stores **metadata only**, in the existing single room JSON row. There is no file/blob table, R2 bucket or upload object. `Next`/native `ended` replaces/removes the current item from persisted state, without adding a played-file history. The clients revoke the old Blob URL, release file/chunk references, stop the previous native media element and close transfer connections. Queue removal, leaving/closing a room and membership changes also prune resources. A reload loses local file handles: the original owner must select the same file again; completed recipients may keep playing until the item changes. Expiry/close clears the room state. The small command dedupe table remains bounded to 200 IDs and contains no file bytes or media metadata.
+
+Google Drive may refuse browser playback because of CORS, download confirmation, quota or sharing rules. The supplied sample downloaded as a 9,610,467-byte H.264/AAC MP4, but actual Chromium playback was denied by missing CORS. The app offers an explicit Drive preview fallback: **each person controls that preview independently; it has no room synchronization or automatic ended/Next API**. Download a permitted file and share it locally, or use a direct public media URL, for the synchronized native player. Do not treat preview playback as synchronized.
+
+Additional local checks (never target production):
+
+```bash
+node tests/media.cjs             # slot 3; ffmpeg + Chromium required
+node tests/relay-security.cjs    # slot 2; binary transfer ACL/order/size/expiry
+node tests/render-capacity.cjs   # slot 2; one real renderer, ten models; run alone
+node --import tsx tests/media.test.ts
+```
+
+`media.cjs` decodes real generated WebM, MP3 and H.264 MOV in two isolated browser profiles, compares received bytes by SHA-256, checks native play/pause/seek/ended, mixed queue, speech-volume duck/restore, Blob URL revocation and removal from persisted room state. Drive failure/preview uses a controlled fixture. Managed Chromium disables non-proxied WebRTC UDP, so successful file transfer is verified through the explicit room relay; WAN WebRTC/TURN connectivity is not certified. `evidence/media.json` and `evidence/render-capacity.json` record these boundaries. The render smoke verifies idle stops rendering, and records software-renderer frame timings; its pass flag is not a physical-device FPS gate.

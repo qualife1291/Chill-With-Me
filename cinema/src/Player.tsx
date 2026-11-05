@@ -1,3 +1,5 @@
+import NativePlayer, { type PlayerProps } from "./NativePlayer";
+import { mediaSource } from "../shared/media";
 import { useEffect, useRef, useState } from "react";
 import { target, type Room, type Command } from "../shared/model";
 export type YouTubePlayer = {
@@ -37,7 +39,7 @@ function loadAPI() {
     document.head.append(s);
   }));
 }
-export default function PlayerView({
+function YouTubePlayerView({
   room,
   offset,
   onEnded,
@@ -263,7 +265,7 @@ export default function PlayerView({
         <div className="empty-player">
           <span>▶</span>
           <h2>Buổi chiếu bắt đầu từ bạn.</h2>
-          <p>Thêm YouTube vào playlist rồi bấm Phát tiếp.</p>
+          <p>Thêm video vào playlist rồi bấm Phát tiếp.</p>
         </div>
       ) : (
         <div ref={el} className="youtube" />
@@ -287,5 +289,14 @@ export default function PlayerView({
         </button>
       )}
     </section>
+  );
+}
+
+export default function PlayerView(props: PlayerProps) {
+  return props.room.current &&
+    mediaSource(props.room.current).kind !== "youtube" ? (
+    <NativePlayer key={props.room.current.id} {...props} />
+  ) : (
+    <YouTubePlayerView {...props} />
   );
 }

@@ -1644,3 +1644,17 @@ body.cinema-active {
 .suggestion-actions button {
   min-height: 44px;
 }
+
+.native-video { width:100%; height:100%; object-fit:contain; background:#000; }
+.file-picker { display:block; margin-block:14px; font-size:14px; }
+.file-picker input { display:block; width:100%; margin-top:8px; min-height:44px; }
+.media-recovery { position:absolute; inset:20% 8% auto; display:grid; gap:12px; background:#10131eee; padding:12px; z-index:3; }
+.media-external { position:absolute; left:12px; top:12px; z-index:4; background:#10131e; color:white; padding:12px; }
+.drive-recovery { position:absolute; inset:auto 12px 48px; z-index:4; padding:12px; background:#10131eee; color:#fff; font-size:13px; }
+.drive-recovery p { margin:0 0 8px; }
+.drive-recovery a { display:inline-block; margin:8px; color:#d7d9ff; }
+.media-external { position:static; }
+.audio-player .native-video { background:transparent; position:relative; z-index:1; }
+.audio-cover { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#e8e9ff; background:radial-gradient(ellipse at center,#37366a,#111521 75%); pointer-events:none; }
+.audio-cover span { font-size:70px; line-height:1; }
+.audio-cover p { max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

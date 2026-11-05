@@ -1,3 +1,10 @@
+import {
+  unpackFileChunk,
+  packFileChunk,
+  MAX_RELAY_BYTES,
+  CHUNK_BYTES,
+} from "../shared/fileRelay";
+import { fileSignalSchema } from "../shared/fileSignal";
 import { DurableObject } from "cloudflare:workers";
 import {
   apply,
@@ -91,6 +98,27 @@ export class RoomSlot extends DurableObject<Env> {
     if (result.changed) this.schedule();
   }
   save(r: Room) {
+    // Attachments hold transfer cursors only; discard them when the item/membership changes.
+    for (const ws of this.ctx.getWebSockets()) {
+      const a = ws.deserializeAttachment() as {
+        relay?: Record<
+          string,
+          { fileId: string; offset: number; requestedAt: number }
+        >;
+      };
+      if (!a.relay) continue;
+      const source = r.current?.source;
+      a.relay = Object.fromEntries(
+        Object.entries(a.relay).filter(
+          ([id, v]) =>
+            source?.kind === "local" &&
+            source.fileId === v.fileId &&
+            r.members.some((m) => m.id === id),
+        ),
+      );
+      if (!Object.keys(a.relay).length) delete a.relay;
+      ws.serializeAttachment(a);
+    }
     this.ctx.storage.sql.exec(
       "INSERT OR REPLACE INTO state(id,json) VALUES(1,?)",
       JSON.stringify(r),
@@ -258,6 +286,82 @@ export class RoomSlot extends DurableObject<Env> {
     }
   }
   webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
+    if (message instanceof ArrayBuffer) {
+      if (message.byteLength > CHUNK_BYTES + 516) {
+        ws.close(1009, "Payload too large");
+        return;
+      }
+      try {
+        const { header: h, bytes } = unpackFileChunk(message),
+          r = this.read();
+        const a = ws.deserializeAttachment() as {
+          id: string;
+          session: string;
+          connectionId: string;
+          relay?: Record<
+            string,
+            { fileId: string; offset: number; requestedAt: number }
+          >;
+        };
+        const source = r?.current?.source;
+        if (
+          !r ||
+          h.session !== r.session ||
+          a.session !== r.session ||
+          source?.kind !== "local" ||
+          source.ownerId !== a.id ||
+          source.fileId !== h.fileId ||
+          source.size > MAX_RELAY_BYTES ||
+          !h.to ||
+          h.to === a.id ||
+          !r.members.some(
+            (m) => m.id === a.id && m.connectionId === a.connectionId,
+          )
+        )
+          throw Error("FORBIDDEN");
+        const progress = a.relay?.[h.to];
+        if (
+          !progress ||
+          progress.fileId !== h.fileId ||
+          progress.offset !== h.offset ||
+          h.offset + bytes.byteLength > source.size
+        )
+          throw Error("INVALID_FILE_CHUNK");
+        const peer = this.ctx.getWebSockets().find((peer) => {
+          const p = peer.deserializeAttachment() as {
+            id: string;
+            session: string;
+            connectionId: string;
+          };
+          return (
+            p.id === h.to &&
+            p.session === r.session &&
+            r.members.some(
+              (m) => m.id === p.id && m.connectionId === p.connectionId,
+            )
+          );
+        });
+        if (!peer) throw Error("FORBIDDEN");
+        progress.offset += bytes.byteLength;
+        ws.serializeAttachment(a);
+        peer.send(
+          packFileChunk(
+            {
+              session: r.session,
+              fileId: h.fileId,
+              from: a.id,
+              offset: h.offset,
+            },
+            bytes,
+          ),
+        );
+      } catch {
+        try {
+          ws.send(JSON.stringify({ type: "file-error" }));
+        } catch {}
+      }
+      return;
+    }
     if (
       typeof message !== "string" ||
       new TextEncoder().encode(message).length > 4096
@@ -269,7 +373,7 @@ export class RoomSlot extends DurableObject<Env> {
       ws.send(JSON.stringify({ type: "pong", serverTime: Date.now() }));
       return;
     }
-    let commandId: string | undefined;
+    let commandId: string | undefined, signalFileId: string | undefined;
     try {
       const a = ws.deserializeAttachment() as {
         id: string;
@@ -278,6 +382,94 @@ export class RoomSlot extends DurableObject<Env> {
         lastLookAt?: number;
       };
       const raw = JSON.parse(message);
+      if (raw.type === "file-signal") {
+        signalFileId =
+          typeof raw.fileId === "string" ? raw.fileId.slice(0, 36) : "";
+        const msg = fileSignalSchema.parse(raw),
+          r = this.read();
+        if (
+          !r ||
+          r.session !== a.session ||
+          msg.session !== a.session ||
+          !r.members.some(
+            (m) => m.id === a.id && m.connectionId === a.connectionId,
+          ) ||
+          !r.members.some((m) => m.id === msg.to) ||
+          msg.to === a.id
+        )
+          throw Error("FORBIDDEN");
+        const source = r.current?.source;
+        if (source?.kind !== "local" || source.fileId !== msg.fileId)
+          throw Error("STALE_FILE");
+        const owner = source.ownerId;
+        if (
+          (["offer", "relay-request", "relay-ack"].includes(msg.signal.type) &&
+            msg.to !== owner) ||
+          (["answer", "unavailable"].includes(msg.signal.type) &&
+            a.id !== owner) ||
+          (msg.signal.type === "ice" && a.id !== owner && msg.to !== owner)
+        )
+          throw Error("FORBIDDEN");
+        const rate = a as typeof a & {
+          fileWindow?: number;
+          fileCount?: number;
+        };
+        if (Date.now() - (rate.fileWindow || 0) > 10000) {
+          rate.fileWindow = Date.now();
+          rate.fileCount = 0;
+        }
+        if ((rate.fileCount = (rate.fileCount || 0) + 1) > 120)
+          throw Error("RATE_LIMIT");
+        ws.serializeAttachment(rate);
+        for (const peer of this.ctx.getWebSockets()) {
+          const p = peer.deserializeAttachment() as {
+            id: string;
+            session: string;
+            connectionId: string;
+          };
+          if (
+            p.id === msg.to &&
+            p.session === r.session &&
+            r.members.some(
+              (m) => m.id === p.id && m.connectionId === p.connectionId,
+            )
+          ) {
+            if (msg.signal.type === "relay-request") {
+              if (source.size > MAX_RELAY_BYTES) throw Error("FILE_TOO_LARGE");
+              const attachment = peer.deserializeAttachment() as typeof p & {
+                relay?: Record<
+                  string,
+                  { fileId: string; offset: number; requestedAt: number }
+                >;
+              };
+              // Retry only after a short cooldown, bound concurrent transfers by room seats.
+              const previous = attachment.relay?.[a.id];
+              if (
+                previous?.fileId === source.fileId &&
+                Date.now() - previous.requestedAt < 10000
+              )
+                throw Error("RATE_LIMIT");
+              attachment.relay = Object.fromEntries(
+                Object.entries(attachment.relay || {}).filter(
+                  ([id, v]) =>
+                    v.fileId === source.fileId &&
+                    r.members.some((m) => m.id === id),
+                ),
+              );
+              attachment.relay[a.id] = {
+                fileId: source.fileId,
+                offset: 0,
+                requestedAt: Date.now(),
+              };
+              peer.serializeAttachment(attachment);
+            }
+            try {
+              peer.send(JSON.stringify({ ...msg, from: a.id, to: undefined }));
+            } catch {}
+          }
+        }
+        return;
+      }
       if (raw.type === "look") {
         const pose = z
           .object({
@@ -383,6 +575,10 @@ export class RoomSlot extends DurableObject<Env> {
           }
       }
     } catch (e) {
+      if (signalFileId !== undefined) {
+        ws.send(JSON.stringify({ type: "file-error", fileId: signalFileId }));
+        return;
+      }
       ws.send(
         JSON.stringify({
           type: "command-error",

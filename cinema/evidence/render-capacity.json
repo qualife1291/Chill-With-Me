@@ -1,0 +1,15 @@
+{
+  "pass": true,
+  "members": 10,
+  "renderer": "Chromium headless SwiftShader; one renderer, not ten devices",
+  "idle": {
+    "elapsed": 1200.300000000745,
+    "renderedFrames": 0
+  },
+  "animation": {
+    "elapsed": 3075.60000000149,
+    "rendererFrames": 9,
+    "rafP50": 314.69999999925494,
+    "rafP95": 412.6000000014901
+  }
+}

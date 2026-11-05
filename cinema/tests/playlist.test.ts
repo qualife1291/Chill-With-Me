@@ -264,7 +264,7 @@ test("legacy room metadata defaults and invalid/boundary reorder do not mutate q
   );
   assert.throws(
     () => apply(r, "g", { type: "suggest", url: "https://evil.test/test" }, 4),
-    /INVALID_YOUTUBE_URL/,
+    /INVALID_MEDIA_URL/,
   );
   assert.equal(r.suggestions, undefined);
 });

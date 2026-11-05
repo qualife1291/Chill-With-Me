@@ -7,13 +7,13 @@
   "members_per_room": 10,
   "authenticated_websockets": 30,
   "broadcast_all_members_ms": [
-    103,
-    85,
-    99
+    96,
+    81,
+    104
   ],
   "http_requests_measured": 92,
-  "http_p50_ms": 21.0,
-  "http_p95_ms": 33.2,
+  "http_p50_ms": 19.4,
+  "http_p95_ms": 28.9,
   "overflow_rejected": true,
   "limitations": "Short backend smoke test, not sustained load or a real media/device/rendering benchmark. Uses 30 independent browser contexts with real session cookies and WebSockets. Test rooms closed by runner."
 }

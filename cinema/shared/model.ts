@@ -1,7 +1,19 @@
 import { z } from "zod";
+import {
+  parseMediaURL,
+  MAX_LOCAL_BYTES,
+  supportedMimes,
+  type MediaSource,
+} from "./media";
 export const avatarSchema = z.enum(["male", "female"]);
 export type AvatarStyle = z.infer<typeof avatarSchema>;
 export const nameSchema = z.string().trim().min(1).max(32);
+export const fileMetadataSchema = z.object({
+  fileId: z.string().uuid(),
+  name: z.string().trim().min(1).max(120),
+  size: z.number().int().min(1).max(MAX_LOCAL_BYTES),
+  mime: z.enum(supportedMimes),
+});
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("chat"),
@@ -18,10 +30,16 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("transfer"), id: z.string() }),
   z.object({ type: z.literal("successor"), id: z.string().nullable() }),
   z.object({ type: z.literal("close") }),
-  z.object({ type: z.literal("add"), url: z.string().max(300) }),
+  z.object({ type: z.literal("add"), url: z.string().max(2048) }),
+  z.object({
+    type: z.literal("file"),
+    file: fileMetadataSchema,
+    mode: z.enum(["start", "queue"]),
+    generation: z.number().int().min(0),
+  }),
   z.object({
     type: z.literal("start"),
-    url: z.string().max(300),
+    url: z.string().max(2048),
     generation: z.number().int(),
   }),
   z.object({
@@ -41,7 +59,7 @@ export const commandSchema = z.discriminatedUnion("type", [
     direction: z.enum(["up", "down"]),
     expectedQueueRevision: z.number().int().min(0),
   }),
-  z.object({ type: z.literal("suggest"), url: z.string().max(300) }),
+  z.object({ type: z.literal("suggest"), url: z.string().max(2048) }),
   z.object({
     type: z.literal("review-suggestion"),
     id: z.string(),
@@ -76,8 +94,9 @@ export type Member = {
   online?: boolean;
   look?: { yaw: number; pitch: number; bodyYaw: 0 | 180 };
 };
-export type Item = { id: string; videoId: string };
+export type Item = { id: string; videoId: string; source?: MediaSource };
 export type Suggestion = {
+  source?: MediaSource;
   id: string;
   videoId: string;
   memberId: string;
@@ -248,7 +267,8 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     r.messages = r.messages.slice(-100);
   } else if (c.type === "suggest") {
     const suggestions = r.suggestions || [];
-    const vid = videoId(c.url);
+    const parsed = parseMediaURL(c.url);
+    const vid = parsed.videoId;
     if (
       suggestions.filter((s) => s.memberId === actor).length >= 3 ||
       suggestions.length >= 30
@@ -259,13 +279,22 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       now - member.lastSuggestedAt < 10000
     )
       throw Error("SUGGESTION_COOLDOWN");
-    if (suggestions.some((s) => s.memberId === actor && s.videoId === vid))
+    if (
+      suggestions.some(
+        (s) =>
+          s.memberId === actor &&
+          JSON.stringify(
+            s.source || { kind: "youtube", videoId: s.videoId },
+          ) === JSON.stringify(parsed.source),
+      )
+    )
       throw Error("DUPLICATE_SUGGESTION");
     r.suggestions = [
       ...suggestions,
       {
         id: crypto.randomUUID(),
         videoId: vid,
+        source: parsed.source,
         memberId: actor,
         name: member.name,
         at: now,
@@ -278,7 +307,11 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     if (c.accept) {
       checkQueue(c.expectedQueueRevision);
       if (r.queue.length >= 50) throw Error("QUEUE_FULL");
-      r.queue.push({ id: crypto.randomUUID(), videoId: proposed.videoId });
+      r.queue.push({
+        id: crypto.randomUUID(),
+        videoId: proposed.videoId,
+        ...(proposed.source ? { source: proposed.source } : {}),
+      });
       bumpQueue();
     }
     r.suggestions = (r.suggestions || []).filter((s) => s.id !== c.id);
@@ -340,12 +373,40 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       if (r.banned.length >= 100) throw Error("BAN_LIMIT");
       r.banned.push(c.id);
     }
+  } else if (c.type === "file") {
+    const file = fileMetadataSchema.parse(c.file);
+    const item: Item = {
+      id: crypto.randomUUID(),
+      videoId: "",
+      source: {
+        kind: "local",
+        fileId: file.fileId!,
+        name: file.name!,
+        size: file.size!,
+        mime: file.mime!,
+        ownerId: actor,
+      },
+    };
+    if (c.mode === "start") {
+      if (c.generation !== r.generation) throw Error("STALE_GENERATION");
+      if (r.current || r.queue.length) throw Error("VIDEO_ALREADY_SELECTED");
+      r.current = item;
+      delete r.queueEndedAt;
+      r.generation++;
+      r.position = 0;
+      r.anchor = now;
+      r.playing = true;
+    } else {
+      if (r.queue.length >= 50) throw Error("QUEUE_FULL");
+      r.queue.push(item);
+    }
+    bumpQueue();
   } else if (c.type === "start") {
     if (c.generation !== r.generation) throw Error("STALE_GENERATION");
     if (r.current || r.queue.length) throw Error("VIDEO_ALREADY_SELECTED");
-    const vid = videoId(c.url);
+    const parsed = parseMediaURL(c.url);
     delete r.queueEndedAt;
-    r.current = { id: crypto.randomUUID(), videoId: vid };
+    r.current = { id: crypto.randomUUID(), ...parsed };
     bumpQueue();
     r.generation++;
     r.position = 0;
@@ -353,7 +414,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     r.playing = true;
   } else if (c.type === "add") {
     if (r.queue.length >= 50) throw Error("QUEUE_FULL");
-    r.queue.push({ id: crypto.randomUUID(), videoId: videoId(c.url) });
+    r.queue.push({ id: crypto.randomUUID(), ...parseMediaURL(c.url) });
     bumpQueue();
   } else if (c.type === "remove") {
     checkQueue(c.expectedQueueRevision);

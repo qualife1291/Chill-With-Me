@@ -4,7 +4,7 @@
     "foreground": true,
     "idleFrames": 0,
     "windowMs": 1205,
-    "videoTimeAdvanced": 1.2060000000000013,
+    "videoTimeAdvanced": 1.2080000000000002,
     "mediaMocked": true,
     "hardwareFpsBenchmark": false
   },
@@ -55,8 +55,5 @@
     "YouTube recommendation restored to room item",
     "ended advances both sessions to next room queue item"
   ],
-  "limitations": "YouTube and speech APIs stubbed; real device voices and actual YouTube playback require pilot",
-  "date": "2026-11-05",
-  "target": "local Wrangler",
-  "command": "node tests/fixes.cjs"
+  "limitations": "YouTube and speech APIs stubbed; real device voices and actual YouTube playback require pilot"
 }

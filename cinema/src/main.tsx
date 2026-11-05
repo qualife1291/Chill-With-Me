@@ -1,8 +1,12 @@
+import { useModalFocus } from "./useModalFocus";
+import { FileShare } from "./FileShare";
+import { mediaLabel, FILE_ACCEPT } from "../shared/media";
 import React, {
   Suspense,
   lazy,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -64,6 +68,8 @@ const errors: Record<string, string> = {
   HOST_ONLY: "Chỉ chủ phòng được thực hiện.",
   BANNED: "Bạn không thể vào lại phiên chiếu này.",
   SLOT_BUSY: "Phòng vừa được tạo. Hãy chọn phòng khác.",
+  INVALID_MEDIA_URL:
+    "Hãy nhập link YouTube, Google Drive công khai hoặc video MP4/WebM/MOV/MP3/M4A/Ogg/WAV qua HTTPS.",
   INVALID_YOUTUBE_URL: "Hãy nhập link video YouTube hợp lệ.",
   RATE_LIMITED: "Thao tác hơi nhanh. Hãy chờ một chút.",
   STALE_GENERATION: "Video đã thay đổi. Hãy thử lại.",
@@ -131,6 +137,20 @@ function App() {
     { id: string; text: string; failed: boolean }[]
   >([]);
   const chatSocket = useRef<WebSocket | null>(null);
+  const files = useMemo(
+    () =>
+      new FileShare((msg) => {
+        const socket = chatSocket.current;
+        if (socket?.readyState !== WebSocket.OPEN)
+          throw Error("Mất kết nối phòng");
+        socket.send(msg instanceof ArrayBuffer ? msg : JSON.stringify(msg));
+      }),
+    [],
+  );
+  useEffect(() => {
+    files.setRoom(status === "joined" ? room : null, id);
+  }, [files, room, status, id]);
+  useEffect(() => () => files.dispose(), [files]);
   const controlQueue = useRef<Promise<void>>(Promise.resolve());
   const liveLook = useRef(
     new Map<
@@ -147,7 +167,23 @@ function App() {
   const latestRoom = useRef(room);
   latestRoom.current = room;
   const surface = useRef<HTMLDivElement>(null);
-  const approval = useRef<HTMLElement>(null);
+  const approval = useRef<HTMLElement>(null),
+    quickModal = useRef<HTMLElement>(null);
+  const isHost = room?.host === id && status === "joined";
+  const quickActive = !!(isHost && !room?.current && room?.queue.length === 0);
+  const approvalActive = !!(
+    isHost &&
+    room?.pending.length &&
+    !approvalDismissed &&
+    (room.current || room.queue.length)
+  );
+  const dismissApproval = useMemo(() => () => setApprovalDismissed(true), []);
+  // One lifecycle restores the old modal before isolating the next one.
+  useModalFocus(
+    quickActive ? quickModal : approval,
+    quickActive || approvalActive,
+    quickActive ? undefined : dismissApproval,
+  );
   const speech = useChatSpeech(room, tts);
   const [busy, setBusy] = useState(false);
   const report = (e: unknown) =>
@@ -221,10 +257,26 @@ function App() {
       socket = new WebSocket(
         `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/rooms/${slot}/ws`,
       );
+      socket.binaryType = "arraybuffer";
       chatSocket.current = socket;
-      socket.onopen = () => setConnection("Đã kết nối");
+      socket.onopen = () => {
+        setConnection("Đã kết nối");
+        files.transport(true);
+      };
       socket.onmessage = (e) => {
+        if (e.data instanceof ArrayBuffer) {
+          files.onChunk(e.data);
+          return;
+        }
         const v = JSON.parse(e.data);
+        if (v.type === "file-error") {
+          files.relayError(v.fileId);
+          return;
+        }
+        if (v.type === "file-signal") {
+          void files.onSignal(v);
+          return;
+        }
         if (v.type === "look") {
           liveLook.current.set(v.id, { look: v.look, at: Date.now() });
           const r = latestRoom.current;
@@ -267,6 +319,7 @@ function App() {
         else if (v.status) receive(v);
       };
       socket.onclose = (e) => {
+        files.transport(false);
         if (stop) return;
         if (e.code === 4002) {
           setConnection("Đã mở ở tab khác");
@@ -297,6 +350,7 @@ function App() {
       clearTimeout(retry);
       clearInterval(poll);
       if (chatSocket.current === socket) chatSocket.current = null;
+      files.transport(false);
       socket?.close();
     };
   }, [slot, status]);
@@ -431,6 +485,30 @@ function App() {
     }
     onSuccess?.();
   }
+  async function uploadFile(file: File, mode: "start" | "queue") {
+    if (!room || quickBusy || queueBusy) return;
+    setQuickBusy(true);
+    setQueueBusy(true);
+    setError("");
+    let prepared: Awaited<ReturnType<FileShare["prepare"]>> | undefined,
+      ok = false;
+    try {
+      prepared = await files.prepare(file);
+      await command(
+        { type: "file", file: prepared, mode, generation: room.generation },
+        () => {
+          ok = true;
+          files.confirm(prepared!.fileId);
+        },
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không đọc được file");
+    } finally {
+      if (prepared && !ok) files.remove(prepared.fileId);
+      setQuickBusy(false);
+      setQueueBusy(false);
+    }
+  }
   async function queueAction(c: Command, onSuccess?: () => void) {
     setQueueBusy(true);
     setQueueNotice("");
@@ -447,10 +525,6 @@ function App() {
   useEffect(() => {
     setApprovalDismissed(false);
   }, [room?.pending.length]);
-  useEffect(() => {
-    if (!approvalDismissed && room?.pending.length && room.host === id)
-      approval.current?.focus();
-  }, [approvalDismissed, room?.pending.length, id]);
   useEffect(() => {
     if (!room || status !== "joined") return;
     const timer = setTimeout(() => {
@@ -843,7 +917,7 @@ function App() {
             <p className="footnote">
               {demo
                 ? "Demo không kết nối người khác. Mở bản server để dùng phòng realtime."
-                : "Phiên alpha · Xem YouTube cùng bạn bè, trò chuyện và đọc tin bằng giọng thiết bị."}
+                : "Phiên alpha · Xem phim, nghe nhạc cùng bạn bè, trò chuyện và đọc tin bằng giọng thiết bị."}
             </p>
           </>
         ) : status === "pending" ? (
@@ -994,7 +1068,7 @@ function App() {
                 <div className="transport">
                   <span className="muted">
                     {room.playing ? "Đang chiếu" : "Đang nghỉ"} · Chỉ chủ phòng
-                    điều khiển · {room.current?.videoId || "Chưa có video"}
+                    điều khiển · {mediaLabel(room.current)}
                   </span>
                   {host && (
                     <div className="actions">
@@ -1061,6 +1135,7 @@ function App() {
                       }
                     >
                       <Player
+                        files={files}
                         isHost={!!host}
                         onControl={(c) => command(c)}
                         speaking={speech.speaking}
@@ -1201,26 +1276,8 @@ function App() {
                     role="dialog"
                     aria-modal="true"
                     aria-label="Thêm video để bắt đầu"
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") e.preventDefault();
-                      if (e.key === "Tab") {
-                        const nodes = e.currentTarget.querySelectorAll<
-                          HTMLInputElement | HTMLButtonElement
-                        >("input,button");
-                        const first = nodes[0],
-                          last = nodes[nodes.length - 1];
-                        if (e.shiftKey && document.activeElement === first) {
-                          e.preventDefault();
-                          last?.focus();
-                        } else if (
-                          !e.shiftKey &&
-                          document.activeElement === last
-                        ) {
-                          e.preventDefault();
-                          first?.focus();
-                        }
-                      }
-                    }}
+                    ref={quickModal}
+                    tabIndex={-1}
                   >
                     <h2>
                       {room.queueEndedAt
@@ -1230,7 +1287,7 @@ function App() {
                     <p>
                       {room.queueEndedAt
                         ? "Thêm link mới để mọi người xem tiếp."
-                        : "Dán link YouTube rồi nhấn Enter để phát ngay."}
+                        : "Dán link YouTube, Drive hoặc video / nhạc trực tiếp để phát ngay."}
                     </p>
                     <form
                       onSubmit={async (e) => {
@@ -1246,10 +1303,9 @@ function App() {
                       }}
                     >
                       <label htmlFor="quick-link">
-                        Link YouTube để bắt đầu
+                        Link video / nhạc để bắt đầu
                       </label>
                       <input
-                        autoFocus
                         id="quick-link"
                         type="url"
                         required
@@ -1257,6 +1313,24 @@ function App() {
                         onChange={(e) => setQuickLink(e.target.value)}
                         placeholder="https://youtu.be/…"
                       />
+                      <label className="file-picker">
+                        Hoặc chọn video / nhạc từ máy (tối đa 100 MB)
+                        <input
+                          aria-label="Chọn video để bắt đầu"
+                          type="file"
+                          accept={FILE_ACCEPT}
+                          disabled={quickBusy}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void uploadFile(file, "start");
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                      <p className="muted">
+                        Giữ tab mở để chia sẻ trực tiếp. Nếu mạng chặn kết nối,
+                        người xem có thể nhận qua phòng với file tối đa 25 MB.
+                      </p>
                       {error && <p role="alert">{error}</p>}
                       <div className="actions" style={{ marginTop: 16 }}>
                         <button
@@ -1291,28 +1365,6 @@ function App() {
                       aria-modal="true"
                       aria-label="Yêu cầu vào phòng"
                       tabIndex={-1}
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape") setApprovalDismissed(true);
-                        if (e.key === "Tab") {
-                          const buttons =
-                            approval.current?.querySelectorAll<HTMLButtonElement>(
-                              "button",
-                            );
-                          if (!buttons?.length) return;
-                          const first = buttons[0],
-                            last = buttons[buttons.length - 1];
-                          if (e.shiftKey && document.activeElement === first) {
-                            e.preventDefault();
-                            last.focus();
-                          } else if (
-                            !e.shiftKey &&
-                            document.activeElement === last
-                          ) {
-                            e.preventDefault();
-                            first.focus();
-                          }
-                        }
-                      }}
                     >
                       <h2>Có bạn đang chờ vào rạp</h2>
                       <p>Phim vẫn tiếp tục phát trong lúc bạn duyệt.</p>
@@ -1498,7 +1550,7 @@ function App() {
                       }}
                     >
                       <label htmlFor="url">
-                        {host ? "Link video YouTube" : "Đề xuất video YouTube"}
+                        {host ? "Link video / nhạc" : "Đề xuất video / nhạc"}
                       </label>
                       <div className="composer">
                         <input
@@ -1517,6 +1569,22 @@ function App() {
                         </button>
                       </div>
                     </form>
+                    {host && (
+                      <label className="file-picker">
+                        Thêm video / nhạc từ máy · tối đa 100 MB
+                        <input
+                          aria-label="Thêm file vào playlist"
+                          type="file"
+                          accept={FILE_ACCEPT}
+                          disabled={queueBusy}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void uploadFile(f, "queue");
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                    )}
                     {queueNotice && <p role="status">{queueNotice}</p>}
                     {!host && (
                       <p className="muted">
@@ -1534,8 +1602,8 @@ function App() {
                         <div className="queue-item" key={q.id}>
                           <span className="index">{i + 1}</span>
                           <div>
-                            <b>Video YouTube</b>
-                            <small>{q.videoId}</small>
+                            <b>Video</b>
+                            <small>{mediaLabel(q)}</small>
                           </div>
                           {host && (
                             <div className="queue-actions">
@@ -1595,7 +1663,7 @@ function App() {
                     ) && (
                       <section
                         className="suggestion-list"
-                        aria-label="Đề xuất video"
+                        aria-label="Đề xuất video / nhạc"
                       >
                         <h3>
                           {host ? "Đề xuất chờ duyệt" : "Đề xuất của bạn"}
@@ -1605,7 +1673,7 @@ function App() {
                           .map((s) => (
                             <article className="suggestion-item" key={s.id}>
                               <b>{s.name}</b>
-                              <small>{s.videoId}</small>
+                              <small>{mediaLabel(s)}</small>
                               {host ? (
                                 <div className="suggestion-actions">
                                   <button

@@ -136,9 +136,9 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   if (await quick.getByRole("button", { name: "Để sau" }).count())
     throw Error("defer exists");
   await quick
-    .getByLabel("Link YouTube để bắt đầu")
+    .getByLabel("Link video / nhạc để bắt đầu")
     .fill("https://youtu.be/jfKfPfyJRdk");
-  await quick.getByLabel("Link YouTube để bắt đầu").press("Enter");
+  await quick.getByLabel("Link video / nhạc để bắt đầu").press("Enter");
   await host.waitForFunction(() => window.__yt?.video);
   await host.waitForFunction(
     () =>
@@ -445,7 +445,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     throw Error("YouTube recommendations escaped room queue");
   await openPanel(host, "Playlist");
   await host
-    .getByLabel("Link video YouTube")
+    .getByLabel("Link video / nhạc")
     .fill("https://youtu.be/5qap5aO4i9A");
   await host.getByRole("button", { name: "Thêm video", exact: true }).click();
   await host.evaluate(() => {
@@ -691,9 +691,9 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   if (notices !== 1) throw Error("Empty queue voice repeated");
   const again = host.getByRole("dialog", { name: "Thêm video để bắt đầu" });
   await again
-    .getByLabel("Link YouTube để bắt đầu")
+    .getByLabel("Link video / nhạc để bắt đầu")
     .fill("https://youtu.be/jfKfPfyJRdk");
-  await again.getByLabel("Link YouTube để bắt đầu").press("Enter");
+  await again.getByLabel("Link video / nhạc để bắt đầu").press("Enter");
   await host.waitForFunction(() => window.__yt.video === "jfKfPfyJRdk");
   await host.setViewportSize({ width: 1440, height: 1000 });
   const viewButton = host
@@ -786,16 +786,16 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await openPanel(host, "Playlist");
   await openPanel(guest, "Playlist");
   await host
-    .getByLabel("Link video YouTube", { exact: true })
+    .getByLabel("Link video / nhạc", { exact: true })
     .fill("https://evil.test/not-youtube");
   await host.getByRole("button", { name: "Thêm video", exact: true }).click();
   await host
     .getByRole("alert")
-    .filter({ hasText: "Hãy nhập link video YouTube hợp lệ." })
+    .filter({ hasText: "Hãy nhập link YouTube, Google Drive công khai hoặc video MP4/WebM/MOV/MP3/M4A/Ogg/WAV qua HTTPS." })
     .waitFor();
   if (
     (await host
-      .getByLabel("Link video YouTube", { exact: true })
+      .getByLabel("Link video / nhạc", { exact: true })
       .inputValue()) !== "https://evil.test/not-youtube"
   )
     throw Error("Rejected playlist URL was lost");
@@ -803,14 +803,14 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .getByRole("button", { name: "Đóng thông báo", exact: true })
     .click();
   await host
-    .getByLabel("Link video YouTube", { exact: true })
+    .getByLabel("Link video / nhạc", { exact: true })
     .fill("https://youtu.be/5qap5aO4i9A");
   await host.getByRole("button", { name: "Thêm video", exact: true }).click();
   await host.waitForFunction(
     () => document.querySelectorAll(".queue-item").length === 1,
   );
   await guest
-    .getByLabel("Đề xuất video YouTube", { exact: true })
+    .getByLabel("Đề xuất video / nhạc", { exact: true })
     .fill("https://youtu.be/dQw4w9WgXcQ");
   await guest.getByRole("button", { name: "Gửi đề xuất", exact: true }).click();
   await host
