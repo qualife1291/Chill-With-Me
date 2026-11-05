@@ -37,6 +37,8 @@ import Player from "./Player";
 import { useChatSpeech } from "./useChatSpeech";
 import { useHeadDrag } from "./useHeadDrag";
 import "./style.css";
+import { useReducedMotion } from "./useReducedMotion";
+const Lobby = lazy(() => import("./Lobby"));
 const Cinema = lazy(() => import("./Cinema"));
 const demo = new URLSearchParams(location.search).has("demo");
 const invitedSlot = Number(new URLSearchParams(location.search).get("room"));
@@ -109,6 +111,12 @@ function App() {
     [offset, setOffset] = useState(0),
     [connection, setConnection] = useState("Đang kết nối"),
     [tts, setTts] = useState(false);
+  const [avatar, setAvatar] = useState<"male" | "female">("male");
+  const [previewSlot, setPreviewSlot] = useState(
+    invitedSlot >= 1 && invitedSlot <= 3 ? invitedSlot : 1,
+  );
+  const [lobbyLight, setLobbyLight] = useState(false);
+  const reducedMotion = useReducedMotion();
   const [pendingMessages, setPendingMessages] = useState<
     { id: string; text: string; failed: boolean }[]
   >([]);
@@ -180,7 +188,10 @@ function App() {
       return;
     }
     void api("/session", {})
-      .then((v) => setId(v.id))
+      .then((v) => {
+        setId(v.id);
+        setConnection("Sẵn sàng");
+      })
       .catch(report);
   }, []);
   useEffect(() => {
@@ -298,7 +309,7 @@ function App() {
     setTts(speech.enable());
     try {
       if (demo) {
-        const r = createRoom(id, name, title, capacity, Date.now());
+        const r = createRoom(id, name, title, capacity, Date.now(), avatar);
         apply(r, id, { type: "sit" }, Date.now());
         setRoom(r);
         setStatus("joined");
@@ -307,9 +318,10 @@ function App() {
         const v = await api(
           `/rooms/${n}/${create ? "create" : "join"}`,
           create
-            ? { name, title, capacity }
+            ? { name, title, capacity, avatar }
             : {
                 name,
+                avatar,
                 ...(n === invitedSlot && invitedSession
                   ? { session: invitedSession }
                   : {}),
@@ -603,45 +615,104 @@ function App() {
         )}
         {status === "lobby" ? (
           <>
-            <section className="hero">
-              <div>
-                <p className="eyebrow">RẠP NHỎ. KHOẢNH KHẮC LỚN.</p>
-                <h1>
-                  Cách nhau một màn hình.
-                  <br />
-                  <em>Gần nhau một bộ phim.</em>
-                </h1>
-                <p className="lead">
-                  Chọn một căn phòng, mời vài người bạn.
-                  <br />
-                  Cùng xem, cùng trò chuyện — theo cách của chúng mình.
-                </p>
-                <div className="hero-tags">
-                  <span>
-                    <Users size={16} />
-                    2–10 ghế mỗi phòng
-                  </span>
-                  <span>
-                    <Film size={16} />
-                    YouTube đồng bộ
-                  </span>
-                  <span>
-                    <Armchair size={16} />
-                    Không gian 3D
-                  </span>
-                </div>
+            <section
+              className={"lobby-stage" + (lobbyLight ? " is-light" : "")}
+              data-preview-slot={previewSlot}
+              aria-label="Sảnh rạp Cùng Xem"
+            >
+              <div className="lobby-world" aria-hidden="true">
+                {!lobbyLight && (
+                  <Suspense
+                    fallback={
+                      <div className="lobby-loading">Đang mở cửa sảnh…</div>
+                    }
+                  >
+                    <SceneBoundary onError={() => setLobbyLight(true)}>
+                      <Lobby
+                        selected={previewSlot}
+                        avatar={avatar}
+                        occupied={[1, 2, 3].map(
+                          (n) => !!summaries.find((s) => s.slot === n)?.open,
+                        )}
+                        onSelect={setPreviewSlot}
+                        reduced={reducedMotion}
+                      />
+                    </SceneBoundary>
+                  </Suspense>
+                )}
               </div>
-              <div className="cinema-art" aria-hidden="true">
-                <div className="art-screen" />
-                <div className="art-light" />
-                <div className="art-seats">
-                  {Array.from({ length: 8 }, (_, i) => (
-                    <i key={i} />
-                  ))}
-                </div>
-                <span>YOUR PRIVATE PICTURE HOUSE</span>
+              <div className="lobby-welcome">
+                <p className="eyebrow">MỘT CHỖ HẸN. BA CĂN PHÒNG.</p>
+                <h1>
+                  Hẹn nhau ở <em>Cùng Xem.</em>
+                </h1>
+                <p>
+                  Chọn cửa phòng, mang theo một bộ phim.
+                  <br />
+                  Phần còn lại là khoảng thời gian bên nhau.
+                </p>
+              </div>
+              <button
+                className="lobby-quality"
+                aria-pressed={lobbyLight}
+                onClick={() => setLobbyLight((v) => !v)}
+              >
+                {lobbyLight ? "Bật sảnh 3D" : "Sảnh nhẹ"}
+              </button>
+              <div
+                className="lobby-doors"
+                role="group"
+                aria-label="Khám phá các phòng"
+              >
+                {[1, 2, 3].map((n) => {
+                  const summary = summaries.find((s) => s.slot === n);
+                  return (
+                    <button
+                      key={n}
+                      aria-label={`Khám phá phòng 0${n}`}
+                      aria-pressed={previewSlot === n}
+                      onClick={() => setPreviewSlot(n)}
+                    >
+                      <span>PHÒNG 0{n}</span>
+                      <b>{["Hổ phách", "Đêm xanh", "Nhung tím"][n - 1]}</b>
+                      <small>
+                        {summary?.open
+                          ? `${summary.count || 0}/${summary.capacity} ghế · đang mở`
+                          : "Sẵn sàng đón bạn"}
+                      </small>
+                    </button>
+                  );
+                })}
               </div>
             </section>
+            <p className="lobby-instruction">
+              Bạn đang khám phá phòng 0{previewSlot}. Nhập tên rồi chọn Tạo
+              phòng hoặc Xin vào phòng bên dưới.
+            </p>
+            <fieldset className="avatar-choice">
+              <legend>Chọn nhân vật của bạn</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="avatar"
+                  value="male"
+                  checked={avatar === "male"}
+                  onChange={() => setAvatar("male")}
+                />{" "}
+                Nam · Knight
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="avatar"
+                  value="female"
+                  checked={avatar === "female"}
+                  onChange={() => setAvatar("female")}
+                />{" "}
+                Nữ · Mage
+              </label>
+              <small>Bạn bè sẽ thấy nhân vật này trong phòng.</small>
+            </fieldset>
             <section className="setup panel">
               <label>
                 Tên của bạn
@@ -685,9 +756,14 @@ function App() {
                     Number(b.slot === invitedSlot) -
                     Number(a.slot === invitedSlot),
                 )
-                .map((s, i) => (
-                  <article className="room-card" key={s.slot}>
-                    <div className={"room-cover cover-" + i}>
+                .map((s) => (
+                  <article
+                    className={
+                      "room-card" + (previewSlot === s.slot ? " previewed" : "")
+                    }
+                    key={s.slot}
+                  >
+                    <div className={"room-cover cover-" + (s.slot - 1)}>
                       <span>PHÒNG 0{s.slot}</span>
                       <Armchair size={56} strokeWidth={1} />
                       <small>
@@ -696,7 +772,7 @@ function App() {
                             "THE AMBER ROOM",
                             "THE MIDNIGHT ROOM",
                             "THE VELVET ROOM",
-                          ][i]
+                          ][s.slot - 1]
                         }
                       </small>
                     </div>
@@ -715,7 +791,7 @@ function App() {
                             "Một buổi tối ấm áp",
                             "Góc nhỏ sau giờ làm",
                             "Buổi chiếu của riêng bạn",
-                          ][i]}
+                          ][s.slot - 1]}
                       </h3>
                       <p>
                         {s.open
@@ -741,7 +817,7 @@ function App() {
             <p className="footnote">
               {demo
                 ? "Demo không kết nối người khác. Mở bản server để dùng phòng realtime."
-                : "Phiên alpha: rạp hình khối, playlist thủ công, chat và duyệt người vào. Giọng cá nhân chưa được bật."}
+                : "Phiên alpha · Xem YouTube cùng bạn bè, trò chuyện và đọc tin bằng giọng thiết bị."}
             </p>
           </>
         ) : status === "pending" ? (
@@ -1002,6 +1078,7 @@ function App() {
                             room={room}
                             id={id}
                             mode={camera}
+                            reducedMotion={reducedMotion}
                             offset={offset}
                             yaw={yaw}
                             pitch={pitch}
@@ -1045,6 +1122,18 @@ function App() {
                         onClick={() => setCamera("third")}
                       >
                         Trên cao · sau nhân vật
+                      </button>
+                      <button
+                        className={camera === "shoulder" ? "selected" : ""}
+                        onClick={() => setCamera("shoulder")}
+                      >
+                        Sau vai
+                      </button>
+                      <button
+                        className={camera === "side" ? "selected" : ""}
+                        onClick={() => setCamera("side")}
+                      >
+                        Góc giao lưu
                       </button>
                       <button
                         onClick={() =>
@@ -1323,8 +1412,7 @@ function App() {
                       </label>
                       <button
                         onClick={() => {
-                          setTts(true);
-                          speech.enable();
+                          setTts(speech.enable());
                         }}
                       >
                         Nghe thử giọng

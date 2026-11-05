@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-02",
-  "scope": "Source discovery only; no binaries downloaded",
+  "date": "2026-11-05",
+  "scope": "Asset catalog: installed models are explicitly marked; other entries remain candidates.",
   "assets": [
     {
       "id": "A01",
@@ -101,6 +101,16 @@
       "status": "candidate_not_downloaded",
       "sha256": null,
       "local_path": null
+    },
+    {
+      "id": "KAYKIT-AVATARS",
+      "name": "KayKit Adventurers: Knight and Mage",
+      "url": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+      "license": "CC0-1.0 verified in original LICENSE.txt",
+      "role": "rigged avatar male/female",
+      "status": "installed_optimized",
+      "local_path": "cinema/public/models",
+      "manifest": "cinema/public/models/manifest.json"
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import {
   apply,
+  avatarSchema,
   connectMember,
   disconnectMember,
   sweep,
@@ -14,6 +15,7 @@ import {
 import { z } from "zod";
 const joinSchema = z.object({
   name: z.string().trim().min(1).max(32),
+  avatar: avatarSchema.default("male"),
   session: z.string().optional(),
 });
 const createSchema = joinSchema.extend({
@@ -165,7 +167,7 @@ export class RoomSlot extends DurableObject<Env> {
         if (action === "create") {
           if (r) throw Error("SLOT_BUSY");
           const c = createSchema.parse(data);
-          r = createRoom(id, c.name, c.title, c.capacity, now);
+          r = createRoom(id, c.name, c.title, c.capacity, now, c.avatar);
           this.save(r);
           this.schedule();
         } else {
@@ -174,7 +176,7 @@ export class RoomSlot extends DurableObject<Env> {
             const c = joinSchema.parse(data);
             if (c.session && c.session !== r.session)
               throw Error("INVITE_EXPIRED");
-            requestJoin(r, id, c.name, now);
+            requestJoin(r, id, c.name, now, c.avatar);
             this.save(r);
           } else if (action === "cancel") {
             const c = z.object({ session: z.string() }).parse(data);

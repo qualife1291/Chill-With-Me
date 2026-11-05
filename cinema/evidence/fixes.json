@@ -2,6 +2,13 @@
   "passed": true,
   "errors": [],
   "checks": [
+    "3D lobby door preview works by keyboard without entering rooms",
+    "mobile lobby fits and light mode releases its canvas",
+    "shoulder/social camera transitions retain player and keep video in bounds",
+    "reduced-motion preference snaps the camera without travel animation",
+    "male/female rigged GLB models load and selected avatar survives approval",
+    "avatar choice previews the loaded female model in lobby",
+    "idle rig head rotation does not accumulate across refreshed snapshots",
     "blocked localStorage does not break room, chat or voice controls",
     "autoplay-blocked feedback and user-gesture playback recovery",
     "cancelled speech callbacks cannot duck audio or show stale warnings",
@@ -35,6 +42,6 @@
   ],
   "limitations": "YouTube and speech APIs stubbed; real device voices and actual YouTube playback require pilot",
   "date": "2026-11-05",
-  "command": "node tests/fixes.cjs",
-  "target": "local Wrangler"
+  "target": "local Wrangler",
+  "command": "node tests/fixes.cjs"
 }

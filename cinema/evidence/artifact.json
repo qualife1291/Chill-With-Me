@@ -1,0 +1,58 @@
+{
+  "target": "local embedded Worker artifact",
+  "passed": true,
+  "assets": [
+    {
+      "path": "index.html",
+      "bytes": 424,
+      "sha256": "e76bf9e4ffd6b1544a3f3bdc9af2ef149e96cb423aa9f9e79836d0613bbe2496"
+    },
+    {
+      "path": "assets/Cinema-CAzcXpcn.js",
+      "bytes": 12783,
+      "sha256": "2737b3f3563ec73167c2c2f96476497c90ee069bf8159a7eb62d4f6c0dcb3e33"
+    },
+    {
+      "path": "assets/Lobby-v06Vl9xb.js",
+      "bytes": 5170,
+      "sha256": "c762be1a7125c9d43be3b9a94460b8db3d9883561f4c8a1144ea86cd64a486c8"
+    },
+    {
+      "path": "assets/ModelBoundary-DW3h8VPv.js",
+      "bytes": 934545,
+      "sha256": "ab2d426587d1c11f68ca0d3215ca1ac30d6cd3095658654761d647b14bbe78d2"
+    },
+    {
+      "path": "assets/index-CRNwL0Jl.css",
+      "bytes": 22668,
+      "sha256": "8f581679f90de75d4c2eeb299cd7e0762dbc19ebc55933db743d5f448f29eb39"
+    },
+    {
+      "path": "assets/index-D1IUhsHH.js",
+      "bytes": 337099,
+      "sha256": "117902718b54f7de0eab7f6d8f1fdf4d1a5a2d11871ed4c6d0fdf4feb66a7391"
+    },
+    {
+      "path": "models/LICENSE.txt",
+      "bytes": 891,
+      "sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    {
+      "path": "models/female.glb",
+      "bytes": 332816,
+      "sha256": "2089f180ae0ec229c28383f616ecc9902c55096fc65a21e008bda763fe9ad620"
+    },
+    {
+      "path": "models/male.glb",
+      "bytes": 341736,
+      "sha256": "1f0e2cfd194b49b68f073ef5b6596a685d8e81127d91d0e9fde98ca14101634e"
+    },
+    {
+      "path": "models/manifest.json",
+      "bytes": 1483,
+      "sha256": "cf5cd5f3b0cd87dd173058cbc9382c037f709e1a9b0c2dc515d6c9f4f08e615d"
+    }
+  ],
+  "roomSlots": 3,
+  "compression": "gzip encodeBody manual; fetch decoded each response once and bytes matched dist"
+}

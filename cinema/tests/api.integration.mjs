@@ -30,8 +30,10 @@ let v = await call(h, "/rooms/3/create", {
   name: "Host test",
   title: "QA room",
   capacity: 2,
+  avatar: "female",
 });
 assert.equal(v.status, 200);
+assert.equal(v.data.room.members[0].avatar, "female");
 const epoch = v.data.room.session;
 const cmd = (s, command, commandId = crypto.randomUUID(), session = epoch) =>
   call(s, "/rooms/3/command", { command, commandId, session });
@@ -43,8 +45,8 @@ try {
   });
   assert.equal(bad.status, 403);
   await Promise.all([
-    call(a, "/rooms/3/join", { name: "A" }),
-    call(b, "/rooms/3/join", { name: "B" }),
+    call(a, "/rooms/3/join", { name: "A", avatar: "male" }),
+    call(b, "/rooms/3/join", { name: "B", avatar: "female" }),
   ]);
   const pending = await call(a, "/rooms/3/state");
   assert.equal(pending.data.status, "pending");
@@ -55,6 +57,11 @@ try {
   ]);
   assert.equal(accepts.filter((r) => r.status === 200).length, 1);
   const member = accepts[0].status === 200 ? a : b;
+  const appearance = await call(member, "/rooms/3/state");
+  assert.equal(
+    appearance.data.room.members.find((m) => m.id === member.id).avatar,
+    member === a ? "male" : "female",
+  );
   assert.equal(
     (await cmd(member, { type: "next", generation: 0 })).status,
     400,
@@ -83,7 +90,7 @@ try {
     400,
   );
   console.log(
-    "PASS integration: origin, pending privacy, concurrent capacity, host ACL, idempotency, Next race, stale epoch, kick revocation.",
+    "PASS integration: avatar choice, origin, pending privacy, concurrent capacity, host ACL, idempotency, Next race, stale epoch, kick revocation.",
   );
 } finally {
   await cmd(h, { type: "close" });

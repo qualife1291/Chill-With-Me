@@ -167,3 +167,20 @@ test("member waves are actor-scoped, bounded, and unavailable to nonmembers", ()
   apply(r, "guest", { type: "wave" }, 4500);
   assert.equal(r.members.find((m) => m.id === "guest")?.waveAt, 4500);
 });
+
+test("avatar choice survives creation, pending approval and snapshots with legacy defaults", () => {
+  const r = createRoom("host", "Host", "Avatar room", 2, 1000, "female");
+  assert.equal(r.members[0].avatar, "female");
+  requestJoin(r, "guest", "Guest", 1000, "male");
+  assert.equal(r.pending[0].avatar, "male");
+  apply(r, "host", { type: "accept", id: "guest" }, 1001);
+  assert.equal(r.members[1].avatar, "male");
+  assert.equal(view(r, "guest").room?.members[0].avatar, "female");
+  assert.equal(
+    createRoom("h", "Host", "Legacy", 2, 1000).members[0].avatar,
+    "male",
+  );
+  assert.throws(() =>
+    createRoom("h", "Host", "Bad", 2, 1000, "invalid" as never),
+  );
+});

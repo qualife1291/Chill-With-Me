@@ -1,4 +1,6 @@
 import { z } from "zod";
+export const avatarSchema = z.enum(["male", "female"]);
+export type AvatarStyle = z.infer<typeof avatarSchema>;
 export const nameSchema = z.string().trim().min(1).max(32);
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({
@@ -49,6 +51,7 @@ export type Member = {
   seated: boolean;
   sitAt?: number;
   waveAt?: number;
+  avatar?: AvatarStyle;
   joinedAt: number;
   deadline?: number;
   connectionId?: string;
@@ -64,7 +67,7 @@ export type Room = {
   successor?: string;
   emptySince?: number;
   members: Member[];
-  pending: { id: string; name: string; at: number }[];
+  pending: { id: string; name: string; at: number; avatar?: AvatarStyle }[];
   banned: string[];
   queue: Item[];
   current: Item | null;
@@ -137,6 +140,7 @@ export function createRoom(
   title: string,
   capacity: number,
   now: number,
+  avatar: AvatarStyle = "male",
 ): Room {
   seats(capacity);
   return {
@@ -150,6 +154,7 @@ export function createRoom(
         name: nameSchema.parse(name),
         seat: 0,
         seated: false,
+        avatar: avatarSchema.parse(avatar),
         joinedAt: now,
         deadline: now + 20000,
       },
@@ -167,13 +172,24 @@ export function createRoom(
     expires: now + 86400000,
   };
 }
-export function requestJoin(r: Room, id: string, name: string, now: number) {
+export function requestJoin(
+  r: Room,
+  id: string,
+  name: string,
+  now: number,
+  avatar: AvatarStyle = "male",
+) {
   if (r.banned.includes(id)) throw Error("BANNED");
   if (r.members.some((m) => m.id === id)) return;
   if (r.pending.some((m) => m.id === id)) return;
   if (r.members.length >= r.capacity) throw Error("ROOM_FULL");
   if (r.pending.length >= 20) throw Error("REQUEST_QUEUE_FULL");
-  r.pending.push({ id, name: nameSchema.parse(name), at: now });
+  r.pending.push({
+    id,
+    name: nameSchema.parse(name),
+    at: now,
+    avatar: avatarSchema.parse(avatar),
+  });
   r.revision++;
 }
 export function apply(r: Room, actor: string, c: Command, now: number) {
@@ -224,6 +240,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     r.members.push({
       id: p.id,
       name: p.name,
+      avatar: p.avatar || "male",
       seat,
       seated: false,
       joinedAt: now,

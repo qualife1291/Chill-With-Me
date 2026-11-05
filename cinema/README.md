@@ -21,13 +21,15 @@ npx tsc --noEmit --skipLibCheck --target ES2022 --module ESNext --moduleResoluti
 npm run worker:check
 ```
 
-To see all 23 individual test results in the research environment:
+To see all 28 individual test results in the research environment:
 
 ```bash
 node --import tsx tests/model.test.ts
 node --import tsx tests/lifecycle.test.ts
 node --import tsx tests/projection.test.ts
 node --import tsx tests/avatar.test.ts
+node --import tsx tests/camera.test.ts
+node --import tsx tests/assets.test.ts
 ```
 
 With local Wrangler running and room slots free:
@@ -46,12 +48,42 @@ After Cloudflare authentication: `npm run build` then `npx wrangler deploy`. Con
 
 The current public alpha instead uses `scripts-bundle.mjs` and the connected Cloudflare API. That script embeds gzip assets; preserve `encodeBody: "manual"`. Requests for these assets count against Worker quota. Static Assets through Wrangler is the intended regular deployment path.
 
-No production credentials or voice recordings belong in Git. Scene/avatar geometry is procedural; the asset catalog is a shortlist, not downloaded licensed assets.
+No production credentials or voice recordings belong in Git. The room geometry is procedural; installed KayKit avatar files and their CC0 license are under public/models. The asset catalog marks installed models separately from candidates.
 
 ## Quality checks and device pilot
 
-The scene uses an original articulated procedural avatar (no third-party model download): walk along the aisle, turn into the row, blend into sitting, and wave via the shared room state. The centered overview uses a wider lens and lower aim to show the room. First-person hides the local avatar; light mode retains the same YouTube player.
+The 3D lobby previews three doors and the selected male/female character. Room avatars use KayKit rigged GLB models with native idle/walk/sit clips and a bounded wave overlay; each member has an independent cloned skeleton. Original procedural avatars remain the per-model failure/loading fallback. Camera presets: first-person, overview, shoulder and social side view. Camera position/aim/lens interpolate and respect reduced-motion settings; every preset retains the same native YouTube player.
 
 `node tests/capacity.cjs` requires all three **local** slots free. It opens 30 independent cookie sessions/WebSockets, verifies room capacity and chat broadcast, rejects an extra guest, and closes its own rooms. Its timing excludes real video, 3D rendering, WAN latency and sustained-load behavior.
 
 Before calling the alpha production-ready, run on actual iOS Safari and Android Chrome: join using separate devices, tap playback after autoplay is blocked, test pause/seek/reconnect/background/foreground, an embed-restricted video and an ad, then select a Vietnamese voice, read several chat messages, stop speech midway and confirm video volume restores. Test touch dragging, first-person/overview/light views and landscape controls. Automated YouTube/speech mocks do not prove those device behaviors.
+
+## Avatar files and reproducible preparation
+
+Runtime files live in `public/models/`: `male.glb` (Knight), `female.glb` (Mage), original `LICENSE.txt` and `manifest.json`. Source: KayKit Adventurers 1.0 by Kay Lousberg, CC0. The manifest pins the upstream commit, source/optimized SHA-256 checksums, tool versions and size budgets. Each model is under 350 KB on disk and approximately 131 KB gzip. Models are served by this app, without a third-party runtime CDN. New/pending member records retain avatar choice; missing values from older sessions default to male. Voice selection remains independent from avatar choice.
+
+No asset tooling is needed for ordinary `npm ci` / build. To regenerate assets, download the two source URLs in the manifest into a temporary directory. Install offline tooling outside the app checkout:
+
+```bash
+npm install --prefix /tmp/cinema-model-tools --no-audit --no-fund @gltf-transform/core@4.2.1 @gltf-transform/functions@4.2.1 @gltf-transform/extensions@4.5.1
+AVATAR_TOOLS=/tmp/cinema-model-tools node tools/prepare-avatars.mjs /path/to/original-glbs
+```
+
+The tool verifies the expected original checksums, retains five needed clips, removes weapons/loose accessories, and optimizes/prunes the GLB data. Keep the manifest/checksums and model tests aligned when intentionally changing this pipeline.
+
+## Embedded release verification
+
+`scripts-bundle.mjs` now includes all recursive dist files, including GLB, manifest and license; it preserves manual gzip encoding and GLB MIME. For local validation of the embedded API deployment variant:
+
+```bash
+npm run build
+node scripts-bundle.mjs
+node tools/embedded-config.mjs
+npx wrangler dev --local --config .wrangler/embedded-check.json --port 8788 --persist-to .wrangler/embedded-state
+# In another terminal, from cinema/:
+node tests/artifact.integration.mjs
+```
+
+Use `wrangler.jsonc` for regular Static Assets deployment. The generated embedded-check config is for local tests only. Deployment target remains Worker `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, SQLite `RoomSlot`, migration `v1`. No data reset or new migration is needed for optional avatar metadata.
+
+The current cloud session lacks Cloudflare authentication. A noninteractive deployment requires `CLOUDFLARE_API_TOKEN`, entered securely in Environment settings, scoped to the existing account with the needed Workers permissions. Never put its value in source or chat. Once configured, deploy from cinema/ with `CLOUDFLARE_ACCOUNT_ID=966c7ceee358485648b935a07877ec45 npx wrangler deploy --config wrangler.jsonc`, then verify production HTML/assets/models and room summaries read-only. Never run room mutation tests against production.

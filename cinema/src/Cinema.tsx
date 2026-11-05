@@ -1,14 +1,23 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef, useEffect, type RefObject } from "react";
+import React, {
+  Suspense,
+  useMemo,
+  useRef,
+  useEffect,
+  type RefObject,
+} from "react";
+import ModelAvatar from "./ModelAvatar";
+import ModelBoundary from "./ModelBoundary";
 import * as THREE from "three";
 import { seats, type Room, type Member } from "../shared/model";
+import { cameraView } from "../shared/camera";
 import { screenMatrix } from "../shared/projection";
 import { avatarMotion, avatarPosition } from "../shared/avatar";
 function position(m: Member, capacity: number, now: number) {
   const p = avatarPosition(m, capacity, now);
   return new THREE.Vector3(p.x, p.y, p.z);
 }
-function Avatar({
+function ProceduralAvatar({
   m,
   capacity,
   offset,
@@ -209,6 +218,16 @@ function Avatar({
     </group>
   );
 }
+function Avatar(props: React.ComponentProps<typeof ModelAvatar>) {
+  const fallback = <ProceduralAvatar {...props} />;
+  return (
+    <ModelBoundary key={props.m.avatar || "male"} fallback={fallback}>
+      <Suspense fallback={fallback}>
+        <ModelAvatar {...props} />
+      </Suspense>
+    </ModelBoundary>
+  );
+}
 function Chair({
   x,
   y,
@@ -255,12 +274,14 @@ function Camera({
   pitch,
   bodyYaw,
   controlsOpen,
+  reducedMotion,
   surface,
 }: {
   yaw: number;
   pitch: number;
   bodyYaw: number;
   controlsOpen: boolean;
+  reducedMotion: boolean;
   surface: RefObject<HTMLDivElement | null>;
   room: Room;
   id: string;
@@ -270,36 +291,56 @@ function Camera({
   const { camera, size, invalidate } = useThree();
   useEffect(() => {
     invalidate();
-  }, [yaw, pitch, bodyYaw, mode, controlsOpen, room.revision, invalidate]);
-  const highest = Math.max(...seats(room.capacity).map((s) => s.y));
-  const rearZ = Math.max(...seats(room.capacity).map((s) => s.z));
+  }, [
+    yaw,
+    pitch,
+    bodyYaw,
+    mode,
+    controlsOpen,
+    reducedMotion,
+    room.revision,
+    invalidate,
+  ]);
+  const aim = useMemo(() => new THREE.Vector3(0, 1.25, -5.7), []);
   const p = useMemo(() => new THREE.Vector3(), []);
   const smoothYaw = useRef(0),
     smoothPitch = useRef(0);
   useFrame((_, dt) => {
     const m = room.members.find((m) => m.id === id);
     if (!m) return;
-    const base = position(m, room.capacity, Date.now() + offset);
-    if (mode === "first")
-      p.copy(base).add(new THREE.Vector3(0, m.seated ? 1.5 : 1.65, -0.08));
-    else p.set(0, highest + 3.4, rearZ + 5.2);
+    const now = Date.now() + offset;
+    const view = cameraView(
+      room.capacity,
+      m,
+      mode,
+      reducedMotion && m.seated ? Math.max(now, (m.sitAt || 0) + 5000) : now,
+    );
+    p.set(view.position[0], view.position[1], view.position[2]);
+    const desiredAim = new THREE.Vector3(
+      view.target[0],
+      view.target[1],
+      view.target[2],
+    );
+    const blend = reducedMotion ? 1 : 1 - Math.exp(-dt * 5);
+    camera.position.lerp(p, blend);
+    aim.lerp(desiredAim, blend);
+    let lensMoving = false;
     if (camera instanceof THREE.PerspectiveCamera) {
-      const fov = mode === "first" ? 60 : 48;
-      if (camera.fov !== fov) {
-        camera.fov = fov;
-        camera.updateProjectionMatrix();
-      }
+      camera.fov = reducedMotion
+        ? view.fov
+        : THREE.MathUtils.damp(camera.fov, view.fov, 5, dt);
+      lensMoving = Math.abs(camera.fov - view.fov) > 0.01;
+      camera.updateProjectionMatrix();
     }
-    camera.position.lerp(p, 1 - Math.exp(-dt * 5));
-    smoothPitch.current +=
-      (pitch - smoothPitch.current) * (1 - Math.exp(-dt * 6));
-    smoothYaw.current +=
-      (bodyYaw + yaw - smoothYaw.current) * (1 - Math.exp(-dt * 6));
-    const look = new THREE.Vector3(0, mode === "first" ? 2.3 : 1.25, -5.7)
+    const headBlend = reducedMotion ? 1 : 1 - Math.exp(-dt * 6);
+    smoothPitch.current += (pitch - smoothPitch.current) * headBlend;
+    smoothYaw.current += (bodyYaw + yaw - smoothYaw.current) * headBlend;
+    const look = aim
+      .clone()
       .sub(camera.position)
       .applyAxisAngle(
         new THREE.Vector3(0, 1, 0),
-        -(smoothYaw.current * Math.PI) / 180,
+        (-smoothYaw.current * Math.PI) / 180,
       );
     const right = new THREE.Vector3()
       .crossVectors(look, new THREE.Vector3(0, 1, 0))
@@ -309,6 +350,8 @@ function Camera({
     camera.updateMatrixWorld();
     if (
       camera.position.distanceTo(p) > 0.002 ||
+      aim.distanceTo(desiredAim) > 0.002 ||
+      lensMoving ||
       Math.abs(bodyYaw + yaw - smoothYaw.current) > 0.005 ||
       Math.abs(pitch - smoothPitch.current) > 0.005 ||
       (m.seated && Date.now() + offset - (m.sitAt || 0) < 5000)
@@ -317,6 +360,12 @@ function Camera({
     const el = surface.current;
     if (!el) return;
     el.dataset.camera = mode;
+    el.dataset.avatar = m.avatar || "male";
+    el.dataset.transitioning = String(
+      camera.position.distanceTo(p) > 0.002 ||
+        aim.distanceTo(desiredAim) > 0.002 ||
+        lensMoving,
+    );
     el.dataset.yaw = smoothYaw.current.toFixed(2);
     el.dataset.pitch = smoothPitch.current.toFixed(2);
     el.dataset.seated = String(m.seated);
@@ -351,7 +400,7 @@ function Camera({
       left: 16,
       top: 72,
       right: controlsOpen && short ? 154 : 16,
-      bottom: controlsOpen && !short ? (narrow ? 180 : 148) : 64,
+      bottom: controlsOpen && !short ? (narrow ? 210 : 180) : 64,
     };
     // Tiny split views prioritize the video over generous padding.
     if (size.height - safe.top - safe.bottom < 200) {
@@ -369,7 +418,10 @@ function Camera({
       ) &&
       width >= 250 &&
       height >= 200;
-    const mat = fits ? screenMatrix(points) : null;
+    const mat =
+      fits && mode !== "side" && mode !== "shoulder"
+        ? screenMatrix(points)
+        : null;
     if (mat) {
       el.style.width = "640px";
       el.style.height = "360px";
@@ -380,12 +432,17 @@ function Camera({
     } else {
       const availableWidth = Math.max(1, size.width - safe.left - safe.right);
       const availableHeight = Math.max(1, size.height - safe.top - safe.bottom);
-      const w = Math.min(availableWidth, 960, (availableHeight * 16) / 9);
+      const social = mode === "side" || mode === "shoulder";
+      const w = Math.min(
+        availableWidth,
+        social && !narrow ? 600 : 960,
+        (availableHeight * (social && !narrow ? 0.4 : 1) * 16) / 9,
+      );
       const h = (w * 9) / 16;
       el.style.width = w + "px";
       el.style.height = h + "px";
       el.style.left = safe.left + (availableWidth - w) / 2 + "px";
-      el.style.top = safe.top + (availableHeight - h) / 2 + "px";
+      el.style.top = safe.top + (social ? 0 : (availableHeight - h) / 2) + "px";
       el.style.transform = "none";
       el.dataset.mode = "docked";
     }
@@ -470,12 +527,14 @@ export default function Cinema({
   pitch,
   bodyYaw,
   controlsOpen,
+  reducedMotion,
   surface,
 }: {
   yaw: number;
   pitch: number;
   bodyYaw: number;
   controlsOpen: boolean;
+  reducedMotion: boolean;
   surface: RefObject<HTMLDivElement | null>;
   room: Room;
   id: string;
@@ -596,6 +655,7 @@ export default function Cinema({
         pitch={pitch}
         bodyYaw={bodyYaw}
         controlsOpen={controlsOpen}
+        reducedMotion={reducedMotion}
         surface={surface}
       />
     </Canvas>

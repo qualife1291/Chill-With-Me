@@ -89,6 +89,43 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     );
     await p.goto(baseURL);
   }
+  await host.locator(".lobby-stage canvas").waitFor();
+  await host
+    .getByRole("button", { name: "Khám phá phòng 03", exact: true })
+    .focus();
+  await host.keyboard.press("Enter");
+  await host.waitForFunction(
+    () => document.querySelector(".lobby-stage")?.dataset.previewSlot === "3",
+  );
+  await host.waitForFunction(
+    () =>
+      document.querySelector(".lobby-stage canvas")?.dataset.settled === "true",
+  );
+  await host.screenshot({ path: "evidence/lobby-desktop.png", fullPage: true });
+  await host.setViewportSize({ width: 390, height: 844 });
+  await host.screenshot({ path: "evidence/lobby-mobile.png", fullPage: true });
+  if (
+    await host.evaluate(() => document.documentElement.scrollWidth > innerWidth)
+  )
+    throw Error("Lobby overflows phone");
+  await host.getByRole("button", { name: "Sảnh nhẹ", exact: true }).click();
+  if (await host.locator(".lobby-stage canvas").count())
+    throw Error("Light lobby kept a GPU canvas");
+  await host.getByRole("button", { name: "Bật sảnh 3D", exact: true }).click();
+  await host.setViewportSize({ width: 1440, height: 1000 });
+  await host
+    .getByRole("button", { name: "Khám phá phòng 01", exact: true })
+    .click();
+  await host.getByLabel("Nữ · Mage", { exact: true }).check();
+  await host.waitForFunction(
+    () =>
+      document.querySelector(".lobby-stage canvas")?.dataset.femaleModel ===
+      "ready",
+  );
+  await host.screenshot({
+    path: "evidence/avatar-choice-lobby.png",
+    fullPage: true,
+  });
   await host.getByPlaceholder("Mọi người gọi bạn là…").fill("Host fixes");
   await host.getByLabel("Tên phòng mới").fill(testTitle);
   await host.getByRole("button", { name: "Tạo phòng" }).first().click();
@@ -103,6 +140,10 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .fill("https://youtu.be/jfKfPfyJRdk");
   await quick.getByLabel("Link YouTube để bắt đầu").press("Enter");
   await host.waitForFunction(() => window.__yt?.video);
+  await host.waitForFunction(
+    () =>
+      document.querySelector(".scene canvas")?.dataset.femaleModel === "ready",
+  );
   const full = await host.locator(".scene").boundingBox();
   if (Math.abs(full.width - 1440) > 2 || Math.abs(full.height - 1000) > 2)
     throw Error("theater not full viewport " + JSON.stringify(full));
@@ -307,6 +348,18 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .click();
 
   console.log("PASS capped chat and typing focus; checking camera regression");
+  await guest.waitForFunction(
+    () =>
+      document.querySelector(".scene canvas")?.dataset.maleModel === "ready" &&
+      document.querySelector(".scene canvas")?.dataset.femaleModel === "ready",
+  );
+  await guest.waitForFunction(
+    () => document.querySelector(".screen-surface")?.dataset.avatar === "male",
+  );
+  await host.waitForFunction(
+    () =>
+      document.querySelector(".screen-surface")?.dataset.avatar === "female",
+  );
   const viewerControls = await guest.evaluate(
     () => window.__yt.config.playerVars,
   );
@@ -445,6 +498,34 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     throw Error("Drag stuck after release");
   await host.mouse.move(450, 180);
   await host.waitForTimeout(400);
+  const gazeBefore = await host
+    .locator(".scene canvas")
+    .getAttribute("data-female-gaze");
+  // A no-op server pose snapshot schedules another render without changing gaze.
+  await host.evaluate(async () => {
+    const rooms = await (await fetch("/api/rooms")).json();
+    const slot = rooms.find((r) => r.open && r.count === 2).slot;
+    const state = await (await fetch(`/api/rooms/${slot}/state`)).json();
+    const me = state.room.members.find((m) => m.avatar === "female");
+    const r = await fetch(`/api/rooms/${slot}/command`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session: state.room.session,
+        commandId: crypto.randomUUID(),
+        command: { type: "look", ...me.look },
+      }),
+    });
+    if (!r.ok) throw Error("Gaze refresh failed");
+  });
+  await host.waitForTimeout(150);
+  const gazeAfter = await host
+    .locator(".scene canvas")
+    .getAttribute("data-female-gaze");
+  if (gazeBefore !== gazeAfter)
+    throw Error(
+      "Idle rig accumulated head rotation " + gazeBefore + " -> " + gazeAfter,
+    );
   const stoppedYaw = Number(
     await host.locator(".screen-surface").getAttribute("data-yaw"),
   );
@@ -587,6 +668,51 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   )
     throw Error("Camera switch remounted video");
   await originalPlayer.dispose();
+  const cameraPlayer = await host.evaluateHandle(() => window.__yt);
+  for (const [label, mode] of [
+    ["Sau vai", "shoulder"],
+    ["Góc giao lưu", "side"],
+  ]) {
+    await host.getByRole("button", { name: label, exact: true }).click();
+    await host.waitForFunction((mode) => {
+      const s = document.querySelector(".screen-surface");
+      return s?.dataset.camera === mode && s.dataset.transitioning === "false";
+    }, mode);
+    if (
+      !(await host.evaluate((player) => window.__yt === player, cameraPlayer))
+    )
+      throw Error("New camera remounted player");
+    const rect = await host.locator(".screen-surface").boundingBox();
+    if (
+      rect.x < -1 ||
+      rect.y < 60 ||
+      rect.x + rect.width > 1441 ||
+      rect.y + rect.height > 1001
+    )
+      throw Error("New camera clips video " + label);
+    await host.screenshot({ path: `evidence/view-${mode}.png` });
+  }
+  await cameraPlayer.dispose();
+  await host.emulateMedia({ reducedMotion: "reduce" });
+  await host.getByRole("button", { name: "Mắt người", exact: true }).click();
+  await host.waitForFunction(
+    () => {
+      const s = document.querySelector(".screen-surface");
+      return (
+        s?.dataset.camera === "first" && s.dataset.transitioning === "false"
+      );
+    },
+    {},
+    { timeout: 1500 },
+  );
+  await host.emulateMedia({ reducedMotion: "no-preference" });
+  await host
+    .getByRole("button", { name: "Trên cao · sau nhân vật", exact: true })
+    .click();
+  await host.waitForFunction(() => {
+    const s = document.querySelector(".screen-surface");
+    return s?.dataset.camera === "third" && s.dataset.transitioning === "false";
+  });
   await host.getByRole("button", { name: "Vẫy tay", exact: true }).click();
   await host.waitForFunction(
     () => document.querySelector(".screen-surface")?.dataset.action === "wave",
@@ -634,6 +760,13 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
         passed: !errors.length,
         errors,
         checks: [
+          "3D lobby door preview works by keyboard without entering rooms",
+          "mobile lobby fits and light mode releases its canvas",
+          "shoulder/social camera transitions retain player and keep video in bounds",
+          "reduced-motion preference snaps the camera without travel animation",
+          "male/female rigged GLB models load and selected avatar survives approval",
+          "avatar choice previews the loaded female model in lobby",
+          "idle rig head rotation does not accumulate across refreshed snapshots",
           "blocked localStorage does not break room, chat or voice controls",
           "autoplay-blocked feedback and user-gesture playback recovery",
           "cancelled speech callbacks cannot duck audio or show stale warnings",

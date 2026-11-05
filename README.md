@@ -26,10 +26,12 @@ npm run serve
 
 Mở URL Wrangler hiển thị, thường `http://localhost:8787`. Hai browser profile để thử realtime. `/?demo` chỉ mô phỏng local.
 
+Sảnh 3D, chọn nhân vật nam/nữ có rig (KayKit CC0), bốn góc nhìn và chuyển camera mượt; có chế độ nhẹ.
+
 React/TypeScript/Vite/Three.js; backend Cloudflare Workers + SQLite Durable Objects + WebSocket. Video qua YouTube IFrame API riêng trên mỗi máy.
 
-Lệnh test/deploy: [`cinema/README.md`](cinema/README.md). Tài liệu tham khảo chọn lọc: [`docs/INDEX.md`](docs/INDEX.md). Asset catalog là danh sách ứng viên; model hiện tại tự dựng bằng geometry.
+Lệnh test/deploy: [`cinema/README.md`](cinema/README.md). Tài liệu tham khảo chọn lọc: [`docs/INDEX.md`](docs/INDEX.md). Asset catalog phân biệt model đã tích hợp và ứng viên; nhân vật dùng model rigged KayKit CC0, có phương án hình khối dự phòng.
 
 ## Giới hạn
 
-23 test logic đã đạt. Browser regression dùng YouTube/speech mô phỏng; không thay thế pilot video thật, quảng cáo, autoplay/iOS và giọng tiếng Việt trên thiết bị. Chưa benchmark 30 người, chưa cam kết drift dưới 1 giây hay miễn phí vô hạn. Free tier có quota. Khóa API và dữ liệu giọng không nằm trong repo; push GitHub không tự deploy.
+28 test logic đã đạt. Browser regression dùng YouTube/speech mô phỏng; không thay thế pilot video thật, quảng cáo, autoplay/iOS và giọng tiếng Việt trên thiết bị. Chưa benchmark 30 người, chưa cam kết drift dưới 1 giây hay miễn phí vô hạn. Free tier có quota. Khóa API và dữ liệu giọng không nằm trong repo; push GitHub không tự deploy.

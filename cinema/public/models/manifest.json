@@ -1,0 +1,29 @@
+{
+  "author": "Kay Lousberg",
+  "pack": "KayKit Adventurers 1.0",
+  "sourceRepository": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+  "sourceCommit": "672074b73ba276876a19e8816ecdc5241817ab47",
+  "license": "CC0-1.0",
+  "licenseFile": "LICENSE.txt",
+  "optimizedWith": "@gltf-transform/core 4.2.1, functions 4.2.1, extensions 4.5.1: retain idle/walk/sit/cheer, remove accessories, resample, dedup, weld, quantize, prune",
+  "models": [
+    {
+      "avatar": "male",
+      "file": "male.glb",
+      "source": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/672074b73ba276876a19e8816ecdc5241817ab47/addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb",
+      "sourceSha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "sha256": "1f0e2cfd194b49b68f073ef5b6596a685d8e81127d91d0e9fde98ca14101634e",
+      "bytes": 341736,
+      "gzipBytes": 130869
+    },
+    {
+      "avatar": "female",
+      "file": "female.glb",
+      "source": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/672074b73ba276876a19e8816ecdc5241817ab47/addons/kaykit_character_pack_adventures/Characters/gltf/Mage.glb",
+      "sourceSha256": "cf898585da33fab50c724d31605fb931eb2912e6d2280092141e98ca81ad507d",
+      "sha256": "2089f180ae0ec229c28383f616ecc9902c55096fc65a21e008bda763fe9ad620",
+      "bytes": 332816,
+      "gzipBytes": 130444
+    }
+  ]
+}
