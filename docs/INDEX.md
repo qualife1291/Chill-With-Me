@@ -7,6 +7,7 @@ Start with [PROJECT_STATE](../PROJECT_STATE.md); it is the only current resume/s
 | Implement a feature / locate invariants | [Architecture](ARCHITECTURE.md) |
 | Commands, media limits, tests, deploy | [Runtime README](../cinema/README.md) |
 | Acceptance and unresolved gates | [Current roadmap](KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) |
+| YouTube Premium / ads in rooms | [Official-source findings](YOUTUBE_PREMIUM.md) |
 | Original 3D product specification | [V3 design](THIET_KE_RAP_3D_V3.md) |
 | Asset candidates / licenses | [Asset catalog](NGUON_FILE_DO_HOA.md); implemented assets: `cinema/public/models/manifest.json` |
 | Security/operating research | [Security](BAO_MAT_VA_VAN_HANH.md), [budget](NGAN_SACH_FREE_TIER.md) |

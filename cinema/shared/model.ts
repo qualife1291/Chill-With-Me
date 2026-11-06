@@ -6,6 +6,7 @@ import {
   supportedMimes,
   type MediaSource,
 } from "./media";
+export const seatingSchema = z.enum(["cinema", "sofa"]);
 export const visibilitySchema = z.enum(["public", "private"]);
 export const avatarSchema = z.enum(["male", "female"]);
 export type AvatarStyle = z.infer<typeof avatarSchema>;
@@ -127,6 +128,7 @@ export type Suggestion = {
   at: number;
 };
 export type Room = {
+  seating?: z.infer<typeof seatingSchema>;
   visibility?: z.infer<typeof visibilitySchema>;
   inviteKey?: string;
   session: string;
@@ -213,11 +215,13 @@ export function createRoom(
   now: number,
   avatar: AvatarStyle = "male",
   visibility: z.infer<typeof visibilitySchema> = "public",
+  seating: z.infer<typeof seatingSchema> = "cinema",
 ): Room {
   seats(capacity);
   return {
     session: crypto.randomUUID(),
     visibility: visibilitySchema.parse(visibility),
+    seating: seatingSchema.parse(seating),
     ...(visibility === "private" ? { inviteKey: crypto.randomUUID() } : {}),
     title: nameSchema.parse(title),
     capacity,

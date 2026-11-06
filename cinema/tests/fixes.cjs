@@ -116,7 +116,11 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host
     .getByRole("button", { name: "Khám phá phòng 01", exact: true })
     .click();
-  await host.getByLabel("Nữ · Mage", { exact: true }).check();
+  await host
+    .getByRole("button", { name: "Tạo phòng", exact: true })
+    .first()
+    .click();
+  await host.getByLabel("Nữ · Rogue", { exact: true }).check();
   await host.waitForFunction(
     () =>
       document.querySelector(".lobby-stage canvas")?.dataset.femaleModel ===
@@ -149,11 +153,17 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     throw Error("theater not full viewport " + JSON.stringify(full));
   await host.screenshot({ path: "evidence/immersive-room.png" });
   await guest.reload();
-  await guest.getByPlaceholder("Mọi người gọi bạn là…").fill("Guest fixes");
+
   await guest
     .locator(".room-card")
     .filter({ hasText: testTitle })
     .getByRole("button", { name: "Xin vào phòng" })
+    .click();
+  await guest.getByPlaceholder("Mọi người gọi bạn là…").fill("Guest fixes");
+
+  await guest
+    .getByRole("dialog", { name: "Thông tin vào phòng", exact: true })
+    .getByRole("button", { name: "Xin vào phòng", exact: true })
     .click();
   const dialog = host.getByRole("dialog", { name: "Yêu cầu vào phòng" });
   await dialog.waitFor();
@@ -726,9 +736,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   )
     throw Error("Light mode remounted video");
   await host.getByRole("button", { name: "Bật 3D", exact: true }).click();
-  await host
-    .getByRole("button", { name: "Trên cao · sau nhân vật", exact: true })
-    .click();
+  await host.getByRole("button", { name: "Toàn cảnh", exact: true }).click();
   await host.waitForFunction(
     () => document.querySelector(".screen-surface")?.dataset.camera === "third",
   );
@@ -740,7 +748,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   const cameraPlayer = await host.evaluateHandle(() => window.__yt);
   for (const [label, mode] of [
     ["Sau vai", "shoulder"],
-    ["Góc giao lưu", "side"],
+    ["Giao lưu", "side"],
   ]) {
     await host.getByRole("button", { name: label, exact: true }).click();
     await host.waitForFunction((mode) => {
@@ -775,9 +783,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     { timeout: 1500 },
   );
   await host.emulateMedia({ reducedMotion: "no-preference" });
-  await host
-    .getByRole("button", { name: "Trên cao · sau nhân vật", exact: true })
-    .click();
+  await host.getByRole("button", { name: "Toàn cảnh", exact: true }).click();
   await host.waitForFunction(() => {
     const s = document.querySelector(".screen-surface");
     return s?.dataset.camera === "third" && s.dataset.transitioning === "false";
@@ -791,7 +797,10 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.getByRole("button", { name: "Thêm video", exact: true }).click();
   await host
     .getByRole("alert")
-    .filter({ hasText: "Hãy nhập link YouTube, Google Drive công khai hoặc video MP4/WebM/MOV/MP3/M4A/Ogg/WAV qua HTTPS." })
+    .filter({
+      hasText:
+        "Hãy nhập link YouTube, Google Drive công khai hoặc video MP4/WebM/MOV/MP3/M4A/Ogg/WAV qua HTTPS.",
+    })
     .waitFor();
   if (
     (await host

@@ -5,6 +5,7 @@ Current behavior and open gates: [PROJECT_STATE](../PROJECT_STATE.md). Commands 
 | Change | Entry points | Preserve |
 | --- | --- | --- |
 | Room/admission/roles | `shared/model.ts`, `worker/index.ts` | 3 fixed slots; host included in 2–10 capacity; approved-cookie membership; epoch/connection checks |
+| Home / seating | main entry dialog, `shared/model.ts`, `worker/index.ts`, `Cinema.tsx` | No profile before intent; create-only seating choice; legacy cinema default; shared sofa geometry retains seat anchors/capacity |
 | Private invitations | `shared/model.ts` view/summary/requestJoin, `InvitationControls.tsx` | Redacted public summary; capability only in host DTO; invite token in URL fragment; rotation clears pending, keeps members |
 | Playlist | `shared/playlist.ts`, model apply, `PlaylistImport.tsx` | Parse the whole batch before mutation; max 20/16 KiB; queue max 50; expected revision; no automatic stale-command replay |
 | Playback | `Player.tsx`, `NativePlayer.tsx` | Native YouTube iframe remains interactive; changing camera never remounts media; only host mutates play/pause/seek/Next; generation rejects stale ended |

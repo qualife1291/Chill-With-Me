@@ -1682,3 +1682,14 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 .camera-options button { min-height:44px; padding:10px 14px; border-radius:12px; touch-action:manipulation; }
 .camera-options button[aria-pressed="true"] { background:#44362c; border-color:#dba45f; color:#fff0d5; box-shadow:inset 0 0 0 1px #dba45f55; }
 @media (max-width:600px) { .camera-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .camera-options button { white-space:normal; line-height:1.35; min-width:0; } }
+.entry-modal { width:min(640px,calc(100vw - 24px)); }
+.entry-modal .setup { padding:16px; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.entry-modal .avatar-choice { margin:16px 0; }
+.entry-modal .actions { justify-content:flex-end; position:sticky; bottom:0; padding-top:12px; background:var(--panel); }
+.camera-options button { font-size:13px; box-shadow:none; }
+.camera-options button.selected { background:#44362c; }
+@media (max-width:600px) { .entry-modal .setup { grid-template-columns:1fr; } }
+.camera-presets { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); width:100%; gap:6px; grid-column:1/-1; }
+.avatar-actions { display:flex; flex-wrap:wrap; gap:6px; grid-column:1/-1; }
+.avatar-actions button { background:#171d29; border-color:#394151; }
+@media (max-width:600px) { .camera-presets { grid-template-columns:repeat(2,minmax(0,1fr)); } }

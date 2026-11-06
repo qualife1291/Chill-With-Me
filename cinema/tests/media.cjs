@@ -168,12 +168,18 @@ const base = "http://localhost:8787",
     assert.equal(created.httpStatus, 200);
     // App resumes the authenticated room through the normal query-link flow.
     await h.goto(base);
-    await h.getByPlaceholder("Mọi người gọi bạn là…").fill("Media host");
-    // Existing member join returns joined, never creates another room.
+
     await h
       .locator(".room-card")
       .filter({ hasText: created.room.title })
       .getByRole("button", { name: "Xin vào phòng" })
+      .click();
+    await h.getByPlaceholder("Mọi người gọi bạn là…").fill("Media host");
+    // Existing member join returns joined, never creates another room.
+
+    await h
+      .getByRole("dialog", { name: "Thông tin vào phòng", exact: true })
+      .getByRole("button", { name: "Xin vào phòng", exact: true })
       .click();
     const quick = h.getByRole("dialog", { name: "Thêm video để bắt đầu" });
     await quick.waitFor();
@@ -207,11 +213,17 @@ const base = "http://localhost:8787",
     );
     assert.equal((await cmd(h, { type: "accept", id: gid })).httpStatus, 200);
     await g.reload();
-    await g.getByPlaceholder("Mọi người gọi bạn là…").fill("Media guest");
+
     await g
       .locator(".room-card")
       .filter({ hasText: created.room.title })
       .getByRole("button", { name: "Xin vào phòng" })
+      .click();
+    await g.getByPlaceholder("Mọi người gọi bạn là…").fill("Media guest");
+
+    await g
+      .getByRole("dialog", { name: "Thông tin vào phòng", exact: true })
+      .getByRole("button", { name: "Xin vào phòng", exact: true })
       .click();
     await g
       .getByRole("button", {

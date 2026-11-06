@@ -137,6 +137,12 @@ function App() {
     offset = clock.offset;
   const [queueBusy, setQueueBusy] = useState(false);
   const [queueNotice, setQueueNotice] = useState("");
+  const [entry, setEntry] = useState<{ slot: number; create: boolean } | null>(
+    null,
+  );
+  const entryModal = useRef<HTMLElement>(null),
+    entryBusy = useRef(false);
+  const [seating, setSeating] = useState<"cinema" | "sofa">("cinema");
   const [avatar, setAvatar] = useState<"male" | "female">("male");
   const [previewSlot, setPreviewSlot] = useState(
     invitedSlot >= 1 && invitedSlot <= 3 ? invitedSlot : 1,
@@ -217,11 +223,17 @@ function App() {
     (room.current || room.queue.length)
   );
   const dismissApproval = useMemo(() => () => setApprovalDismissed(true), []);
+  const dismissEntry = useMemo(
+    () => () => {
+      if (!entryBusy.current) setEntry(null);
+    },
+    [],
+  );
   // One lifecycle restores the old modal before isolating the next one.
   useModalFocus(
-    quickActive ? quickModal : approval,
-    quickActive || approvalActive,
-    quickActive ? undefined : dismissApproval,
+    entry ? entryModal : quickActive ? quickModal : approval,
+    !!entry || quickActive || approvalActive,
+    entry ? dismissEntry : quickActive ? undefined : dismissApproval,
   );
   const speech = useChatSpeech(room, tts);
   const [busy, setBusy] = useState(false);
@@ -410,6 +422,7 @@ function App() {
       return;
     }
     setBusy(true);
+    entryBusy.current = true;
     setError("");
     setYaw(0);
     setPitch(0);
@@ -427,16 +440,18 @@ function App() {
           Date.now(),
           avatar,
           visibility,
+          seating,
         );
         apply(r, id, { type: "sit" }, Date.now());
         setRoom(r);
         setStatus("joined");
+        setEntry(null);
         setSlot(n);
       } else {
         const v = await api(
           `/rooms/${n}/${create ? "create" : "join"}`,
           create
-            ? { name, title, capacity, avatar, visibility }
+            ? { name, title, capacity, avatar, visibility, seating }
             : {
                 name,
                 avatar,
@@ -449,12 +464,14 @@ function App() {
               },
         );
         receive(v);
+        setEntry(null);
         setSlot(n);
       }
     } catch (e) {
       report(e);
     } finally {
       setBusy(false);
+      entryBusy.current = false;
     }
   }
   async function sendChat(c: Extract<Command, { type: "chat" }>) {
@@ -847,77 +864,139 @@ function App() {
               </div>
             </section>
             <p className="lobby-instruction">
-              Bạn đang khám phá phòng 0{previewSlot}. Nhập tên rồi chọn Tạo
-              phòng hoặc Xin vào phòng bên dưới.
+              Bạn đang khám phá phòng 0{previewSlot}. Chọn một phòng để tiếp
+              tục; thông tin được nhập ở bước sau.
             </p>
-            <fieldset className="avatar-choice">
-              <legend>Chọn nhân vật của bạn</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="avatar"
-                  value="male"
-                  checked={avatar === "male"}
-                  onChange={() => setAvatar("male")}
-                />{" "}
-                Nam · Knight
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="avatar"
-                  value="female"
-                  checked={avatar === "female"}
-                  onChange={() => setAvatar("female")}
-                />{" "}
-                Nữ · Mage
-              </label>
-              <small>Bạn bè sẽ thấy nhân vật này trong phòng.</small>
-            </fieldset>
-            <section className="setup panel">
-              <label>
-                Tên của bạn
-                <input
-                  maxLength={32}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Mọi người gọi bạn là…"
-                />
-              </label>
-              <label>
-                Tên phòng mới
-                <input
-                  maxLength={32}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </label>
-              <label>
-                Quyền riêng tư
-                <select
-                  value={visibility}
-                  onChange={(e) =>
-                    setVisibility(e.target.value as "public" | "private")
+            {entry && (
+              <div className="approval-backdrop">
+                <section
+                  ref={entryModal}
+                  tabIndex={-1}
+                  className="approval-modal entry-modal panel"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={
+                    entry.create ? "Tạo phòng mới" : "Thông tin vào phòng"
                   }
                 >
-                  <option value="public">Công khai</option>
-                  <option value="private">Riêng tư</option>
-                </select>
-              </label>
-              <label>
-                Số ghế
-                <select
-                  value={capacity}
-                  onChange={(e) => setCapacity(Number(e.target.value))}
-                >
-                  {Array.from({ length: 9 }, (_, i) => (
-                    <option key={i} value={i + 2}>
-                      {i + 2} ghế
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </section>
+                  <h2>
+                    {entry.create
+                      ? "Tạo góc xem của bạn"
+                      : "Vào phòng 0" + entry.slot}
+                  </h2>
+                  <p>
+                    {entry.create
+                      ? "Chọn nhân vật và bố cục cho buổi xem."
+                      : "Chỉ cần tên và nhân vật. Chủ phòng sẽ duyệt yêu cầu của bạn."}
+                  </p>
+                  <fieldset className="avatar-choice">
+                    <legend>Chọn nhân vật của bạn</legend>
+                    <label>
+                      <input
+                        type="radio"
+                        name="avatar"
+                        value="male"
+                        checked={avatar === "male"}
+                        onChange={() => setAvatar("male")}
+                      />{" "}
+                      Nam · Barbarian
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="avatar"
+                        value="female"
+                        checked={avatar === "female"}
+                        onChange={() => setAvatar("female")}
+                      />{" "}
+                      Nữ · Rogue
+                    </label>
+                    <small>Bạn bè sẽ thấy nhân vật này trong phòng.</small>
+                  </fieldset>
+                  <section className="setup panel">
+                    <label>
+                      Tên của bạn
+                      <input
+                        maxLength={32}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Mọi người gọi bạn là…"
+                      />
+                    </label>
+                    {entry.create && (
+                      <>
+                        <label>
+                          Tên phòng mới
+                          <input
+                            maxLength={32}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                          />
+                        </label>
+                        <label>
+                          Quyền riêng tư
+                          <select
+                            value={visibility}
+                            onChange={(e) =>
+                              setVisibility(
+                                e.target.value as "public" | "private",
+                              )
+                            }
+                          >
+                            <option value="public">Công khai</option>
+                            <option value="private">Riêng tư</option>
+                          </select>
+                        </label>
+                        <label>
+                          Số ghế
+                          <select
+                            value={capacity}
+                            onChange={(e) =>
+                              setCapacity(Number(e.target.value))
+                            }
+                          >
+                            {Array.from({ length: 9 }, (_, i) => (
+                              <option key={i} value={i + 2}>
+                                {i + 2} ghế
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          Kiểu chỗ ngồi
+                          <select
+                            value={seating}
+                            onChange={(e) =>
+                              setSeating(e.target.value as "cinema" | "sofa")
+                            }
+                          >
+                            <option value="cinema">Ghế rạp riêng</option>
+                            <option value="sofa">Sofa ngồi chung</option>
+                          </select>
+                        </label>
+                      </>
+                    )}
+                  </section>
+                  {error && <p role="alert">{error}</p>}
+                  <div className="actions">
+                    <button onClick={() => setEntry(null)} disabled={busy}>
+                      Quay lại
+                    </button>
+                    <button
+                      className="primary"
+                      disabled={busy || !name.trim()}
+                      onClick={() => void enter(entry.slot, entry.create)}
+                    >
+                      {busy
+                        ? "Đang xử lý…"
+                        : entry.create
+                          ? "Tạo phòng"
+                          : "Xin vào phòng"}
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )}
             <div className="section-title">
               <h2>Chọn phòng của bạn</h2>
               <span>03 PHÒNG · DUYỆT TRƯỚC KHI VÀO</span>
@@ -978,7 +1057,11 @@ function App() {
                       <button
                         className="primary wide"
                         disabled={busy || !id}
-                        onClick={() => void enter(s.slot, !s.open)}
+                        onClick={() => {
+                          setPreviewSlot(s.slot);
+                          setError("");
+                          setEntry({ slot: s.slot, create: !s.open });
+                        }}
                       >
                         {s.open
                           ? s.private
@@ -1109,6 +1192,11 @@ function App() {
                   {host ? "BẠN LÀ CHỦ PHÒNG" : "BUỔI CHIẾU CHUNG"}
                 </p>
                 <h1>{room.title}</h1>
+                <p className="muted">
+                  {room.seating === "sofa" ? "Sofa ngồi chung" : "Ghế rạp"} ·
+                  Premium của chủ phòng không chia sẻ quyền bỏ quảng cáo cho
+                  thành viên khác.
+                </p>
               </div>
               {!room.host && (
                 <p className="muted">
@@ -1307,61 +1395,74 @@ function App() {
                       role="group"
                       aria-label="Góc nhìn và hành động"
                     >
-                      <button
-                        aria-pressed={camera === "first"}
-                        className={camera === "first" ? "selected" : ""}
-                        onClick={() => setCamera("first")}
+                      <div
+                        className="camera-presets"
+                        role="group"
+                        aria-label="Chọn góc nhìn"
                       >
-                        Mắt người
-                      </button>
-                      <button
-                        aria-pressed={camera === "third"}
-                        className={camera === "third" ? "selected" : ""}
-                        onClick={() => setCamera("third")}
+                        <button
+                          title="Góc nhìn từ chỗ ngồi"
+                          aria-pressed={camera === "first"}
+                          className={camera === "first" ? "selected" : ""}
+                          onClick={() => setCamera("first")}
+                        >
+                          Mắt người
+                        </button>
+                        <button
+                          aria-pressed={camera === "third"}
+                          className={camera === "third" ? "selected" : ""}
+                          onClick={() => setCamera("third")}
+                        >
+                          Toàn cảnh
+                        </button>
+                        <button
+                          aria-pressed={camera === "shoulder"}
+                          className={camera === "shoulder" ? "selected" : ""}
+                          onClick={() => setCamera("shoulder")}
+                        >
+                          Sau vai
+                        </button>
+                        <button
+                          aria-pressed={camera === "side"}
+                          className={camera === "side" ? "selected" : ""}
+                          onClick={() => setCamera("side")}
+                        >
+                          Giao lưu
+                        </button>
+                      </div>
+                      <div
+                        className="avatar-actions"
+                        role="group"
+                        aria-label="Hành động nhân vật"
                       >
-                        Trên cao · sau nhân vật
-                      </button>
-                      <button
-                        aria-pressed={camera === "shoulder"}
-                        className={camera === "shoulder" ? "selected" : ""}
-                        onClick={() => setCamera("shoulder")}
-                      >
-                        Sau vai
-                      </button>
-                      <button
-                        aria-pressed={camera === "side"}
-                        className={camera === "side" ? "selected" : ""}
-                        onClick={() => setCamera("side")}
-                      >
-                        Góc giao lưu
-                      </button>
-                      <button
-                        onClick={() =>
-                          void command({ type: "sit", instant: true })
-                        }
-                      >
-                        Ngồi ngay
-                      </button>
-                      <button onClick={() => void command({ type: "wave" })}>
-                        Vẫy tay
-                      </button>
-                      <button onClick={resetView}>Nhìn màn chiếu</button>
-                      <button
-                        aria-pressed={bodyYaw === 180}
-                        onClick={() => {
-                          setBodyYaw((v) => (v === 0 ? 180 : 0));
-                          setYaw(0);
-                          setPitch(0);
-                        }}
-                      >
-                        Ngoái ra sau
-                      </button>
-                      <button
-                        aria-pressed={light}
-                        onClick={() => setLight((v) => !v)}
-                      >
-                        {light ? "Bật 3D" : "Chế độ nhẹ"}
-                      </button>
+                        <button
+                          onClick={() =>
+                            void command({ type: "sit", instant: true })
+                          }
+                        >
+                          Ngồi ngay
+                        </button>
+                        <button onClick={() => void command({ type: "wave" })}>
+                          Vẫy tay
+                        </button>
+                        <button onClick={resetView}>Nhìn màn chiếu</button>
+                        <button
+                          aria-pressed={bodyYaw === 180}
+                          onClick={() => {
+                            setBodyYaw((v) => (v === 0 ? 180 : 0));
+                            setYaw(0);
+                            setPitch(0);
+                          }}
+                        >
+                          Ngoái ra sau
+                        </button>
+                        <button
+                          aria-pressed={light}
+                          onClick={() => setLight((v) => !v)}
+                        >
+                          {light ? "Bật 3D" : "Chế độ nhẹ"}
+                        </button>
+                      </div>
                     </div>
                     <HeadPad onTurn={turn} />
                     <small className="head-help">

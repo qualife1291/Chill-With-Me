@@ -28,8 +28,8 @@ const output = resolve(
 );
 await mkdir(output, { recursive: true });
 const sources = {
-  Knight: "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
-  Mage: "cf898585da33fab50c724d31605fb931eb2912e6d2280092141e98ca81ad507d",
+  Barbarian: "cefc311a0e10c7858b6141f5ada7e33268727564fb8ac1347aab97d000669cc6",
+  Rogue: "e825437cd4d2ee9c1960b517a74a69101e33eb409ae7fa8cedc7134a998fbb7d",
 };
 for (const [name, expected] of Object.entries(sources)) {
   const bytes = await readFile(resolve(input, name + ".glb"));
@@ -61,7 +61,7 @@ for (const [name, expected] of Object.entries(sources)) {
       n.setMesh(null);
   await doc.transform(resample(), dedup(), weld(), quantize(), prune());
   const optimized = await io.writeBinary(doc);
-  const filename = name === "Knight" ? "male.glb" : "female.glb";
+  const filename = name === "Barbarian" ? "male.glb" : "female.glb";
   await writeFile(resolve(output, filename), optimized);
   console.log(
     JSON.stringify({

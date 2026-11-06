@@ -40,11 +40,17 @@ const assert = require("node:assert/strict");
     session = created.data.room?.session;
     assert.equal(created.httpStatus, 200);
     await h.reload();
-    await h.getByPlaceholder("Mọi người gọi bạn là…").fill("Renderer host");
+
     await h
       .locator(".room-card")
       .filter({ hasText: created.data.room.title })
       .getByRole("button", { name: "Xin vào phòng" })
+      .click();
+    await h.getByPlaceholder("Mọi người gọi bạn là…").fill("Renderer host");
+
+    await h
+      .getByRole("dialog", { name: "Thông tin vào phòng", exact: true })
+      .getByRole("button", { name: "Xin vào phòng", exact: true })
       .click();
     // No media/network fixture required to load ten rigs: leave the mandatory start modal open.
     for (let i = 0; i < 9; i++) {

@@ -1,3 +1,4 @@
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import React, {
   Suspense,
@@ -228,36 +229,75 @@ function Avatar(props: React.ComponentProps<typeof ModelAvatar>) {
     </ModelBoundary>
   );
 }
+function Cushion({
+  width,
+  height,
+  depth,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+}) {
+  const geometry = useMemo(
+    () =>
+      new RoundedBoxGeometry(
+        width,
+        height,
+        depth,
+        2,
+        Math.min(height, width, depth) * 0.25,
+      ),
+    [width, height, depth],
+  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return <primitive object={geometry} attach="geometry" />;
+}
 function Chair({
   x,
   y,
   z,
   occupied,
+  sofa = false,
+  left = true,
+  right = true,
 }: {
   x: number;
   y: number;
   z: number;
   occupied: boolean;
+  sofa?: boolean;
+  left?: boolean;
+  right?: boolean;
 }) {
   return (
     <group position={[x, y, z]}>
       <mesh position={[0, 0.42, 0]}>
-        <boxGeometry args={[0.76, 0.18, 0.66]} />
+        {sofa ? (
+          <Cushion width={1.05} height={0.18} depth={0.8} />
+        ) : (
+          <boxGeometry args={[0.76, 0.18, 0.66]} />
+        )}
         <meshStandardMaterial
           color={occupied ? "#a54151" : "#652838"}
           roughness={0.9}
         />
       </mesh>
       <mesh position={[0, 0.79, 0.28]} rotation={[-0.08, 0, 0]}>
-        <boxGeometry args={[0.76, 0.62, 0.18]} />
+        {sofa ? (
+          <Cushion width={1.05} height={0.62} depth={0.18} />
+        ) : (
+          <boxGeometry args={[0.76, 0.62, 0.18]} />
+        )}
         <meshStandardMaterial color="#7d3042" roughness={0.95} />
       </mesh>
-      {[-0.44, 0.44].map((x) => (
-        <mesh key={x} position={[x, 0.65, 0]}>
-          <boxGeometry args={[0.12, 0.16, 0.8]} />
-          <meshStandardMaterial color="#272932" />
-        </mesh>
-      ))}
+      {[-0.44, 0.44]
+        .filter((x) => !sofa || (x < 0 ? left : right))
+        .map((x) => (
+          <mesh key={x} position={[x, 0.65, 0]}>
+            <boxGeometry args={[0.12, 0.16, 0.8]} />
+            <meshStandardMaterial color="#272932" />
+          </mesh>
+        ))}
       <mesh position={[0, 0.16, 0]}>
         <boxGeometry args={[0.5, 0.32, 0.4]} />
         <meshStandardMaterial color="#191c24" />
@@ -647,6 +687,25 @@ export default function Cinema({
           key={s.id}
           {...s}
           occupied={room.members.some((m) => m.seat === s.id)}
+          sofa={room.seating === "sofa"}
+          left={
+            !layout.some(
+              (other) =>
+                other.id !== s.id &&
+                other.y === s.y &&
+                Math.abs(other.z - s.z) < 0.01 &&
+                Math.abs(other.x - (s.x - 1.05)) < 0.01,
+            )
+          }
+          right={
+            !layout.some(
+              (other) =>
+                other.id !== s.id &&
+                other.y === s.y &&
+                Math.abs(other.z - s.z) < 0.01 &&
+                Math.abs(other.x - (s.x + 1.05)) < 0.01,
+            )
+          }
         />
       ))}
       {[-0.6, 0.6].map((x) => (

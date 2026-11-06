@@ -304,3 +304,14 @@ test("clock samples expire, storage is bounded, and a new room resets all timing
   clock.reset();
   assert.equal(clock.now(80000, 1234), 1234);
 });
+
+test("seating layouts preserve capacity/anchors with safe legacy defaults", () => {
+  const cinema = createRoom("h", "H", "Cinema", 6, 0);
+  const sofa = createRoom("h", "H", "Sofa", 6, 0, "male", "public", "sofa");
+  assert.equal(cinema.seating, "cinema");
+  assert.equal(sofa.seating, "sofa");
+  requestJoin(sofa, "g", "G", 1);
+  apply(sofa, "h", { type: "accept", id: "g" }, 2);
+  assert.equal(view(sofa, "g").room?.seating, "sofa");
+  assert.equal(sofa.members[1].seat, 1);
+});

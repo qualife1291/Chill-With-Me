@@ -46,6 +46,7 @@ const base = "http://localhost:8787",
       );
       await p.goto(base);
     }
+    assert.equal(await h.getByPlaceholder("Mọi người gọi bạn là…").count(), 0);
     const rooms = (await api(h, "/rooms")).data;
     assert(!rooms.find((r) => r.slot === slot).open);
     await h.evaluate(() =>
@@ -57,16 +58,27 @@ const base = "http://localhost:8787",
         },
       }),
     );
-    await h.getByPlaceholder("Mọi người gọi bạn là…").fill("Private host");
-    await h.getByLabel("Tên phòng mới").fill("Do not disclose " + Date.now());
-    await h.getByLabel("Quyền riêng tư").selectOption("private");
-    await h.getByLabel("Số ghế").selectOption("4");
+
     await h
       .locator(".room-card")
       .nth(slot - 1)
       .getByRole("button", { name: "Tạo phòng" })
       .click();
+    await h.getByPlaceholder("Mọi người gọi bạn là…").fill("Private host");
+    await h.getByLabel("Tên phòng mới").fill("Do not disclose " + Date.now());
+    await h.getByLabel("Quyền riêng tư").selectOption("private");
+    await h.getByLabel("Số ghế").selectOption("4");
+    await h.getByLabel("Kiểu chỗ ngồi").selectOption("sofa");
+
+    await h
+      .getByRole("dialog", { name: "Tạo phòng mới", exact: true })
+      .getByRole("button", { name: "Tạo phòng", exact: true })
+      .click();
     const state = (await api(h, `/rooms/${slot}/state`)).data.room;
+    assert.equal(state.seating, "sofa");
+    checks.push(
+      "home defers profile entry until room selection; sofa is persisted at creation",
+    );
     epoch = state.session;
     const key = state.inviteKey;
     assert(key);
@@ -141,11 +153,17 @@ const base = "http://localhost:8787",
       seen.push({ url: r.url(), referer: r.headers().referer || "" }),
     );
     await g.goto(`${base}/?room=${slot}&session=${epoch}#invite=${key}`);
-    await g.getByPlaceholder("Mọi người gọi bạn là…").fill("Private guest");
+
     await g
       .locator(".room-card")
       .filter({ hasText: "Phòng riêng tư" })
       .getByRole("button", { name: "Vào phòng riêng" })
+      .click();
+    await g.getByPlaceholder("Mọi người gọi bạn là…").fill("Private guest");
+
+    await g
+      .getByRole("dialog", { name: "Thông tin vào phòng", exact: true })
+      .getByRole("button", { name: "Xin vào phòng", exact: true })
       .click();
     assert.equal((await api(g, `/rooms/${slot}/state`)).data.status, "pending");
     assert(!seen.some((r) => r.url.includes(key) || r.referer.includes(key)));
@@ -159,6 +177,7 @@ const base = "http://localhost:8787",
     await g.waitForFunction(() => window.__yt?.video === "jfKfPfyJRdk");
     const guestState = (await api(g, `/rooms/${slot}/state`)).data.room;
     assert(!("inviteKey" in guestState));
+    assert.equal(guestState.seating, "sofa");
     await panel(g, "Thông tin");
     assert(
       await g
@@ -333,11 +352,17 @@ const base = "http://localhost:8787",
         };
       });
       await resume.goto(`${base}/?room=${slot}`);
+
+      await resume
+        .getByRole("button", { name: "Vào phòng riêng", exact: true })
+        .click();
       await resume
         .getByPlaceholder("Mọi người gọi bạn là…")
         .fill("Resume host");
+
       await resume
-        .getByRole("button", { name: "Vào phòng riêng", exact: true })
+        .getByRole("dialog", { name: "Thông tin vào phòng", exact: true })
+        .getByRole("button", { name: "Xin vào phòng", exact: true })
         .click();
       await resume.waitForFunction(() => !!window.__yt?.video);
       const actual = await resume.evaluate(() => window.__yt.getCurrentTime());

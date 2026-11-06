@@ -1,6 +1,7 @@
 {
   "passed": true,
   "checks": [
+    "home defers profile entry until room selection; sofa is persisted at creation",
     "private lobby/state hide title, capacity, member count, epoch and capability",
     "bulk start textarea participates in modal keyboard loop",
     "invalid batch retains input and cannot partially publish",

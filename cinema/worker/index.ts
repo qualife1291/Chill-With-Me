@@ -9,6 +9,7 @@ import { DurableObject } from "cloudflare:workers";
 import {
   apply,
   visibilitySchema,
+  seatingSchema,
   roomSummary,
   avatarSchema,
   connectMember,
@@ -32,6 +33,7 @@ const createSchema = joinSchema.extend({
   title: z.string().trim().min(1).max(32),
   capacity: z.number().int().min(2).max(10),
   visibility: visibilitySchema.default("public"),
+  seating: seatingSchema.default("cinema"),
 });
 const error = (code: string, status = 400) =>
   Response.json(
@@ -200,6 +202,7 @@ export class RoomSlot extends DurableObject<Env> {
             now,
             c.avatar,
             c.visibility,
+            c.seating,
           );
           this.save(r);
           this.schedule();

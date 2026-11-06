@@ -1,6 +1,6 @@
 # Nguồn file đồ họa cho rạp3D — khảo sát02/11/2026
 
-Đã đối chiếu trang gói/tác giả và license công bố. **Chưa tải ZIP, giải nén, kiểm tra file license bên trong hoặc chạy model trong Three.js.** Dung lượng dưới đây là gói tải theo trang, không phải dung lượng asset tối ưu cuối cùng. Không có asset trả phí được mua.
+Model đang tích hợp: Barbarian/Rogue CC0, nguồn/hash tại `cinema/public/models/manifest.json`; đã tối ưu và kiểm tra trong trình duyệt. Các bảng khảo sát bên dưới là ứng viên lịch sử: chưa tải/kiểm tra ZIP của các ứng viên đó. Đã đối chiếu trang gói/tác giả và license công bố. Dung lượng dưới đây là gói tải theo trang, không phải dung lượng asset tối ưu cuối cùng. Không có asset trả phí được mua.
 
 ## Bộ đề xuất cho dự án
 
@@ -70,3 +70,7 @@ Có danh sách nguồn cụ thể và lựa chọn ưu tiên; **chưa tải file
 Đã mở lại trang tác giả Quaternius: [Universal Base Characters](https://quaternius.com/packs/universalbasecharacters.html) công bố 6 base nam/nữ theo ba tỷ lệ cơ thể, định dạng FBX/OBJ/Blend/glTF, CC0. [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) công bố hơn 120 animation humanoid, FBX/GLB/Blend, CC0. Hai trang có cả lựa chọn mở rộng/tài trợ; chỉ license đi kèm file tải cụ thể mới xác lập quyền cho file đó.
 
 Ưu tiên thử base Regular nam/nữ thay phong cách Knight/Mage cho bối cảnh xem phim. Chưa tải/retarget/benchmark các file mới nên chưa kết luận đẹp hoặc nhẹ hơn bản KayKit đang dùng (khoảng 333–342 KB/model). Điều kiện thay: license/hash đi kèm, rig đầu và tay đúng, walk/sit/wave không lỗi, kiểm thử 10 skeleton độc lập và đo dung lượng/GPU. Không coi shortlist là model đã tích hợp.
+
+## Model thay thế đã tích hợp · 06/11/2026
+
+Nam: Barbarian; nữ: Rogue không hood, từ cùng pack KayKit CC0 và commit đã pin trong manifest. File tải đã đối chiếu Git blob SHA của tree nguồn; source SHA-256 và output SHA-256 ghi lại trong manifest. Giữ rig/idle/walk/sit/cheer, bỏ accessories và tối ưu geometry/animation bằng tool ngoài app. Kết quả 331.576/339.052 byte; tổng nhỏ hơn bộ Knight/Mage cũ khoảng 3,9 KB. Đây là số đo dung lượng, không phải bằng chứng FPS cao hơn. Model Quaternius thường phục vẫn là ứng viên retarget riêng.

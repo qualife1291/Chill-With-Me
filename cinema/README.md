@@ -12,6 +12,8 @@ npm run build
 npm run serve -- --local --ip 127.0.0.1 --port 8787
 ```
 
+Home asks for a profile only after selecting create/join. Hosts choose cinema chairs or shared sofa seating at creation; all members receive the same layout, with unchanged capacity/seat anchors.
+
 Use separate browser profiles for separate members. `/?demo` is a local simulation. Optional Vite HMR: `npm run dev` while Wrangler supplies the API. Never run room mutation tests on production.
 
 ## Verify
@@ -91,3 +93,5 @@ KayKit GLB provenance/checksums/license: `public/models/manifest.json`. The offl
 ## Limits of evidence
 
 UI tests mock YouTube/device speech. Native tests decode generated WebM, MP3 and H.264 MOV, compare transferred bytes and exercise play/pause/seek/ended, speech-volume duck/restore and DB/Blob cleanup. Managed Chromium blocks non-proxied UDP, so relay delivery is verified separately from WebRTC/WAN connectivity. Ten SwiftShader avatars and 30 backend sockets do not certify device FPS, thermal behavior, WAN drift or sustained media quota. Actual iOS/Android YouTube ads/autoplay, touch, voice quality, production eviction/rollback/privacy operations and full voice-provider gates remain open.
+
+YouTube Premium is not shared through the host video URL. See [official-source findings](../docs/YOUTUBE_PREMIUM.md); each iframe/viewer needs its own eligible signed-in account, and ads can cause drift.
