@@ -1,3 +1,4 @@
+import PlaybackReadiness from "./PlaybackReadiness";
 import InvitationControls from "./InvitationControls";
 import PlaylistImport from "./PlaylistImport";
 import { useRoomClock } from "./useRoomClock";
@@ -70,6 +71,8 @@ const errors: Record<string, string> = {
   IMPORT_TOO_LARGE: "Danh sách tối đa 16 KB.",
   IMPORT_TOO_MANY: "Mỗi lần nhập tối đa 20 link.",
   INVITE_EXPIRED: "Phiên phòng trong link mời đã kết thúc. Hãy xin link mới.",
+  ROOM_WAITING:
+    "Có thành viên đang quảng cáo hoặc tải video. Hãy chờ hoặc dùng nút tiếp tục dù còn người chờ.",
   ROOM_FULL: "Phòng đã đủ chỗ.",
   TARGET_OFFLINE: "Người nhận quyền cần đang kết nối.",
   MEMBERSHIP_EXPIRED: "Chỗ giữ đã hết hạn. Hãy xin vào lại.",
@@ -543,7 +546,18 @@ function App() {
         const send = async () => {
           receive(await api(`/rooms/${slot}/command`, envelope));
         };
-        if (["seek", "play", "pause", "next", "start"].includes(c.type)) {
+        if (
+          [
+            "seek",
+            "play",
+            "pause",
+            "next",
+            "start",
+            "wait",
+            "ready",
+            "resume",
+          ].includes(c.type)
+        ) {
           const pending = controlQueue.current.catch(() => {}).then(send);
           controlQueue.current = pending;
           await pending;
@@ -1172,6 +1186,11 @@ function App() {
               >
                 <Maximize size={18} aria-hidden="true" />
               </button>
+              <PlaybackReadiness
+                room={room}
+                id={id}
+                onCommand={(c) => command(c)}
+              />
             </nav>
             <div
               className="room-heading"
@@ -1243,6 +1262,7 @@ function App() {
             <div className="theater-layout">
               <div className="stage-column">
                 {speech.warning && <p role="status">{speech.warning}</p>}
+
                 <div className="transport">
                   <span className="muted">
                     {room.playing ? "Đang chiếu" : "Đang nghỉ"} · Chỉ chủ phòng

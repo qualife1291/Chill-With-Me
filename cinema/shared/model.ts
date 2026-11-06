@@ -93,6 +93,9 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("next"), generation: z.number().int() }),
   z.object({ type: z.literal("play"), generation: z.number().int() }),
   z.object({ type: z.literal("pause"), generation: z.number().int() }),
+  z.object({ type: z.literal("wait"), generation: z.number().int() }),
+  z.object({ type: z.literal("ready"), generation: z.number().int() }),
+  z.object({ type: z.literal("resume"), generation: z.number().int() }),
   z.object({
     type: z.literal("seek"),
     generation: z.number().int(),
@@ -146,6 +149,8 @@ export type Room = {
   current: Item | null;
   generation: number;
   queueEndedAt?: number;
+  waiting?: string[];
+  readinessPaused?: boolean;
   playing: boolean;
   position: number;
   anchor: number;
@@ -279,9 +284,17 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   const member = r.members.find((m) => m.id === actor);
   if (!member) throw Error("FORBIDDEN");
   if (
-    !["chat", "sit", "leave", "ping", "look", "wave", "suggest"].includes(
-      c.type,
-    ) &&
+    ![
+      "chat",
+      "sit",
+      "leave",
+      "ping",
+      "look",
+      "wave",
+      "suggest",
+      "wait",
+      "ready",
+    ].includes(c.type) &&
     actor !== r.host
   )
     throw Error("HOST_ONLY");
@@ -292,6 +305,31 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   const bumpQueue = () => {
     r.queueRevision = (r.queueRevision || 0) + 1;
   };
+  if (c.type === "wait" || c.type === "ready" || c.type === "resume") {
+    if (c.generation !== r.generation) throw Error("STALE_GENERATION");
+    if (!r.current) throw Error("NO_VIDEO");
+    const waiting = (r.waiting || []).filter((id) =>
+      r.members.some((m) => m.id === id),
+    );
+    if (c.type === "wait") {
+      if (waiting.includes(actor)) return;
+      r.waiting = [...waiting, actor];
+      r.readinessPaused = true;
+      r.position = target(r, now);
+      r.anchor = now;
+      r.playing = false;
+    } else if (c.type === "ready")
+      r.waiting = waiting.filter((id) => id !== actor);
+    else {
+      r.waiting = [];
+      delete r.readinessPaused;
+      r.position = target(r, now);
+      r.anchor = now;
+      r.playing = true;
+    }
+    r.revision++;
+    return;
+  }
   if (c.type === "ping") return;
   if (c.type === "chat") {
     r.messages.push({
@@ -501,6 +539,8 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     bumpQueue();
   } else if (c.type === "next") {
     if (c.generation !== r.generation) throw Error("STALE_GENERATION");
+    r.waiting = [];
+    delete r.readinessPaused;
     const previous = r.current;
     r.current = r.queue.shift() || null;
     bumpQueue();
@@ -514,11 +554,17 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     if (!("generation" in c) || c.generation !== r.generation)
       throw Error("STALE_GENERATION");
     if (!r.current) throw Error("NO_VIDEO");
+    if (c.type === "play" && r.waiting?.length) throw Error("ROOM_WAITING");
     r.position = c.type === "seek" ? c.position : target(r, now);
     r.anchor = now;
-    if (c.type === "play") r.playing = true;
+    if (c.type === "play") {
+      r.playing = true;
+      delete r.readinessPaused;
+    }
     if (c.type === "pause") r.playing = false;
   }
+  if (r.waiting)
+    r.waiting = r.waiting.filter((id) => r.members.some((m) => m.id === id));
   r.revision++;
 }
 export function roomSummary(r: Room | null) {
@@ -605,6 +651,8 @@ export function sweep(r: Room, now: number) {
   );
   if (expired.length) {
     r.members = r.members.filter((m) => !expired.includes(m));
+    if (r.waiting)
+      r.waiting = r.waiting.filter((id) => r.members.some((m) => m.id === id));
     r.suggestions = (r.suggestions || []).filter((s) =>
       r.members.some((m) => m.id === s.memberId),
     );

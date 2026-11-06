@@ -5,6 +5,7 @@
     "invalid local codec rejected before publish",
     "local file metadata and real host decode",
     "two isolated browser profiles transfer exact file bytes via bounded authenticated room relay (managed Chromium blocks WebRTC UDP)",
+    "viewer requests shared interruption, declares ready, and host resumes native playback",
     "native host pause replicates",
     "native host seek replicates",
     "native host play replicates",

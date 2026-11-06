@@ -122,7 +122,15 @@ export default function NativePlayer(props: PlayerProps) {
   function control(type: "play" | "pause" | "seek") {
     const p = latest.current,
       v = ref.current;
-    if (!v || !ready.current || !p.isHost || ended.current || v.ended) return;
+    if (
+      !v ||
+      !ready.current ||
+      !p.isHost ||
+      !!p.room.readinessPaused ||
+      ended.current ||
+      v.ended
+    )
+      return;
     if (
       !nativePending.current &&
       ((type === "play" && p.room.playing) ||
@@ -209,7 +217,7 @@ export default function NativePlayer(props: PlayerProps) {
             control("seek");
           }}
           onEnded={() => {
-            if (ended.current) return;
+            if (ended.current || latest.current.room.readinessPaused) return;
             ended.current = true;
             if (latest.current.isHost) latest.current.onEnded();
           }}

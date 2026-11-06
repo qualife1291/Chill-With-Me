@@ -119,6 +119,7 @@ function YouTubePlayerView({
               )
                 return;
               if (
+                !r.readinessPaused &&
                 e.data === 0 &&
                 p.getDuration() > 0 &&
                 p.getCurrentTime() >= p.getDuration() - 2 &&
@@ -139,7 +140,7 @@ function YouTubePlayerView({
                     type: "pause",
                     generation: r.generation,
                   });
-                if (e.data === 1 && !r.playing)
+                if (e.data === 1 && !r.playing && !r.readinessPaused)
                   latest.current.onControl({
                     type: "play",
                     generation: r.generation,
@@ -202,13 +203,21 @@ function YouTubePlayerView({
       if (!latest.current.isHost) sync();
     }, 5000);
     return () => clearInterval(t);
-  }, [ready, room.generation, room.playing, room.anchor]);
+  }, [
+    ready,
+    room.generation,
+    room.playing,
+    room.anchor,
+    room.readinessPaused,
+    room.waiting?.length,
+  ]);
   useEffect(() => {
     if (!ready) return;
     const t = setInterval(() => {
       const p = player.current,
         r = latest.current.room;
-      if (!p || !r.current || !latest.current.isHost) return;
+      if (!p || !r.current || !latest.current.isHost || r.readinessPaused)
+        return;
       if (
         p.getVideoData().video_id &&
         p.getVideoData().video_id !== r.current.videoId

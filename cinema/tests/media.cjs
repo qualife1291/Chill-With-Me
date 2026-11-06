@@ -275,6 +275,24 @@ const base = "http://localhost:8787",
     checks.push(
       "two isolated browser profiles transfer exact file bytes via bounded authenticated room relay (managed Chromium blocks WebRTC UDP)",
     );
+    await g.locator(".playback-readiness summary").click();
+    await g
+      .getByRole("button", { name: "Đang quảng cáo / tải video", exact: true })
+      .click();
+    await h
+      .getByRole("button", { name: "Tiếp tục dù còn người chờ", exact: true })
+      .waitFor();
+    await h.waitForFunction(
+      () => document.querySelector("video")?.paused === true,
+    );
+    await g.getByRole("button", { name: "Đã sẵn sàng", exact: true }).click();
+    await h
+      .getByRole("button", { name: "Tiếp tục cho cả phòng", exact: true })
+      .click();
+    await g.waitForFunction(() => !document.querySelector("video").paused);
+    checks.push(
+      "viewer requests shared interruption, declares ready, and host resumes native playback",
+    );
     await h.waitForTimeout(1000);
     await media(h).evaluate((v) => v.pause());
     await g.waitForFunction(

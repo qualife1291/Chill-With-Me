@@ -315,3 +315,47 @@ test("seating layouts preserve capacity/anchors with safe legacy defaults", () =
   assert.equal(view(sofa, "g").room?.seating, "sofa");
   assert.equal(sofa.members[1].seat, 1);
 });
+
+test("member readiness freezes the shared timeline; only host resumes and stale reports cannot stop the next item", () => {
+  const r = createRoom("h", "H", "R", 3, 0);
+  requestJoin(r, "g", "G", 0);
+  apply(r, "h", { type: "accept", id: "g" }, 0);
+  apply(
+    r,
+    "h",
+    { type: "start", url: "https://youtu.be/jfKfPfyJRdk", generation: 0 },
+    1000,
+  );
+  apply(r, "g", { type: "wait", generation: 1 }, 6000);
+  assert.equal(r.position, 5);
+  assert.equal(r.playing, false);
+  assert.equal(r.readinessPaused, true);
+  const anchor = r.anchor;
+  apply(r, "g", { type: "wait", generation: 1 }, 9000);
+  assert.equal(r.anchor, anchor);
+  assert.deepEqual(r.waiting, ["g"]);
+  assert.throws(
+    () => apply(r, "h", { type: "play", generation: 1 }, 10000),
+    /ROOM_WAITING/,
+  );
+  assert.throws(
+    () => apply(r, "g", { type: "resume", generation: 1 }, 10000),
+    /HOST_ONLY/,
+  );
+  apply(r, "g", { type: "ready", generation: 1 }, 11000);
+  assert.equal(r.playing, false);
+  assert.equal(r.readinessPaused, true);
+  apply(r, "h", { type: "resume", generation: 1 }, 12000);
+  assert.equal(r.position, 5);
+  assert.equal(r.playing, true);
+  assert.equal(r.anchor, 12000);
+  apply(r, "g", { type: "wait", generation: 1 }, 14000);
+  apply(r, "h", { type: "kick", id: "g" }, 15000);
+  assert.deepEqual(r.waiting, []);
+  apply(r, "h", { type: "next", generation: 1 }, 16000);
+  assert.throws(
+    () => apply(r, "h", { type: "wait", generation: 1 }, 16001),
+    /STALE_GENERATION/,
+  );
+  assert(!r.readinessPaused);
+});
