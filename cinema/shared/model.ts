@@ -22,6 +22,9 @@ export const fileMetadataSchema = z.object({
   size: z.number().int().min(1).max(MAX_LOCAL_BYTES),
   mime: z.enum(supportedMimes),
 });
+export const reactionSchema = z.enum(["flowers", "applause", "sad", "troll"]);
+export type ReactionKind = z.infer<typeof reactionSchema>;
+export const REACTION_MS = 3000;
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("chat"),
@@ -109,6 +112,7 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("sit"), instant: z.boolean().optional() }),
   z.object({ type: z.literal("ping") }),
   z.object({ type: z.literal("wave") }),
+  z.object({ type: z.literal("reaction"), kind: reactionSchema }),
   z.object({ type: z.literal("poke"), id: z.string().min(1).max(128) }),
 ]);
 export type Command = z.infer<typeof commandSchema>;
@@ -120,6 +124,7 @@ export type Member = {
   sitAt?: number;
   waveAt?: number;
   pokeAt?: number;
+  lastReactionAt?: number;
   pokedAt?: number;
   pokedBy?: string;
   avatar?: AvatarStyle;
@@ -170,8 +175,17 @@ export type Room = {
   playing: boolean;
   position: number;
   anchor: number;
+  reaction?: {
+    id: string;
+    kind: ReactionKind;
+    memberId: string;
+    name: string;
+    at: number;
+  };
   messages: {
     id: string;
+    senderId?: string;
+    at?: number;
     name: string;
     text: string;
     clientMessageId?: string;
@@ -321,6 +335,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       "look",
       "wave",
       "poke",
+      "reaction",
       "suggest",
       "wait",
       "ready",
@@ -366,6 +381,8 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       id: crypto.randomUUID(),
       name: member.name,
       text: c.text.normalize("NFC"),
+      senderId: actor,
+      at: now,
     });
     r.messages = r.messages.slice(-100);
   } else if (c.type === "suggest") {
@@ -471,6 +488,22 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   } else if (c.type === "wave") {
     if (member.waveAt !== undefined && now - member.waveAt < 2400) return;
     member.waveAt = now;
+  } else if (c.type === "reaction") {
+    if (r.reaction && now < r.reaction.at + REACTION_MS)
+      throw Error("REACTION_BUSY");
+    if (
+      member.lastReactionAt !== undefined &&
+      now - member.lastReactionAt < 5000
+    )
+      throw Error("REACTION_COOLDOWN");
+    member.lastReactionAt = now;
+    r.reaction = {
+      id: crypto.randomUUID(),
+      kind: c.kind,
+      memberId: actor,
+      name: member.name,
+      at: now,
+    };
   } else if (c.type === "poke") {
     const friend = r.members.find((m) => m.id === c.id && m.id !== actor);
     if (!friend) throw Error("INVALID_TARGET");
@@ -634,10 +667,12 @@ export function view(r: Room, id: string) {
     room: {
       ...publicRoom,
       ...(id === r.host && inviteKey ? { inviteKey } : {}),
-      members: r.members.map(({ connectionId, lastSuggestedAt, ...m }) => ({
-        ...m,
-        online: !!connectionId,
-      })),
+      members: r.members.map(
+        ({ connectionId, lastSuggestedAt, lastReactionAt, ...m }) => ({
+          ...m,
+          online: !!connectionId,
+        }),
+      ),
       banned: [],
       pending: id === r.host ? r.pending : [],
     },
@@ -679,6 +714,10 @@ export function disconnectMember(
 }
 export function sweep(r: Room, now: number) {
   const before = r.revision;
+  if (r.reaction && now >= r.reaction.at + REACTION_MS) {
+    delete r.reaction;
+    r.revision++;
+  }
   const pending = r.pending.filter((p) => p.at + 120000 > now);
   if (pending.length !== r.pending.length) {
     r.pending = pending;
@@ -722,6 +761,7 @@ export function sweep(r: Room, now: number) {
 export function nextDeadline(r: Room) {
   return Math.min(
     r.expires,
+    ...(r.reaction ? [r.reaction.at + REACTION_MS] : []),
     ...r.pending.map((p) => p.at + 120000),
     ...r.members.flatMap((m) => (m.deadline === undefined ? [] : [m.deadline])),
     ...(r.emptySince === undefined ? [] : [r.emptySince + 60000]),

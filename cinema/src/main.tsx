@@ -48,6 +48,8 @@ import {
   type Member,
 } from "../shared/model";
 import Player from "./Player";
+import RoomActivity from "./RoomActivity";
+import { useRoomSounds } from "./useRoomSounds";
 import { useChatSpeech } from "./useChatSpeech";
 import { useHeadDrag } from "./useHeadDrag";
 import "./style.css";
@@ -74,6 +76,8 @@ type Summary = {
   count?: number;
 };
 const errors: Record<string, string> = {
+  REACTION_BUSY: "Cảm xúc đang diễn ra. Đợi một chút nhé.",
+  REACTION_COOLDOWN: "Bạn chờ 5 giây giữa hai cảm xúc nhé.",
   INVITE_REQUIRED: "Phòng riêng cần link mời hợp lệ từ chủ phòng.",
   NOT_PRIVATE_ROOM: "Phòng này không dùng lời mời riêng.",
   IMPORT_TOO_LARGE: "Danh sách tối đa 16 KB.",
@@ -235,8 +239,7 @@ function App() {
   const approvalActive = !!(
     isHost &&
     room?.pending.length &&
-    !approvalDismissed &&
-    (room.current || room.queue.length)
+    !approvalDismissed
   );
   const dismissApproval = useMemo(() => () => setApprovalDismissed(true), []);
   const dismissEntry = useMemo(
@@ -247,11 +250,12 @@ function App() {
   );
   // One lifecycle restores the old modal before isolating the next one.
   useModalFocus(
-    entry ? entryModal : quickActive ? quickModal : approval,
+    entry ? entryModal : approvalActive ? approval : quickModal,
     !!entry || quickActive || approvalActive,
-    entry ? dismissEntry : quickActive ? undefined : dismissApproval,
+    entry ? dismissEntry : approvalActive ? dismissApproval : undefined,
   );
   const speech = useChatSpeech(room, tts);
+  const sounds = useRoomSounds();
   const [busy, setBusy] = useState(false);
   const report = (e: unknown) =>
     setError(
@@ -645,7 +649,7 @@ function App() {
   }, [room?.session]);
   useEffect(() => {
     setApprovalDismissed(false);
-  }, [room?.pending.length]);
+  }, [room?.session, room?.pending.map((p) => `${p.id}:${p.at}`).join(",")]);
   useEffect(() => {
     if (!room || status !== "joined") return;
     const timer = setTimeout(() => {
@@ -1241,6 +1245,24 @@ function App() {
         ) : room ? (
           <>
             {me && (
+              <RoomActivity
+                key={room.session}
+                room={room}
+                me={me}
+                offset={offset}
+                chatOpen={panel === "chat"}
+                playSound={sounds.play}
+                onOpenChat={() => {
+                  panelOpener.current =
+                    document.querySelector<HTMLButtonElement>(
+                      '.cinema-toolbar button[aria-label="Chat"]',
+                    );
+                  setPanel("chat");
+                  setTab("chat");
+                }}
+              />
+            )}
+            {me && (
               <aside className="session-badge" aria-label="Thông tin của bạn">
                 <span
                   className="session-initials"
@@ -1563,13 +1585,6 @@ function App() {
                         <RotateCcw size={18} aria-hidden="true" />
                       </button>
                     )}
-                  {me && (
-                    <PokeNotice
-                      member={me}
-                      members={room.members}
-                      offset={offset}
-                    />
-                  )}
                   <div className="scene-controls">
                     {me && (
                       <RoomControls
@@ -1588,12 +1603,14 @@ function App() {
                           viewOpener.current?.focus({ preventScroll: true });
                         }}
                         command={command}
+                        soundsEnabled={sounds.enabled}
+                        onToggleSounds={sounds.toggle}
                       />
                     )}
                   </div>
                 </section>
               </div>
-              {host && !room.current && room.queue.length === 0 && (
+              {quickActive && !approvalActive && (
                 <div className="approval-backdrop">
                   <section
                     className="approval-modal panel"
@@ -1698,47 +1715,47 @@ function App() {
                   </section>
                 </div>
               )}
-              {host &&
-                room.pending.length > 0 &&
-                !approvalDismissed &&
-                (room.current || room.queue.length > 0) && (
-                  <div className="approval-backdrop">
-                    <section
-                      className="approval-modal panel"
-                      ref={approval}
-                      role="dialog"
-                      aria-modal="true"
-                      aria-label="Yêu cầu vào phòng"
-                      tabIndex={-1}
-                    >
-                      <h2>Có bạn đang chờ vào rạp</h2>
-                      <p>Phim vẫn tiếp tục phát trong lúc bạn duyệt.</p>
-                      {room.pending.map((p) => (
-                        <div className="person" key={p.id}>
-                          <b>{p.name}</b>
-                          <button
-                            className="primary"
-                            onClick={() =>
-                              void command({ type: "accept", id: p.id })
-                            }
-                          >
-                            Cho vào
-                          </button>
-                          <button
-                            onClick={() =>
-                              void command({ type: "reject", id: p.id })
-                            }
-                          >
-                            Từ chối
-                          </button>
-                        </div>
-                      ))}
-                      <button onClick={() => setApprovalDismissed(true)}>
-                        Để sau
-                      </button>
-                    </section>
-                  </div>
-                )}
+              {host && room.pending.length > 0 && !approvalDismissed && (
+                <div className="approval-backdrop">
+                  <section
+                    className="approval-modal panel"
+                    ref={approval}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Yêu cầu vào phòng"
+                    tabIndex={-1}
+                  >
+                    <h2>Có bạn đang chờ vào rạp</h2>
+                    <p>
+                      Duyệt hoặc từ chối từng người. Video đang phát vẫn tiếp
+                      tục.
+                    </p>
+                    {room.pending.map((p) => (
+                      <div className="person" key={p.id}>
+                        <b>{p.name}</b>
+                        <button
+                          className="primary"
+                          onClick={() =>
+                            void command({ type: "accept", id: p.id })
+                          }
+                        >
+                          Cho vào
+                        </button>
+                        <button
+                          onClick={() =>
+                            void command({ type: "reject", id: p.id })
+                          }
+                        >
+                          Từ chối
+                        </button>
+                      </div>
+                    ))}
+                    <button onClick={() => setApprovalDismissed(true)}>
+                      Để sau
+                    </button>
+                  </section>
+                </div>
+              )}
               <aside
                 className="sidebar panel"
                 id="room-panel"
@@ -2287,28 +2304,3 @@ class SceneBoundary extends React.Component<
   }
 }
 createRoot(document.getElementById("root")!).render(<App />);
-
-function PokeNotice({
-  member,
-  members,
-  offset,
-}: {
-  member: Member;
-  members: Member[];
-  offset: number;
-}) {
-  const [active, setActive] = useState(false);
-  useEffect(() => {
-    const left = (member.pokedAt ?? -Infinity) + 3000 - (Date.now() + offset);
-    setActive(left > 0);
-    if (left <= 0) return;
-    const timer = setTimeout(() => setActive(false), left);
-    return () => clearTimeout(timer);
-  }, [member.pokedAt, offset]);
-  return active ? (
-    <div className="poke-notice" role="status">
-      {members.find((m) => m.id === member.pokedBy)?.name || "Một người bạn"}{" "}
-      vừa chọc bạn 👋
-    </div>
-  ) : null;
-}

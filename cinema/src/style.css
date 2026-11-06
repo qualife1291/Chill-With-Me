@@ -1762,3 +1762,26 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 @media(max-height:480px) { .session-badge {display:none;} .cinema-app.with-chat .sidebar {width:260px;height:calc(100dvh - 24px);} .cinema-app.with-chat.show-controls .room-controls {max-height:calc(100dvh - 90px);} }
 /* Identity is informational; dragging/clicking the scene passes through it. */
 .session-badge { pointer-events:none; }
+
+/* Room activity stays above the scene without blocking video/camera input. */
+.chat-toasts { position:fixed; right:16px; bottom:16px; z-index:20; width:min(320px,calc(100vw - 32px)); display:grid; gap:8px; }
+.chat-toast { display:flex; border:1px solid #dbc49d50; border-radius:16px; background:#302d24f2; box-shadow:0 8px 30px #0005; overflow:hidden; }
+.chat-toast > button:first-child { display:grid; text-align:left; gap:5px; min-width:0; flex:1; padding:12px 14px; border:0; background:transparent; }
+.chat-toast strong { color:#edc88c; font-size:12px; }
+.chat-toast span { color:#f4eedf; font-size:13px; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.chat-toast .toast-dismiss { align-self:start; border:0; background:transparent; min-width:44px; min-height:44px; }
+.reaction-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.reaction-actions button { display:flex; gap:6px; align-items:center; justify-content:center; min-height:44px; background:#4b493b99; border-color:#dbc49d30; font-size:12px; }
+.reaction-actions button span { font-size:20px; }
+.sound-toggle { width:100%; margin-top:8px; min-height:44px; display:flex; gap:8px; align-items:center; justify-content:center; font-size:11px; background:transparent; }
+.room-reaction { pointer-events:none; position:fixed; z-index:25; left:50%; top:46%; transform:translate(-50%,-50%); display:grid; justify-items:center; gap:6px; padding:18px 28px; max-width:calc(100vw - 32px); border:1px solid #edce9255; border-radius:26px; background:#302d24e8; box-shadow:0 12px 44px #0006; color:#fff4dc; text-align:center; animation:reaction-arrive .25s ease-out; }
+.room-reaction strong { max-width:240px; overflow-wrap:anywhere; }
+.room-reaction > span { color:#edc88c; font-size:14px; }
+.reaction-symbol { font-size:68px; line-height:1.2; animation:reaction-bounce .8s ease-in-out 3; }
+.flower-shower { position:fixed; left:50%; top:50%; width:min(700px,90vw); height:min(500px,70dvh); transform:translate(-50%,-50%); }
+.flower-shower i { position:absolute; left:calc(var(--i) * 6.2%); top:-10%; font-size:28px; font-style:normal; opacity:0; animation:flower-fall 2.5s ease-in calc(var(--i) * .025s) both; }
+@keyframes reaction-arrive { from {opacity:0;scale:.85;} to {opacity:1;scale:1;} }
+@keyframes reaction-bounce { 50% {transform:translateY(-8px) rotate(-8deg);} }
+@keyframes flower-fall { 10% {opacity:1;} 90% {opacity:1;} to {top:110%;transform:rotate(160deg);opacity:0;} }
+@media(prefers-reduced-motion:reduce) { .room-reaction,.reaction-symbol,.flower-shower i {animation:none;} .flower-shower {display:none;} }
+@media(max-width:800px) { .chat-toasts {bottom:82px;right:12px;} }

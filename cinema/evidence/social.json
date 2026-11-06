@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "target": "local Wrangler",
+  "checks": [
+    "approval interrupts start-video dialog immediately, centered with isolated focus",
+    "multiple requests accept/reject individually; pending member cannot send reactions; start dialog resumes",
+    "closed-chat incoming toast includes name, opens chat; no self-toast or toast while chat is open",
+    "chat preview stack is bounded to three messages and expires automatically",
+    "poke names sender and starts two real WebAudio tones on recipient only, without replay on snapshot",
+    "flowers and sound reach both members; duplicate command does not replay audio; room-wide cooldown, disabled controls, 3-second removal and DB cleanup",
+    "viewer can applaud; real noise-burst audio plays for host while muted recipient sees visual only",
+    "sad/troll actions broadcast; mobile fits; reduced motion suppresses animation",
+    "rejoin seeds chat/poke/reaction history without replaying audio or old-message toasts"
+  ],
+  "errors": [],
+  "limitations": "YouTube fixture; actual WebAudio nodes start in Chromium, not an acoustic or device/autoplay quality certification."
+}

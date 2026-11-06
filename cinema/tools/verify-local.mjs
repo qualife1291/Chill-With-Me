@@ -136,6 +136,7 @@ try {
     path.join(root, "evidence/fixes.json"),
   );
   for (const file of [
+    "social.cjs",
     "world-screen.cjs",
     "media.cjs",
     "roadmap.cjs",

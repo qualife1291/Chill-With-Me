@@ -47,10 +47,16 @@ export function useModalFocus(
     const contain = (e: FocusEvent) => {
       if (!el.contains(e.target as Node)) focus();
     };
+    // Accept/reject can remove the focused row while the same dialog stays open.
+    const observer = new MutationObserver(() => {
+      if (!el.contains(document.activeElement)) focus();
+    });
+    observer.observe(el, { childList: true, subtree: true });
     document.addEventListener("keydown", key, true);
     document.addEventListener("focusin", contain);
     focus();
     return () => {
+      observer.disconnect();
       document.removeEventListener("keydown", key, true);
       document.removeEventListener("focusin", contain);
       for (const [s, previous] of isolated) s.inert = previous;

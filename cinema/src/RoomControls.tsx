@@ -1,5 +1,15 @@
-import { Armchair, Hand, RotateCcw, X, Leaf } from "lucide-react";
-import type { Room, Member, Command } from "../shared/model";
+import { useEffect, useState } from "react";
+import {
+  Armchair,
+  Hand,
+  RotateCcw,
+  X,
+  Leaf,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
+import { reactions } from "./RoomActivity";
+import type { Room, Member, Command, ReactionKind } from "../shared/model";
 export default function RoomControls({
   room,
   me,
@@ -10,6 +20,8 @@ export default function RoomControls({
   onLight,
   onClose,
   command,
+  soundsEnabled,
+  onToggleSounds,
 }: {
   room: Room;
   me: Member;
@@ -19,8 +31,25 @@ export default function RoomControls({
   light: boolean;
   onLight: () => void;
   onClose: () => void;
+  soundsEnabled: boolean;
+  onToggleSounds: () => void;
   command: (c: Command, onSuccess?: () => void) => Promise<unknown>;
 }) {
+  const [sendingReaction, setSendingReaction] = useState(false);
+  const [cooling, setCooling] = useState(false);
+  useEffect(() => {
+    if (!cooling) return;
+    const timer = setTimeout(() => setCooling(false), 5000);
+    return () => clearTimeout(timer);
+  }, [cooling]);
+  const sendReaction = async (kind: ReactionKind) => {
+    setSendingReaction(true);
+    try {
+      await command({ type: "reaction", kind }, () => setCooling(true));
+    } finally {
+      setSendingReaction(false);
+    }
+  };
   return (
     <section
       className="room-controls"
@@ -87,6 +116,39 @@ export default function RoomControls({
               ))}
           </select>
         </label>
+        <div
+          className="reaction-actions"
+          role="group"
+          aria-label="Cảm xúc cả rạp"
+        >
+          {(Object.keys(reactions) as ReactionKind[]).map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              disabled={sendingReaction || cooling || !!room.reaction}
+              onClick={() => void sendReaction(kind)}
+            >
+              <span aria-hidden="true">{reactions[kind].icon}</span>
+              {reactions[kind].label}
+            </button>
+          ))}
+        </div>
+        <p className="control-hint" aria-live="polite">
+          {cooling
+            ? "Đợi một chút trước cảm xúc tiếp theo…"
+            : "Cả rạp cùng thấy · 3 giây mỗi cảm xúc"}
+        </p>
+        <button
+          className="sound-toggle"
+          type="button"
+          aria-pressed={soundsEnabled}
+          onClick={onToggleSounds}
+        >
+          {soundsEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          {soundsEnabled
+            ? "Âm thanh tương tác: Bật"
+            : "Âm thanh tương tác: Tắt"}
+        </button>
       </details>
       <button className="light-toggle" onClick={onLight} aria-pressed={light}>
         <Leaf size={15} />
