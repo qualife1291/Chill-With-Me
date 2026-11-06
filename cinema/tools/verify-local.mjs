@@ -135,7 +135,12 @@ try {
     path.join(temporary, "evidence/fixes.json"),
     path.join(root, "evidence/fixes.json"),
   );
-  for (const file of ["media.cjs", "roadmap.cjs", "render-capacity.cjs"])
+  for (const file of [
+    "world-screen.cjs",
+    "media.cjs",
+    "roadmap.cjs",
+    "render-capacity.cjs",
+  ])
     await run(file, node, ["tests/" + file]);
   const capacity = await run("capacity 3 rooms 30 sockets", node, [
     "tests/capacity.cjs",

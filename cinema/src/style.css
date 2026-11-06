@@ -1684,3 +1684,43 @@ button:disabled { cursor:not-allowed; opacity:.5; }
  .cinema-app.show-controls .scene-controls { width:240px; max-height:calc(100dvh - 74px); overflow:auto; }
  .cinema-app.show-controls .camera-options { display:flex; }
 }
+
+/* The world screen stays behind the depth-tested WebGL scene. No mini/dock mode. */
+.scene:not(.is-light) > .screen-surface { z-index:0; box-shadow:none; border-radius:0; }
+.scene.is-light > .screen-surface { visibility:visible!important; pointer-events:auto!important; }
+.scene:not(.is-light) .screen-surface .unlock { top:auto; bottom:8px; left:8px; max-width:calc(100% - 16px); }
+
+/* A compact tool sheet, with appearance tucked behind its own disclosure. */
+.cinema-app.show-controls .scene-controls { width:304px; max-width:calc(100% - 24px); padding:0; border:0; background:none; backdrop-filter:none; }
+.room-controls { width:100%; max-height:min(72dvh,600px); overflow:auto; padding:16px; border:1px solid #ffffff20; border-radius:20px; background:#182422ed; box-shadow:0 18px 50px #0005; backdrop-filter:blur(18px); color:#eaece6; }
+.room-controls header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; font-size:13px; font-weight:600; }
+.room-controls button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:10px; border:1px solid #ffffff20; background:#ffffff08; color:inherit; border-radius:12px; font-size:12px; }
+.room-controls header button { width:44px; padding:8px; }
+.room-controls .view-row { display:flex; align-items:flex-end; gap:8px; }
+.room-controls .view-row label { flex:1; min-width:0; }
+.room-controls label { display:flex; flex-direction:column; gap:7px; font-size:11px; color:#becac4; }
+.room-controls select { width:100%; min-height:44px; padding:8px 10px; border-radius:12px; border:1px solid #ffffff24; background:#263731; color:#f5f1e7; font-size:12px; }
+.control-hint { margin:10px 0 14px; color:#a8bcb1; font-size:11px; }
+.control-section { border-top:1px solid #ffffff14; padding:12px 0 0; margin-top:12px; }
+.control-section summary { cursor:pointer; display:flex; align-items:center; gap:7px; min-height:36px; font-size:12px; font-weight:600; list-style:none; }
+.control-section summary::after { content:'＋'; margin-left:auto; color:#d5b78a; }
+.control-section[open] summary::after { content:'−'; }
+.action-row,.color-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0 12px; }
+.friend-picker { margin-bottom:8px; }
+.color-row input { width:100%; min-height:44px; padding:4px; border:1px solid #ffffff20; border-radius:12px; background:#263731; cursor:pointer; }
+.room-controls .apply-colors { width:100%; background:#d4b180; color:#171e19; border:0; }
+.appearance-controls p { font-size:11px; color:#c9decf; }
+.room-controls .light-toggle { width:100%; margin-top:12px; border:0; color:#b5c5bc; }
+.room-controls :is(button,select,input,summary):focus-visible { outline:2px solid #e3c293; outline-offset:3px; }
+@media(max-height:480px) { .cinema-app.show-controls .scene-controls { width:270px; max-height:calc(100dvh - 74px); } .room-controls { max-height:calc(100dvh - 74px); padding:12px; } }
+
+.room-controls > header { padding:0; min-height:44px; height:auto; margin:0 0 12px; border:0; background:none; }
+.room-controls header span { font-size:13px; }
+.entry-appearance { display:grid; grid-template-columns:150px 1fr; gap:16px; align-items:center; margin:12px 0 20px; }
+.entry-avatar-preview { height:190px; border:1px solid #ffffff20; border-radius:16px; overflow:hidden; }
+.entry-appearance fieldset { min-width:0; margin:0; padding:12px; border:1px solid #ffffff1a; border-radius:14px; }
+.entry-appearance legend { font-size:12px; color:#d6c4a8; padding:0 6px; }
+.entry-appearance label { font-size:12px; color:#c2cdc6; }
+.entry-appearance input[type=color] { display:block; width:100%; height:44px; padding:4px; background:#21332d; border:1px solid #ffffff24; border-radius:10px; cursor:pointer; }
+.entry-appearance small { font-size:11px; color:#aebfb4; line-height:1.5; display:block; }
+@media(max-width:480px) { .entry-appearance { grid-template-columns:110px 1fr; gap:10px; } .entry-avatar-preview {height:170px;} .entry-appearance fieldset {padding:8px;} }

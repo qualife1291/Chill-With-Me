@@ -1,9 +1,25 @@
+// Single world-space contract for the frame, depth mask, camera and DOM projection.
+export const SCREEN = { width: 8.8, height: 4.95, y: 3.35, z: -5.69 } as const;
+export function screenCorners(): [number, number, number][] {
+  const { width: w, height: h, y, z } = SCREEN;
+  return [
+    [-w / 2, y + h / 2, z],
+    [w / 2, y + h / 2, z],
+    [w / 2, y - h / 2, z],
+    [-w / 2, y - h / 2, z],
+  ];
+}
 // Homography mapping a 640x360 DOM player onto the projected cinema screen.
 export function screenMatrix(
   points: { x: number; y: number }[],
   w = 640,
   h = 360,
 ) {
+  if (
+    points.length !== 4 ||
+    !points.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
+  )
+    return null;
   const source = [
       [0, 0],
       [w, 0],

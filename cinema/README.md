@@ -92,7 +92,9 @@ KayKit GLB provenance/checksums/license: `public/models/manifest.json`. The offl
 
 ## View and social controls
 
-Select eye/overview/shoulder/social from the view menu. Drag/swipe or WASD/arrows to look; scroll the room background to narrow/widen the lens. Looking aside keeps the existing video in a small corner; reset returns to the screen. Character actions include sit, wave and a targeted poke (approved peers only, 3s cooldown). Seats are centered: 2–5 in one row, 6–8 in two, 9–10 in three. Cinema and sofa layouts share the same floor/path rules. Click or keyboard-focus the local-file tile to open the native picker; it is not a drag-and-drop upload or server cache.
+Choose male/female and clothing/hair colors before creating/requesting entry to a room; a 3D preview shows the result. Appearance is retained through approval/reconnect and cannot be edited inside the room. Legacy profiles retain their original textures.
+
+Select eye/overview/shoulder/social from the view menu. Drag/swipe or WASD/arrows to look; scroll the room background to narrow/widen the lens. Video stays on the physical 8.8×4.95 screen, with heads/chairs correctly in front of it. It naturally leaves view when you look away; there is no automatic floating player. Reset returns your gaze to the screen. The native iframe stays interactive/mounted; explicit light mode provides a flat player. Character actions include sit, wave and a targeted poke (approved peers only, 3s cooldown). Seats are centered: 2–5 in one row, 6–8 in two, 9–10 in three. Click or keyboard-focus the local-file tile to open the native picker.
 
 The optional temporary-storage core in `worker/temp-media.ts` has fake-object unit coverage only. R2 activation, binding, authenticated routes, client upload/prefetch, alarm reconciliation and real-service tests remain required before use. Absolute TTL is 6h; long-playback/renewal policy and resumable upload are not implemented.
 

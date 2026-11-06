@@ -9,6 +9,11 @@ import {
 export const seatingSchema = z.enum(["cinema", "sofa"]);
 export const visibilitySchema = z.enum(["public", "private"]);
 export const avatarSchema = z.enum(["male", "female"]);
+export const appearanceSchema = z.object({
+  clothing: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  hair: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+});
+export type Appearance = z.infer<typeof appearanceSchema>;
 export type AvatarStyle = z.infer<typeof avatarSchema>;
 export const nameSchema = z.string().trim().min(1).max(32);
 export const fileMetadataSchema = z.object({
@@ -118,6 +123,7 @@ export type Member = {
   pokedAt?: number;
   pokedBy?: string;
   avatar?: AvatarStyle;
+  appearance?: Appearance;
   lastSuggestedAt?: number;
   joinedAt: number;
   deadline?: number;
@@ -145,7 +151,13 @@ export type Room = {
   successor?: string;
   emptySince?: number;
   members: Member[];
-  pending: { id: string; name: string; at: number; avatar?: AvatarStyle }[];
+  pending: {
+    id: string;
+    name: string;
+    at: number;
+    avatar?: AvatarStyle;
+    appearance?: Appearance;
+  }[];
   banned: string[];
   queue: Item[];
   queueRevision?: number;
@@ -224,6 +236,7 @@ export function createRoom(
   avatar: AvatarStyle = "male",
   visibility: z.infer<typeof visibilitySchema> = "public",
   seating: z.infer<typeof seatingSchema> = "cinema",
+  appearance?: Appearance,
 ): Room {
   seats(capacity);
   return {
@@ -241,6 +254,7 @@ export function createRoom(
         seat: 0,
         seated: false,
         avatar: avatarSchema.parse(avatar),
+        appearance: appearanceSchema.optional().parse(appearance),
         joinedAt: now,
         deadline: now + 20000,
       },
@@ -267,6 +281,7 @@ export function requestJoin(
   now: number,
   avatar: AvatarStyle = "male",
   inviteKey?: string,
+  appearance?: Appearance,
 ) {
   if (r.banned.includes(id)) throw Error("BANNED");
   if (r.members.some((m) => m.id === id)) return;
@@ -280,6 +295,7 @@ export function requestJoin(
     name: nameSchema.parse(name),
     at: now,
     avatar: avatarSchema.parse(avatar),
+    appearance: appearanceSchema.optional().parse(appearance),
   });
   r.revision++;
 }
@@ -483,6 +499,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       id: p.id,
       name: p.name,
       avatar: p.avatar || "male",
+      appearance: p.appearance,
       seat,
       seated: false,
       joinedAt: now,

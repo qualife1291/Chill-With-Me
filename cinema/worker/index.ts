@@ -12,6 +12,7 @@ import {
   seatingSchema,
   roomSummary,
   avatarSchema,
+  appearanceSchema,
   connectMember,
   disconnectMember,
   sweep,
@@ -26,6 +27,7 @@ import { z } from "zod";
 const joinSchema = z.object({
   name: z.string().trim().min(1).max(32),
   avatar: avatarSchema.default("male"),
+  appearance: appearanceSchema.optional(),
   session: z.string().optional(),
   inviteKey: z.string().uuid().optional(),
 });
@@ -203,6 +205,7 @@ export class RoomSlot extends DurableObject<Env> {
             c.avatar,
             c.visibility,
             c.seating,
+            c.appearance,
           );
           this.save(r);
           this.schedule();
@@ -212,7 +215,15 @@ export class RoomSlot extends DurableObject<Env> {
             const c = joinSchema.parse(data);
             if (c.session && c.session !== r.session)
               throw Error("INVITE_EXPIRED");
-            requestJoin(r, id, c.name, now, c.avatar, c.inviteKey);
+            requestJoin(
+              r,
+              id,
+              c.name,
+              now,
+              c.avatar,
+              c.inviteKey,
+              c.appearance,
+            );
             this.save(r);
           } else if (action === "cancel") {
             const c = z.object({ session: z.string() }).parse(data);

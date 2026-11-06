@@ -5,6 +5,7 @@ import {
   createRoom,
   requestJoin,
   seats,
+  commandSchema,
   target,
   videoId,
   view,
@@ -221,4 +222,39 @@ test("poke targets approved peers, is actor scoped, and has a three-second coold
     () => apply(r, "outsider", { type: "poke", id: "h" }, 4000),
     /FORBIDDEN/,
   );
+});
+
+test("appearance is chosen on entry, survives approval, and cannot change inside a room", () => {
+  const colors = { clothing: "#bf3355", hair: "#4c2f9c" },
+    other = { clothing: "#008353", hair: "#9b5a45" };
+  const r = createRoom(
+    "h",
+    "H",
+    "Style",
+    3,
+    0,
+    "female",
+    "public",
+    "sofa",
+    colors,
+  );
+  requestJoin(r, "g", "G", 1, "male", undefined, other);
+  requestJoin(r, "g", "G", 2, "male", undefined, colors);
+  apply(r, "h", { type: "accept", id: "g" }, 3);
+  requestJoin(r, "g", "G", 4, "male", undefined, colors);
+  assert.deepEqual(r.members.find((m) => m.id === "g")?.appearance, other);
+  assert.deepEqual(r.members[0].appearance, colors);
+  const restored = JSON.parse(JSON.stringify(r));
+  assert.deepEqual(restored.members[0].appearance, colors);
+  assert.equal(
+    commandSchema.safeParse({ type: "appearance", colors: other }).success,
+    false,
+  );
+  for (const invalid of ["#fff", "red", "#12345678", "url(x)", "#zzzzzz", ""])
+    assert.throws(() =>
+      createRoom("x", "X", "Bad", 2, 0, "male", "public", "cinema", {
+        clothing: invalid,
+        hair: "#123456",
+      }),
+    );
 });

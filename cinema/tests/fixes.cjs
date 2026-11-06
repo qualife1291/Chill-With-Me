@@ -131,6 +131,8 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     fullPage: true,
   });
   await host.getByPlaceholder("Mọi người gọi bạn là…").fill("Host fixes");
+  await host.getByLabel("Màu quần áo", { exact: true }).fill("#bf3355");
+  await host.getByLabel("Màu tóc", { exact: true }).fill("#4c2f9c");
   await host.getByLabel("Tên phòng mới").fill(testTitle);
   await host.getByLabel("Số ghế", { exact: true }).selectOption("5");
   await host.getByLabel("Kiểu chỗ ngồi", { exact: true }).selectOption("sofa");
@@ -174,6 +176,16 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.waitForFunction(
     () => document.querySelector(".cinema-app")?.dataset.members === "2",
   );
+  if (await host.getByLabel("Màu tóc", { exact: true }).count())
+    throw Error("Appearance editor leaked into room");
+  await guest.waitForFunction(
+    () =>
+      JSON.parse(
+        document.querySelector(".scene canvas")?.dataset.femaleAppearance ||
+          "null",
+      )?.hair === "#4c2f9c",
+  );
+
   await guest.waitForFunction(
     () => document.querySelector(".cinema-app")?.dataset.members === "2",
   );
@@ -225,12 +237,14 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   );
   await host.keyboard.up("ArrowRight");
   await host.waitForFunction(
-    () => document.querySelector(".screen-surface")?.dataset.mode === "mini",
+    () =>
+      document.querySelector(".screen-surface")?.dataset.mode === "projected",
   );
   if (
-    (await host.locator(".screen-surface").getAttribute("data-mode")) !== "mini"
+    (await host.locator(".screen-surface").getAttribute("data-mode")) !==
+    "projected"
   )
-    throw Error("rear camera dock missing");
+    throw Error("camera drag detached video from world screen");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -642,22 +656,11 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   ]) {
     await host.setViewportSize(viewport);
     await host.waitForTimeout(1200);
-    const geometry = await host.locator(".screen-surface").evaluate((el) => {
-      const a = el.getBoundingClientRect(),
-        b = el.parentElement.getBoundingClientRect();
-      return {
-        inside:
-          a.left >= b.left - 1 &&
-          a.top >= b.top - 1 &&
-          a.right <= b.right + 1 &&
-          a.bottom <= b.bottom + 1,
-        ratio: el.offsetWidth / el.offsetHeight,
-      };
-    });
-    if (!geometry.inside)
-      throw Error(
-        "Player clipped in mobile orientation " + JSON.stringify(viewport),
-      );
+    const mode = await host
+      .locator(".screen-surface")
+      .getAttribute("data-mode");
+    if (mode !== "projected")
+      throw Error("Portrait/landscape detached the screen");
     const targets = await host
       .locator(".cinema-toolbar button")
       .evaluateAll((buttons) =>
@@ -751,14 +754,11 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
       !(await host.evaluate((player) => window.__yt === player, cameraPlayer))
     )
       throw Error("New camera remounted player");
-    const rect = await host.locator(".screen-surface").boundingBox();
-    if (
-      rect.x < -1 ||
-      rect.y < 60 ||
-      rect.x + rect.width > 1441 ||
-      rect.y + rect.height > 1001
-    )
-      throw Error("New camera clips video " + label);
+    const screenMode = await host
+      .locator(".screen-surface")
+      .getAttribute("data-mode");
+    if (!["projected", "offscreen"].includes(screenMode))
+      throw Error("Camera created a floating player");
     await host.screenshot({ path: `evidence/view-${mode}.png` });
   }
   for (const viewport of [
@@ -769,15 +769,12 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     await host.waitForTimeout(1000);
     if (!(await host.getByLabel("Chọn góc nhìn", { exact: true }).isVisible()))
       throw Error("Camera selector hidden in mobile orientation");
-    const video = await host.locator(".screen-surface").boundingBox(),
-      controls = await host.locator(".scene-controls").boundingBox();
     if (
-      Math.min(video.x + video.width, controls.x + controls.width) >
-        Math.max(video.x, controls.x) &&
-      Math.min(video.y + video.height, controls.y + controls.height) >
-        Math.max(video.y, controls.y)
+      !["projected", "offscreen"].includes(
+        await host.locator(".screen-surface").getAttribute("data-mode"),
+      )
     )
-      throw Error("Corner player overlaps camera controls");
+      throw Error("Mobile view created floating video");
     await host.screenshot({ path: `evidence/social-${viewport.width}.png` });
   }
   await host.setViewportSize({ width: 1440, height: 1000 });
@@ -1051,7 +1048,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
         checks: [
           "3D lobby door preview works by keyboard without entering rooms",
           "mobile lobby fits and light mode releases its canvas",
-          "shoulder/social camera transitions retain player and keep video in bounds",
+          "shoulder/social transitions retain the world-anchored player, hidden only out of sight",
           "reduced-motion preference snaps the camera without travel animation",
           "male/female rigged GLB models load and selected avatar survives approval",
           "avatar choice previews the loaded female model in lobby",
@@ -1079,7 +1076,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
           "both sessions see two members",
           "centered approval dialog",
           "DOM player projects onto 3D screen",
-          "looking around keeps a small corner player clear of faces",
+          "looking around retains the projected screen without a corner/dock fallback",
           "chat speech queue and volume 80 to 20 to 80",
           "mobile no overflow",
           "full viewport default theater",
@@ -1088,6 +1085,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
           "targeted poke is shared and announces the actor",
           "five-seat sofa room renders alongside ten-seat cinema smoke",
           "compact camera selector remains usable in landscape",
+          "entry color choices reach the guest renderer; no in-room color editor",
           "Enter starts video atomically",
           "neck pose shared",
           "default screen centered",

@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "checks": [
+    "no appearance editor inside the room",
+    "server rejects in-room appearance commands",
+    "rejoin cannot overwrite admitted appearance",
+    "DOM bounds match the world screen corners",
+    "projected iframe remains clickable through the WebGL layer",
+    "first retains projected/offscreen mode and player identity",
+    "shoulder retains projected/offscreen mode and player identity",
+    "side retains projected/offscreen mode and player identity",
+    "foreground hair remains visible over the red video plane (pixel check)",
+    "drag stays attached, no floating fallback",
+    "portrait overview frames the wide screen by moving the camera"
+  ],
+  "pageErrors": [],
+  "limitations": "Local SwiftShader; YouTube red iframe fixture; actual native iframe geometry and compositor/occlusion pixels; no hardware/actual YouTube certification."
+}

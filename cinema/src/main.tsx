@@ -1,4 +1,5 @@
 import PlaybackReadiness from "./PlaybackReadiness";
+import RoomControls from "./RoomControls";
 import InvitationControls from "./InvitationControls";
 import PlaylistImport from "./PlaylistImport";
 import { useRoomClock } from "./useRoomClock";
@@ -51,6 +52,7 @@ import { useChatSpeech } from "./useChatSpeech";
 import { useHeadDrag } from "./useHeadDrag";
 import "./style.css";
 import { useReducedMotion } from "./useReducedMotion";
+const AvatarPreview = lazy(() => import("./AvatarPreview"));
 const Lobby = lazy(() => import("./Lobby"));
 const Cinema = React.memo(lazy(() => import("./Cinema")));
 const demo = new URLSearchParams(location.search).has("demo");
@@ -154,6 +156,10 @@ function App() {
     entryBusy = useRef(false);
   const [seating, setSeating] = useState<"cinema" | "sofa">("cinema");
   const [avatar, setAvatar] = useState<"male" | "female">("male");
+  const [appearance, setAppearance] = useState({
+    clothing: "#4d6c82",
+    hair: "#978f86",
+  });
   const [previewSlot, setPreviewSlot] = useState(
     invitedSlot >= 1 && invitedSlot <= 3 ? invitedSlot : 1,
   );
@@ -469,6 +475,7 @@ function App() {
           avatar,
           visibility,
           seating,
+          appearance,
         );
         apply(r, id, { type: "sit" }, Date.now());
         setRoom(r);
@@ -479,10 +486,11 @@ function App() {
         const v = await api(
           `/rooms/${n}/${create ? "create" : "join"}`,
           create
-            ? { name, title, capacity, avatar, visibility, seating }
+            ? { name, title, capacity, avatar, visibility, seating, appearance }
             : {
                 name,
                 avatar,
+                appearance,
                 ...(n === invitedSlot && invitedKey
                   ? { inviteKey: invitedKey }
                   : {}),
@@ -668,6 +676,7 @@ function App() {
     id,
     speech.announce,
   ]);
+  const viewOpener = useRef<HTMLButtonElement>(null);
   const head = useRef({ yaw, pitch, bodyYaw });
   head.current = { yaw, pitch, bodyYaw };
   const turn = React.useCallback((dx: number, dy: number) => {
@@ -690,9 +699,9 @@ function App() {
         ws = chatSocket.current;
       if (!r || ws?.readyState !== WebSocket.OPEN) return;
       const text = JSON.stringify({ ...head.current });
-      if (text !== previous || Date.now() - sentAt >= 2000) {
+      if (text !== previous || performance.now() - sentAt >= 2000) {
         previous = text;
-        sentAt = Date.now();
+        sentAt = performance.now();
         ws.send(
           JSON.stringify({ type: "look", session: r.session, ...head.current }),
         );
@@ -849,6 +858,7 @@ function App() {
                       <Lobby
                         selected={previewSlot}
                         avatar={avatar}
+                        appearance={appearance}
                         occupied={[1, 2, 3].map(
                           (n) => !!summaries.find((s) => s.slot === n)?.open,
                         )}
@@ -939,7 +949,13 @@ function App() {
                         name="avatar"
                         value="male"
                         checked={avatar === "male"}
-                        onChange={() => setAvatar("male")}
+                        onChange={() => {
+                          setAvatar("male");
+                          setAppearance({
+                            clothing: "#4d6c82",
+                            hair: "#978f86",
+                          });
+                        }}
                       />{" "}
                       Nam · Barbarian
                     </label>
@@ -949,12 +965,70 @@ function App() {
                         name="avatar"
                         value="female"
                         checked={avatar === "female"}
-                        onChange={() => setAvatar("female")}
+                        onChange={() => {
+                          setAvatar("female");
+                          setAppearance({
+                            clothing: "#008353",
+                            hair: "#9b5a45",
+                          });
+                        }}
                       />{" "}
                       Nữ · Rogue
                     </label>
                     <small>Bạn bè sẽ thấy nhân vật này trong phòng.</small>
                   </fieldset>
+                  <div className="entry-appearance">
+                    <div
+                      className="entry-avatar-preview"
+                      aria-label="Xem trước nhân vật"
+                    >
+                      <Suspense fallback={<p>Đang tải nhân vật…</p>}>
+                        <SceneBoundary onError={() => {}}>
+                          <AvatarPreview
+                            avatar={avatar}
+                            appearance={appearance}
+                          />
+                        </SceneBoundary>
+                      </Suspense>
+                    </div>
+                    <fieldset>
+                      <legend>Màu sắc của bạn</legend>
+                      <div className="color-row">
+                        <label>
+                          Màu quần áo
+                          <input
+                            type="color"
+                            aria-label="Màu quần áo"
+                            value={appearance.clothing}
+                            onChange={(e) =>
+                              setAppearance((v) => ({
+                                ...v,
+                                clothing: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          Màu tóc
+                          <input
+                            type="color"
+                            aria-label="Màu tóc"
+                            value={appearance.hair}
+                            onChange={(e) =>
+                              setAppearance((v) => ({
+                                ...v,
+                                hair: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                      </div>
+                      <small>
+                        Chọn trước khi vào phòng. Ngoại hình được giữ trong suốt
+                        phiên phòng.
+                      </small>
+                    </fieldset>
+                  </div>
                   <section className="setup panel">
                     <label>
                       Tên của bạn
@@ -1194,6 +1268,7 @@ function App() {
                 );
               })}
               <button
+                ref={viewOpener}
                 aria-label="Góc nhìn 🎮"
                 title="Góc nhìn và điều khiển"
                 aria-pressed={showControls}
@@ -1464,78 +1539,25 @@ function App() {
                     />
                   )}
                   <div className="scene-controls">
-                    <div
-                      className="camera-options"
-                      role="group"
-                      aria-label="Góc nhìn và hành động"
-                    >
-                      <label className="view-select">
-                        Góc nhìn
-                        <select
-                          aria-label="Chọn góc nhìn"
-                          value={camera}
-                          onChange={(e) => {
-                            setCamera(e.target.value);
-                            resetView();
-                          }}
-                        >
-                          <option value="first">Mắt người</option>
-                          <option value="third">Toàn cảnh</option>
-                          <option value="shoulder">Sau vai</option>
-                          <option value="side">Giao lưu</option>
-                        </select>
-                      </label>
-                      <div
-                        className="avatar-actions"
-                        role="group"
-                        aria-label="Hành động nhân vật"
-                      >
-                        <button
-                          onClick={() =>
-                            void command({ type: "sit", instant: true })
-                          }
-                        >
-                          Ngồi ngay
-                        </button>
-                        <button onClick={() => void command({ type: "wave" })}>
-                          Vẫy tay
-                        </button>
-                        <button onClick={resetView}>Nhìn màn chiếu</button>
-                        <select
-                          aria-label="Chọc bạn"
-                          value=""
-                          disabled={room.members.length < 2}
-                          onChange={(e) => {
-                            if (e.target.value)
-                              void command({
-                                type: "poke",
-                                id: e.target.value,
-                              });
-                          }}
-                        >
-                          <option value="">Chọc bạn…</option>
-                          {room.members
-                            .filter((m) => m.id !== id)
-                            .map((m) => (
-                              <option key={m.id} value={m.id}>
-                                {m.name}
-                              </option>
-                            ))}
-                        </select>
-                        <button
-                          aria-pressed={light}
-                          onClick={() => setLight((v) => !v)}
-                        >
-                          {light ? "Bật 3D" : "Chế độ nhẹ"}
-                        </button>
-                      </div>
-                    </div>
-
-                    <small className="head-help">
-                      Kéo để nhìn · Cuộn để thu/phóng · WASD
-                      <br />
-                      {Math.round(yaw)}° / {Math.round(pitch)}°
-                    </small>
+                    {me && (
+                      <RoomControls
+                        room={room}
+                        me={me}
+                        camera={camera}
+                        onCamera={(mode) => {
+                          setCamera(mode);
+                          resetView();
+                        }}
+                        onReset={resetView}
+                        light={light}
+                        onLight={() => setLight((v) => !v)}
+                        onClose={() => {
+                          setShowControls(false);
+                          viewOpener.current?.focus({ preventScroll: true });
+                        }}
+                        command={command}
+                      />
+                    )}
                   </div>
                 </section>
               </div>

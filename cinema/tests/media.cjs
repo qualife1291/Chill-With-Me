@@ -332,7 +332,13 @@ const base = "http://localhost:8787",
       .getByRole("button", { name: "Góc nhìn 🎮", exact: true })
       .click();
     assert.equal(await media(h).getAttribute("data-identity"), "stable");
-    checks.push("camera leaves native video mounted");
+    await h
+      .getByRole("button", { name: "Đóng điều khiển", exact: true })
+      .click();
+    assert.equal(await media(h).getAttribute("data-identity"), "stable");
+    checks.push(
+      "camera leaves native video mounted; closing tools restores access to the player",
+    );
     assert.equal(
       (await cmd(g, { type: "pause", generation: 1 })).error,
       "HOST_ONLY",

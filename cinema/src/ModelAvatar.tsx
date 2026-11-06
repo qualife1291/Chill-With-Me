@@ -45,6 +45,53 @@ export default function ModelAvatar({
         return [clip.name, { action, duration: clip.duration }];
       }),
     );
+    const materials: THREE.MeshStandardMaterial[] = [];
+    const colors = {
+      clothing: { value: new THREE.Color() },
+      hair: { value: new THREE.Color() },
+      enabled: { value: 0 },
+    };
+    const variants = new Map<string, THREE.MeshStandardMaterial>();
+    scene.traverse((node) => {
+      if (!(node as THREE.Mesh).isMesh) return;
+      const mesh = node as THREE.Mesh;
+      const original = mesh.material as THREE.MeshStandardMaterial;
+      const head = node.name.toLowerCase().includes("head");
+      const key = original.uuid + String(head);
+      let material = variants.get(key);
+      if (!material) {
+        material = original.clone();
+        material.roughness = 0.88;
+        material.onBeforeCompile = (shader) => {
+          shader.uniforms.customClothing = colors.clothing;
+          shader.uniforms.customHair = colors.hair;
+          shader.uniforms.customEnabled = colors.enabled;
+          shader.fragmentShader =
+            "uniform vec3 customClothing; uniform vec3 customHair; uniform float customEnabled;\n" +
+            shader.fragmentShader;
+          shader.fragmentShader = shader.fragmentShader.replace(
+            "#include <map_fragment>",
+            `#include <map_fragment>
+            #ifdef USE_MAP
+            if(customEnabled > 0.5) {
+              vec2 uv = vMapUv;
+              bool hairCell = uv.x > 0.125 && uv.x < 0.25 && uv.y < 0.25;
+              bool clothCell = (uv.x < 0.25 && uv.y > 0.25 && uv.y < 0.5) || ${style === "male" ? "(uv.x > 0.25 && uv.x < 0.375 && uv.y > 0.5 && uv.y < 0.75)" : "(uv.x > 0.125 && uv.x < 0.375 && uv.y > 0.5 && uv.y < 0.75) || (uv.x < 0.125 && uv.y > 0.75)"};
+              if(${head ? "hairCell" : "clothCell"}) {
+                float shade = clamp(max(max(diffuseColor.r,diffuseColor.g),diffuseColor.b) * 1.6, 0.22, 1.0);
+                diffuseColor.rgb = ${head ? "customHair" : "customClothing"} * shade;
+              }
+            }
+            #endif`,
+          );
+        };
+        material.customProgramCacheKey = () =>
+          "avatar-palette-" + style + "-" + head;
+        variants.set(key, material);
+        materials.push(material);
+      }
+      mesh.material = material;
+    });
     const bones = new Map<string, THREE.Bone>();
     scene.traverse((node) => {
       if ((node as THREE.Bone).isBone)
@@ -53,8 +100,29 @@ export default function ModelAvatar({
           node as THREE.Bone,
         );
     });
-    return { scene, scale, floor: -bounds.min.y, mixer, actions, bones };
+    return {
+      scene,
+      scale,
+      floor: -bounds.min.y,
+      mixer,
+      actions,
+      bones,
+      materials,
+      colors,
+    };
   }, [gltf]);
+  useEffect(() => {
+    const custom = m.appearance;
+    rig.colors.enabled.value = custom ? 1 : 0;
+    if (custom) {
+      rig.colors.clothing.value.set(custom.clothing);
+      rig.colors.hair.value.set(custom.hair);
+    }
+    gl.domElement.dataset[style + "Appearance"] = JSON.stringify(
+      custom || null,
+    );
+    invalidate();
+  }, [rig, m.appearance?.clothing, m.appearance?.hair, gl, style, invalidate]);
   const overlays = useMemo(() => {
     const entries = new Map<THREE.Bone, THREE.Quaternion>();
     for (const name of ["head", "upperarmr", "lowerarmr"]) {
@@ -68,6 +136,7 @@ export default function ModelAvatar({
     gl.domElement.dataset[style + "Model"] = "ready";
     invalidate();
     return () => {
+      rig.materials.forEach((material) => material.dispose());
       rig.mixer.stopAllAction();
       rig.mixer.uncacheRoot(rig.scene);
       const skeletons = new Set<THREE.Skeleton>();

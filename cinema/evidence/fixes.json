@@ -3,8 +3,8 @@
   "performance": {
     "foreground": true,
     "idleFrames": 0,
-    "windowMs": 1203,
-    "videoTimeAdvanced": 1.2059999999999995,
+    "windowMs": 1205,
+    "videoTimeAdvanced": 1.208000000000002,
     "mediaMocked": true,
     "hardwareFpsBenchmark": false
   },
@@ -12,7 +12,7 @@
   "checks": [
     "3D lobby door preview works by keyboard without entering rooms",
     "mobile lobby fits and light mode releases its canvas",
-    "shoulder/social camera transitions retain player and keep video in bounds",
+    "shoulder/social transitions retain the world-anchored player, hidden only out of sight",
     "reduced-motion preference snaps the camera without travel animation",
     "male/female rigged GLB models load and selected avatar survives approval",
     "avatar choice previews the loaded female model in lobby",
@@ -40,7 +40,7 @@
     "both sessions see two members",
     "centered approval dialog",
     "DOM player projects onto 3D screen",
-    "looking around keeps a small corner player clear of faces",
+    "looking around retains the projected screen without a corner/dock fallback",
     "chat speech queue and volume 80 to 20 to 80",
     "mobile no overflow",
     "full viewport default theater",
@@ -49,6 +49,7 @@
     "targeted poke is shared and announces the actor",
     "five-seat sofa room renders alongside ten-seat cinema smoke",
     "compact camera selector remains usable in landscape",
+    "entry color choices reach the guest renderer; no in-room color editor",
     "Enter starts video atomically",
     "neck pose shared",
     "default screen centered",

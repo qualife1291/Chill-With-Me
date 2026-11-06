@@ -12,7 +12,7 @@ import ModelBoundary from "./ModelBoundary";
 import * as THREE from "three";
 import { seats, type Room, type Member } from "../shared/model";
 import { cameraView } from "../shared/camera";
-import { screenMatrix } from "../shared/projection";
+import { SCREEN, screenCorners, screenMatrix } from "../shared/projection";
 import { avatarMotion, avatarPosition } from "../shared/avatar";
 function position(m: Member, capacity: number, now: number) {
   const p = avatarPosition(m, capacity, now);
@@ -46,9 +46,7 @@ function ProceduralAvatar({
     m.seated,
     invalidate,
   ]);
-  const shirt = ["#d9a558", "#6f9fc3", "#a797d0", "#68b39b", "#d88791"][
-    m.seat % 5
-  ];
+  const shirt = m.appearance?.clothing || "#6f9fc3";
   useFrame((_, dt) => {
     const now = Date.now() + offset,
       pose = avatarMotion(m, now);
@@ -144,7 +142,10 @@ function ProceduralAvatar({
           </mesh>
           <mesh position={[0, 0.26, 0.045]} scale={[1, 0.7, 0.9]}>
             <sphereGeometry args={[0.18, 12, 8]} />
-            <meshStandardMaterial color="#382b27" roughness={1} />
+            <meshStandardMaterial
+              color={m.appearance?.hair || "#382b27"}
+              roughness={1}
+            />
           </mesh>
           {[-1, 1].map((side) => (
             <group key={side}>
@@ -345,6 +346,15 @@ function Camera({
       reducedMotion && m.seated ? Math.max(now, (m.sitAt || 0) + 5000) : now,
     );
     p.set(view.position[0], view.position[1], view.position[2]);
+    if (mode === "third") {
+      const aspect = Math.max(0.2, size.width / size.height);
+      p.z = Math.max(
+        p.z,
+        SCREEN.z +
+          (SCREEN.width / (2 * Math.tan((view.fov * Math.PI) / 360) * aspect)) *
+            1.1,
+      );
+    }
     const desiredAim = new THREE.Vector3(
       view.target[0],
       view.target[1],
@@ -409,97 +419,33 @@ function Camera({
         : pose.sitting === 1
           ? "sit"
           : "stand";
-    const corners = [
-      [-3.35, 4.184, -5.69],
-      [3.35, 4.184, -5.69],
-      [3.35, 0.416, -5.69],
-      [-3.35, 0.416, -5.69],
-    ].map((v) =>
-      new THREE.Vector3(...(v as [number, number, number])).project(camera),
+    const world = screenCorners().map((v) => new THREE.Vector3(...v));
+    const inFront = world.every(
+      (v) => v.clone().applyMatrix4(camera.matrixWorldInverse).z < -camera.near,
     );
-    const points = corners.map((v) => ({
-      x: ((v.x + 1) * size.width) / 2,
-      y: ((1 - v.y) * size.height) / 2,
-    }));
-    const width =
-      Math.max(...points.map((p) => p.x)) - Math.min(...points.map((p) => p.x));
-    const height =
-      Math.max(...points.map((p) => p.y)) - Math.min(...points.map((p) => p.y));
-    // Keep the entire player clear of the toolbar and expanded view controls.
-    const short = size.height <= 480;
-    const narrow = size.width <= 800;
-    const safe = {
-      left: 16,
-      top: 72,
-      right: controlsOpen && short ? 264 : 16,
-      bottom: controlsOpen && !short ? (narrow ? 260 : 250) : 64,
-    };
-    // Tiny split views prioritize the video over generous padding.
-    if (size.height - safe.top - safe.bottom < 200) {
-      safe.top = 60;
-      safe.bottom = 12;
-    }
-    const fits =
-      corners.every((v) => v.z < 1 && v.z > -1) &&
-      points.every(
-        (p) =>
-          p.x >= safe.left &&
-          p.x <= size.width - safe.right &&
-          p.y >= safe.top &&
-          p.y <= size.height - safe.bottom,
-      ) &&
-      width >= 250 &&
-      height >= 200;
-    const mat =
-      fits && mode !== "side" && mode !== "shoulder"
-        ? screenMatrix(points)
-        : null;
-    const lookingAway =
-      Math.abs(smoothYaw.current) > 8 ||
-      Math.abs(smoothPitch.current) > 8 ||
-      mode === "side" ||
-      mode === "shoulder";
-    if (lookingAway) {
-      const w = Math.min(240, size.width * 0.32);
-      el.style.width = w + "px";
-      el.style.height = (w * 9) / 16 + "px";
-      el.style.left =
-        (controlsOpen && short ? 16 : Math.max(12, size.width - w - 16)) + "px";
-      el.style.top = "72px";
-      el.style.transform = "none";
-      el.dataset.mode = "mini";
-    } else if (mat) {
-      el.style.width = "640px";
-      el.style.height = "360px";
-      el.style.left = "0";
-      el.style.top = "0";
-      el.style.transform = "matrix3d(" + mat.join(",") + ")";
-      el.dataset.mode = "projected";
-    } else {
-      const availableWidth = Math.max(1, size.width - safe.left - safe.right);
-      const availableHeight = Math.max(1, size.height - safe.top - safe.bottom);
-      const social = mode === "side" || mode === "shoulder";
-      const w = Math.min(
-        availableWidth,
-        social && !narrow ? 600 : 960,
-        (availableHeight * (social && !narrow ? 0.4 : 1) * 16) / 9,
-      );
-      const h = (w * 9) / 16;
-      el.style.width = w + "px";
-      el.style.height = h + "px";
-      el.style.left = safe.left + (availableWidth - w) / 2 + "px";
-      el.style.top =
-        safe.top + (social || narrow ? 0 : (availableHeight - h) / 2) + "px";
-      el.style.transform = "none";
-      el.dataset.mode = "docked";
-    }
+    const points = world
+      .map((v) => v.project(camera))
+      .map((v) => ({
+        x: ((v.x + 1) * size.width) / 2,
+        y: ((1 - v.y) * size.height) / 2,
+      }));
+    const mat = inFront ? screenMatrix(points) : null;
+    el.style.width = "640px";
+    el.style.height = "360px";
+    el.style.left = "0";
+    el.style.top = "0";
+    el.style.visibility = mat ? "visible" : "hidden";
+    el.style.pointerEvents = mat ? "auto" : "none";
+    if (mat) el.style.transform = "matrix3d(" + mat.join(",") + ")";
+    el.dataset.mode = mat ? "projected" : "offscreen";
+    el.dataset.corners = JSON.stringify(points);
   });
   return null;
 }
 function TheatreInterior() {
   return (
     <group>
-      <directionalLight position={[0, 5, 6]} intensity={1.5} color="#a7c5e9" />
+      <directionalLight position={[0, 5, 6]} intensity={1.5} color="#ede5d6" />
       {[-1, 1].map((side) => (
         <group key={side}>
           <pointLight
@@ -512,7 +458,7 @@ function TheatreInterior() {
             <group key={z} position={[side * 5.32, 2.3, z]}>
               <mesh>
                 <boxGeometry args={[0.08, 3.4, 2.6]} />
-                <meshStandardMaterial color="#343248" roughness={0.95} />
+                <meshStandardMaterial color="#263b38" roughness={0.95} />
               </mesh>
               <mesh position={[-side * 0.065, 0.2, 0]}>
                 <boxGeometry args={[0.05, 0.7, 0.07]} />
@@ -524,35 +470,13 @@ function TheatreInterior() {
               </mesh>
             </group>
           ))}
-          <mesh position={[side * 3.55, 2.3, -5.62]}>
-            <boxGeometry args={[0.16, 4.25, 0.16]} />
-            <meshStandardMaterial
-              color="#c38d52"
-              metalness={0.6}
-              roughness={0.35}
-            />
-          </mesh>
-          <mesh position={[side * 4.55, 2.4, -5.5]}>
-            <boxGeometry args={[1.45, 4.8, 0.25]} />
-            <meshStandardMaterial color="#552b45" roughness={1} />
-          </mesh>
         </group>
       ))}
-      {[0.28, 4.32].map((y) => (
-        <mesh key={y} position={[0, y, -5.62]}>
-          <boxGeometry args={[7.25, 0.12, 0.14]} />
-          <meshStandardMaterial
-            color="#b88b58"
-            metalness={0.6}
-            roughness={0.4}
-          />
-        </mesh>
-      ))}
       {[-3, 0, 3, 6].map((z) => (
-        <group key={z} position={[0, 5.35, z]}>
+        <group key={z} position={[0, 6.45, z]}>
           <mesh>
             <boxGeometry args={[11.2, 0.14, 0.28]} />
-            <meshStandardMaterial color="#302d40" />
+            <meshStandardMaterial color="#21302c" />
           </mesh>
           {[-3.5, 3.5].map((x) => (
             <mesh key={x} position={[x, -0.09, 0]}>
@@ -596,11 +520,17 @@ export default function Cinema({
       frameloop="demand"
       dpr={[1, 1.3]}
       camera={{ position: [0, 3.3, 7], fov: 60 }}
-      gl={{ antialias: true, alpha: false }}
+      gl={{ antialias: true, alpha: true }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 1,
+        pointerEvents: "none",
+      }}
     >
       <TheatreInterior />
-      <color attach="background" args={["#11151f"]} />
-      <fog attach="fog" args={["#11151f", 18, 38]} />
+      <color attach="background" args={["#101b19"]} />
+      <fog attach="fog" args={["#101b19", 18, 38]} />
       <ambientLight intensity={room.playing ? 0.65 : 1.0} />
       <hemisphereLight args={["#c3d1ea", "#18121d", 1.1]} />
       <pointLight
@@ -611,31 +541,74 @@ export default function Cinema({
       />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]}>
         <planeGeometry args={[12, 16]} />
-        <meshStandardMaterial color="#251c28" roughness={1} />
+        <meshStandardMaterial color="#202b29" roughness={1} />
       </mesh>
-      <mesh position={[0, 2.3, -6]}>
-        <boxGeometry args={[12, 5, 0.2]} />
-        <meshStandardMaterial color="#1e2636" />
+      <mesh position={[0, 3.2, -6]}>
+        <boxGeometry args={[12, 6.4, 0.2]} />
+        <meshStandardMaterial color="#152422" />
       </mesh>
-      <mesh position={[0, 2.3, -5.8]}>
-        <boxGeometry args={[6.7, 3.768, 0.08]} />
-        <meshStandardMaterial
-          color="#05070b"
-          emissive="#000000"
-          emissiveIntensity={0}
+      {/* Native media lives below WebGL. This transparent depth-writing plane
+          opens the screen only where foreground avatars/chairs do not occlude it. */}
+      <mesh position={[0, SCREEN.y, SCREEN.z]}>
+        <planeGeometry args={[SCREEN.width, SCREEN.height]} />
+        <meshBasicMaterial
+          color="#000000"
+          opacity={0}
+          transparent
+          blending={THREE.NoBlending}
+          depthWrite
+          depthTest
+          toneMapped={false}
+          fog={false}
         />
       </mesh>
-      {/* Static emissive trim: no extra shadow maps or animation loop. */}
-      {[-3.5, 3.5].map((x) => (
-        <mesh key={"screen-edge" + x} position={[x, 2.3, -5.72]}>
-          <boxGeometry args={[0.035, 4.05, 0.035]} />
-          <meshBasicMaterial color={room.playing ? "#9baac9" : "#e4c9a3"} />
-        </mesh>
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          <mesh
+            position={[
+              side * (SCREEN.width / 2 + 0.12),
+              SCREEN.y,
+              SCREEN.z - 0.05,
+            ]}
+          >
+            <boxGeometry args={[0.16, SCREEN.height + 0.35, 0.18]} />
+            <meshStandardMaterial
+              color="#9b7750"
+              metalness={0.45}
+              roughness={0.42}
+            />
+          </mesh>
+          <mesh position={[side * 5.1, 3.1, -5.82]}>
+            <boxGeometry args={[1.1, 6.2, 0.18]} />
+            <meshStandardMaterial color="#263b38" roughness={1} />
+          </mesh>
+          <mesh
+            position={[
+              side * (SCREEN.width / 2 + 0.03),
+              SCREEN.y,
+              SCREEN.z + 0.01,
+            ]}
+          >
+            <boxGeometry args={[0.025, SCREEN.height + 0.06, 0.025]} />
+            <meshBasicMaterial color="#e9d0a7" />
+          </mesh>
+        </group>
       ))}
-      {[0.28, 4.32].map((y) => (
-        <mesh key={"screen-halo" + y} position={[0, y, -5.72]}>
-          <boxGeometry args={[7.03, 0.035, 0.035]} />
-          <meshBasicMaterial color="#b4a0c7" />
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position={[
+            0,
+            SCREEN.y + side * (SCREEN.height / 2 + 0.12),
+            SCREEN.z - 0.05,
+          ]}
+        >
+          <boxGeometry args={[SCREEN.width + 0.4, 0.16, 0.18]} />
+          <meshStandardMaterial
+            color="#9b7750"
+            metalness={0.45}
+            roughness={0.42}
+          />
         </mesh>
       ))}
       {[-5.32, 5.32].map((x) => (
@@ -653,8 +626,8 @@ export default function Cinema({
         </group>
       ))}
       {[-5.5, 5.5].map((x) => (
-        <mesh key={x} position={[x, 2, 0]}>
-          <boxGeometry args={[0.2, 4, 12]} />
+        <mesh key={x} position={[x, 3.1, 0]}>
+          <boxGeometry args={[0.2, 6.2, 12]} />
           <meshStandardMaterial color="#29303e" />
         </mesh>
       ))}
@@ -666,7 +639,7 @@ export default function Cinema({
             <group key={"tier" + y}>
               <mesh position={[0, y / 2 - 0.04, row.z]}>
                 <boxGeometry args={[6.3, y, 2.2]} />
-                <meshStandardMaterial color="#302331" roughness={1} />
+                <meshStandardMaterial color="#293833" roughness={1} />
               </mesh>
               <mesh position={[0, y + 0.015, row.z - 0.91]}>
                 <boxGeometry args={[6.3, 0.025, 0.035]} />

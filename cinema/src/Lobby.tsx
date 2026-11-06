@@ -39,12 +39,14 @@ function LobbyCamera({
 export default function Lobby({
   selected,
   avatar,
+  appearance,
   occupied,
   onSelect,
   reduced,
 }: {
   selected: number;
   avatar: AvatarStyle;
+  appearance?: Member["appearance"];
   occupied: boolean[];
   onSelect: (slot: number) => void;
   reduced: boolean;
@@ -55,11 +57,12 @@ export default function Lobby({
         id: "preview",
         name: "Preview",
         avatar,
+        appearance,
         seat: 0,
         seated: false,
         joinedAt: 0,
       }) satisfies Member,
-    [avatar],
+    [avatar, appearance],
   );
   return (
     <Canvas

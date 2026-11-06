@@ -10,7 +10,7 @@
     "native host seek replicates",
     "native host play replicates",
     "native media ducks and restores device speech volume",
-    "camera leaves native video mounted",
+    "camera leaves native video mounted; closing tools restores access to the player",
     "guest cannot control room",
     "real ended advances mixed playlist exactly once",
     "finished local file Blob URL revoked after provider transition",
