@@ -5,25 +5,33 @@
   "sourceCommit": "672074b73ba276876a19e8816ecdc5241817ab47",
   "license": "CC0-1.0",
   "licenseFile": "LICENSE.txt",
-  "optimizedWith": "@gltf-transform/core 4.2.1, functions 4.2.1, extensions 4.5.1: retain idle/walk/sit/cheer, remove accessories, resample, dedup, weld, quantize, prune",
+  "optimizedWith": "@gltf-transform/core 4.2.1, functions 4.2.1, extensions 4.5.1: retain idle/walk/sit; procedural wave, remove accessories, resample, dedup, weld, quantize, prune; scene-volume position quantization and skin deduplication; derived scalp hair from pinned Rogue, head-bone-local",
   "models": [
     {
       "avatar": "male",
       "file": "male.glb",
       "source": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/672074b73ba276876a19e8816ecdc5241817ab47/addons/kaykit_character_pack_adventures/Characters/gltf/Barbarian.glb",
       "sourceSha256": "cefc311a0e10c7858b6141f5ada7e33268727564fb8ac1347aab97d000669cc6",
-      "sha256": "da6ced2bd6434080f3e97bf906ed24b0440de8854000b68b9b0e2df0744e26e8",
-      "bytes": 331576,
-      "gzipBytes": 129721
+      "sha256": "f25819f81b2d427c7a1c9699f87db3b5aac8010afb7638ab19105957c21c1669",
+      "bytes": 310152,
+      "derivedHair": {
+        "source": "Rogue.glb at sourceCommit",
+        "optimizedSourceSha256": "d5d5f1a869795ca3e74affa31349716d79b320cd9a4d6b81e3bdf900e89bda70",
+        "baseMaleSha256": "3370fa76f65a3cb42ffcc1a33fde6f125f5e6d821a231f2283595e029e771542",
+        "triangles": 456,
+        "scalpClearanceScale": 1.06,
+        "method": "head-bone-local connected scalp geometry; eyebrows excluded; quantized"
+      },
+      "gzipBytes": 124350
     },
     {
       "avatar": "female",
       "file": "female.glb",
       "source": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/672074b73ba276876a19e8816ecdc5241817ab47/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue.glb",
       "sourceSha256": "e825437cd4d2ee9c1960b517a74a69101e33eb409ae7fa8cedc7134a998fbb7d",
-      "sha256": "f342d73a7cc529c393fecbf3d5d9a922648924054418f70997b1576bf2ebd7cc",
-      "bytes": 339052,
-      "gzipBytes": 132396
+      "sha256": "d5d5f1a869795ca3e74affa31349716d79b320cd9a4d6b81e3bdf900e89bda70",
+      "bytes": 289448,
+      "gzipBytes": 114326
     }
   ]
 }

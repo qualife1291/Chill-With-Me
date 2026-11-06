@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SCREEN, screenCorners, screenMatrix } from "../shared/projection";
+import {
+  SCREEN,
+  screenCorners,
+  screenMatrix,
+  screenClipMatrix,
+} from "../shared/projection";
 test("player corners match tilted 3D screen via perspective homography", () => {
   const points = [
     { x: 100, y: 80 },
@@ -37,4 +42,13 @@ test("wide-screen geometry remains 16:9 and rejects degenerate projections", () 
     null,
   );
   assert.equal(screenMatrix([{ x: NaN, y: 0 }]), null);
+});
+
+test("clip-space projection preserves signed W for partial camera-plane crossings", () => {
+  const vp = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, -1, 0, 0, 0, 0];
+  assert(screenClipMatrix(vp, 1280, 900).every(Number.isFinite));
+  const side = [0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];
+  const tilted = screenClipMatrix(side, 1280, 900);
+  assert(tilted[15] < 0 && tilted[3] * 640 + tilted[15] > 0);
+  assert.notEqual(tilted[15], 1);
 });

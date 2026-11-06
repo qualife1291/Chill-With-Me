@@ -117,12 +117,21 @@ const assert = require("node:assert/strict");
     }
     const animation = await observed;
     assert(animation.rendererFrames > 0);
+    const resources = JSON.parse(
+      await h.locator(".scene canvas").getAttribute("data-render-stats"),
+    );
+    assert(resources.textures <= 12, JSON.stringify(resources));
+    assert(resources.calls <= 150, JSON.stringify(resources));
+    assert(resources.geometries <= 100, JSON.stringify(resources));
     const report = {
       pass: true,
       members: 10,
       renderer: "Chromium headless SwiftShader; one renderer, not ten devices",
       idle,
       animation,
+      resources: JSON.parse(
+        await h.locator(".scene canvas").getAttribute("data-render-stats"),
+      ),
     };
     require("node:fs").writeFileSync(
       require("node:path").join(__dirname, "../evidence/render-capacity.json"),

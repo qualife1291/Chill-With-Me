@@ -32,6 +32,24 @@ export default function ModelAvatar({
   const gaze = useRef({ yaw: look.yaw, pitch: look.pitch });
   const rig = useMemo(() => {
     const scene = cloneSkeleton(gltf.scene);
+    // SkeletonUtils clones one skeleton per skinned part. Equal inverse binds
+    // now share a single per-avatar skeleton/texture after scene quantization.
+    const skeletons: THREE.Skeleton[] = [];
+    scene.traverse((node) => {
+      if (!(node as THREE.SkinnedMesh).isSkinnedMesh) return;
+      const mesh = node as THREE.SkinnedMesh,
+        s = mesh.skeleton;
+      const shared = skeletons.find(
+        (v) =>
+          v.bones.length === s.bones.length &&
+          v.bones.every(
+            (b, i) =>
+              b === s.bones[i] && v.boneInverses[i].equals(s.boneInverses[i]),
+          ),
+      );
+      if (shared) mesh.skeleton = shared;
+      else skeletons.push(s);
+    });
     scene.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(scene);
     const scale = 1.7 / Math.max(bounds.max.y - bounds.min.y, 0.001);

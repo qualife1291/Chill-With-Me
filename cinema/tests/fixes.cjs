@@ -712,7 +712,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.setViewportSize({ width: 844, height: 390 });
   if (!(await host.getByLabel("Chọn góc nhìn", { exact: true }).isVisible()))
     throw Error("Landscape hides compact camera controls");
-  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("side");
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("orbit");
   await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("first");
   const flatBounds = await host.locator(".screen-surface.flat").boundingBox();
   if (
@@ -731,9 +731,9 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   )
     throw Error("Light mode remounted video");
   await host.getByRole("button", { name: "Bật 3D", exact: true }).click();
-  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("third");
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("orbit");
   await host.waitForFunction(
-    () => document.querySelector(".screen-surface")?.dataset.camera === "third",
+    () => document.querySelector(".screen-surface")?.dataset.camera === "orbit",
   );
   if (
     !(await host.evaluate((player) => window.__yt === player, originalPlayer))
@@ -741,10 +741,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     throw Error("Camera switch remounted video");
   await originalPlayer.dispose();
   const cameraPlayer = await host.evaluateHandle(() => window.__yt);
-  for (const [label, mode] of [
-    ["Sau vai", "shoulder"],
-    ["Giao lưu", "side"],
-  ]) {
+  for (const [label, mode] of [["Tự do", "orbit"]]) {
     await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption(mode);
     await host.waitForFunction((mode) => {
       const s = document.querySelector(".screen-surface");
@@ -792,10 +789,10 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     { timeout: 1500 },
   );
   await host.emulateMedia({ reducedMotion: "no-preference" });
-  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("third");
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("orbit");
   await host.waitForFunction(() => {
     const s = document.querySelector(".screen-surface");
-    return s?.dataset.camera === "third" && s.dataset.transitioning === "false";
+    return s?.dataset.camera === "orbit" && s.dataset.transitioning === "false";
   });
   const queuePlayer = await host.evaluateHandle(() => window.__yt);
   await openPanel(host, "Playlist");
@@ -991,10 +988,46 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     frames: idleAfter - idleBefore,
     windowMs: Math.round(idleWindowMs),
   });
+  await host.evaluate(() => {
+    window.__waveSeen = false;
+    const el = document.querySelector(".screen-surface");
+    window.__waveObserver = new MutationObserver(() => {
+      if (el.dataset.action === "wave") window.__waveSeen = true;
+    });
+    window.__waveObserver.observe(el, {
+      attributes: true,
+      attributeFilter: ["data-action"],
+    });
+  });
+  host.on("response", async (r) => {
+    try {
+      if (r.request().postDataJSON()?.command?.type === "wave") {
+        const d = await r.json();
+        console.log("Wave response", {
+          status: r.status(),
+          serverTime: d.serverTime,
+          waveAt: d.room?.members.find((m) => m.id === d.room.host)?.waveAt,
+          error: d.error,
+          now: Date.now(),
+        });
+      }
+    } catch {}
+  });
   await host.getByRole("button", { name: "Vẫy tay", exact: true }).click();
-  await host.waitForFunction(
-    () => document.querySelector(".screen-surface")?.dataset.action === "wave",
-  );
+  try {
+    await host.waitForFunction(() => window.__waveSeen);
+  } catch (e) {
+    console.log(
+      "Wave diagnostics",
+      await host.evaluate(() => ({
+        action: document.querySelector(".screen-surface")?.dataset.action,
+        error: document.querySelector(".error-banner")?.textContent,
+        now: Date.now(),
+      })),
+    );
+    throw e;
+  }
+  await host.evaluate(() => window.__waveObserver.disconnect());
   await host.waitForTimeout(650);
   await host.screenshot({ path: "evidence/wave-desktop.png" });
   const waving = await host.evaluate(async (testTitle) => {
@@ -1048,7 +1081,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
         checks: [
           "3D lobby door preview works by keyboard without entering rooms",
           "mobile lobby fits and light mode releases its canvas",
-          "shoulder/social transitions retain the world-anchored player, hidden only out of sight",
+          "eye/orbit transitions retain the world-anchored player, hidden only out of sight",
           "reduced-motion preference snaps the camera without travel animation",
           "male/female rigged GLB models load and selected avatar survives approval",
           "avatar choice previews the loaded female model in lobby",
@@ -1065,7 +1098,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
           "cancelled speech callbacks cannot duck audio or show stale warnings",
           "100-message cap follows latest while preserving scrolled history",
           "typing focus releases held camera keys",
-          "first/third/light view switches retain video player",
+          "first/orbit/light view switches retain video player",
           "light player fits landscape screen and expanded controls",
           "wave action persists and is visible to another room member",
           "direct background drag and correct yaw/pitch",

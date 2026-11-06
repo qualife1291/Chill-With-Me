@@ -3,8 +3,8 @@
   "performance": {
     "foreground": true,
     "idleFrames": 0,
-    "windowMs": 1205,
-    "videoTimeAdvanced": 1.208000000000002,
+    "windowMs": 1204,
+    "videoTimeAdvanced": 1.2080000000000002,
     "mediaMocked": true,
     "hardwareFpsBenchmark": false
   },
@@ -12,7 +12,7 @@
   "checks": [
     "3D lobby door preview works by keyboard without entering rooms",
     "mobile lobby fits and light mode releases its canvas",
-    "shoulder/social transitions retain the world-anchored player, hidden only out of sight",
+    "eye/orbit transitions retain the world-anchored player, hidden only out of sight",
     "reduced-motion preference snaps the camera without travel animation",
     "male/female rigged GLB models load and selected avatar survives approval",
     "avatar choice previews the loaded female model in lobby",
@@ -29,7 +29,7 @@
     "cancelled speech callbacks cannot duck audio or show stale warnings",
     "100-message cap follows latest while preserving scrolled history",
     "typing focus releases held camera keys",
-    "first/third/light view switches retain video player",
+    "first/orbit/light view switches retain video player",
     "light player fits landscape screen and expanded controls",
     "wave action persists and is visible to another room member",
     "direct background drag and correct yaw/pitch",

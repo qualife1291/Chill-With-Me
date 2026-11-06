@@ -110,6 +110,9 @@ fs.mkdirSync(shots, { recursive: true });
       const v = await p.locator(".screen-surface").evaluate((el) => {
         if (el.dataset.mode === "offscreen")
           return { hidden: el.style.visibility === "hidden" };
+        const weights = JSON.parse(el.dataset.clipW || "[]");
+        if (weights.some((w) => w < 0))
+          return { partial: true, mode: el.dataset.mode };
         const pts = JSON.parse(el.dataset.corners),
           scene = el.parentElement.getBoundingClientRect(),
           actual = el.getBoundingClientRect();
@@ -129,7 +132,7 @@ fs.mkdirSync(shots, { recursive: true });
         };
       });
       assert(
-        v.hidden || (v.mode === "projected" && v.error < 2),
+        v.hidden || v.partial || (v.mode === "projected" && v.error < 2),
         JSON.stringify(v),
       );
       assert(await p.evaluate((ref) => window.__yt === ref, original));
@@ -153,32 +156,112 @@ fs.mkdirSync(shots, { recursive: true });
     await p.frameLocator("iframe").locator('body[data-clicked="1"]').waitFor();
     checks.push("projected iframe remains clickable through the WebGL layer");
     await view.click();
-    for (const mode of ["first", "shoulder", "side"]) {
-      await p.getByLabel("Chọn góc nhìn", { exact: true }).selectOption(mode);
-      await p.waitForTimeout(1800);
-      await p.screenshot({ path: path.join(shots, "world-" + mode + ".png") });
-      await verifyProjection();
-      checks.push(
-        mode + " retains projected/offscreen mode and player identity",
-      );
-    }
-    await p
-      .getByLabel("Chọn góc nhìn", { exact: true })
-      .selectOption("shoulder");
-    await p.waitForTimeout(2200);
+    await p.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("first");
     await p
       .getByRole("button", { name: "Đóng điều khiển", exact: true })
       .click();
-    const { PerspectiveCamera, Vector3 } = require("three");
-    const cam = new PerspectiveCamera(58, 1280 / 900, 0.1, 100);
-    cam.position.set(-0.25, 2, 2.3);
-    cam.lookAt(0, 3.35, -5.69);
-    cam.updateMatrixWorld();
-    const head = new Vector3(-1.25, 1.75, -0.55).project(cam);
-    const pixel = {
-      x: Math.round((head.x + 1) * 640),
-      y: Math.round((1 - head.y) * 450),
+    const redCount = async () => {
+      const bytes = await p.screenshot();
+      return p.evaluate(async (b) => {
+        const im = new Image();
+        im.src = "data:image/png;base64," + b;
+        await im.decode();
+        const c = document.createElement("canvas");
+        c.width = im.width;
+        c.height = im.height;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(im, 0, 0);
+        const d = ctx.getImageData(0, 0, c.width, c.height).data;
+        let count = 0;
+        for (let i = 0; i < d.length; i += 32)
+          if (d[i] > 180 && d[i + 1] < 100 && d[i + 2] < 100) count++;
+        return count;
+      }, bytes.toString("base64"));
     };
+    for (const target of [48, -60]) {
+      await view.click();
+      await p
+        .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
+        .click();
+      await p
+        .getByRole("button", { name: "Đóng điều khiển", exact: true })
+        .click();
+      await p.locator(".scene").focus();
+      const key = target > 0 ? "d" : "a";
+      await p.keyboard.down(key);
+      await p.waitForFunction(
+        (t) =>
+          t > 0
+            ? Number(document.querySelector(".screen-surface")?.dataset.yaw) >=
+              t
+            : Number(document.querySelector(".screen-surface")?.dataset.yaw) <=
+              t,
+        target,
+      );
+      await p.keyboard.up(key);
+      await p.waitForTimeout(1800);
+      const weights = JSON.parse(
+        await p.locator(".screen-surface").getAttribute("data-clip-w"),
+      );
+      assert(
+        weights.some((w) => w < 0) && weights.some((w) => w > 0),
+        JSON.stringify({ target, weights }),
+      );
+      for (let sample = 0; sample < 3; sample++)
+        assert(
+          (await redCount()) > 100,
+          "Visible screen went black at a camera-plane crossing",
+        );
+      await p.screenshot({
+        path: path.join(shots, "partial-" + target + ".png"),
+      });
+    }
+    checks.push(
+      "partially-behind screen retains video at both side angles in repeated pixel captures",
+    );
+    await view.click();
+    await p
+      .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
+      .click();
+    assert.deepEqual(
+      await p
+        .getByLabel("Chọn góc nhìn", { exact: true })
+        .locator("option")
+        .evaluateAll((xs) => xs.map((x) => x.value)),
+      ["first", "orbit"],
+    );
+    checks.push("only eye and unified orbit choices remain");
+    for (const mode of ["first", "orbit"]) {
+      await p.getByLabel("Chọn góc nhìn", { exact: true }).selectOption(mode);
+      await p.waitForTimeout(2000);
+      await verifyProjection();
+      checks.push(mode + " retains the player");
+    }
+    await p.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("orbit");
+    await p
+      .getByRole("button", { name: "Đóng điều khiển", exact: true })
+      .click();
+    await p.mouse.move(40, 200);
+    for (let i = 0; i < 12; i++) await p.mouse.wheel(0, -100);
+    await p.locator(".scene").focus();
+    await p.keyboard.down("s");
+    await p.waitForFunction(
+      () =>
+        Number(document.querySelector(".screen-surface")?.dataset.pitch) < -18,
+    );
+    await p.keyboard.up("s");
+    await p.waitForTimeout(2500);
+    const { Matrix4, Vector3 } = require("three");
+    const vp = new Matrix4().fromArray(
+      JSON.parse(
+        await p.locator(".screen-surface").getAttribute("data-view-projection"),
+      ),
+    );
+    const head = new Vector3(-1.25, 1.75, -0.55).applyMatrix4(vp),
+      pixel = {
+        x: Math.round((head.x + 1) * 640),
+        y: Math.round((1 - head.y) * 450),
+      };
     const quad = JSON.parse(
       await p.locator(".screen-surface").getAttribute("data-corners"),
     );
@@ -192,15 +275,17 @@ fs.mkdirSync(shots, { recursive: true });
       )
         inside = !inside;
     }
-    assert(
-      inside,
-      "Occlusion sample must be inside the projected video quadrilateral",
-    );
+    assert(inside, "Occlusion sample must be inside the projected screen");
+    const screenCenter = new Vector3(0, 3.35, -5.69).applyMatrix4(vp);
+    const filmPixel = {
+      x: Math.round((screenCenter.x + 1) * 640),
+      y: Math.round((1 - screenCenter.y) * 450),
+    };
     const shot = await p.screenshot({
       path: path.join(shots, "world-occlusion.png"),
     });
     const samples = await p.evaluate(
-      async ({ base64, pixel }) => {
+      async ({ base64, pixel, filmPixel }) => {
         const im = new Image();
         im.src = "data:image/png;base64," + base64;
         await im.decode();
@@ -211,10 +296,10 @@ fs.mkdirSync(shots, { recursive: true });
         ctx.drawImage(im, 0, 0);
         return {
           head: [...ctx.getImageData(pixel.x, pixel.y, 1, 1).data],
-          screen: [...ctx.getImageData(650, 450, 1, 1).data],
+          screen: [...ctx.getImageData(filmPixel.x, filmPixel.y, 1, 1).data],
         };
       },
-      { base64: shot.toString("base64"), pixel },
+      { base64: shot.toString("base64"), pixel, filmPixel },
     );
     assert(
       samples.head[2] > samples.head[0],
@@ -230,7 +315,7 @@ fs.mkdirSync(shots, { recursive: true });
       "foreground hair remains visible over the red video plane (pixel check)",
     );
     await view.click();
-    await p.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("third");
+    await p.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("orbit");
     await p.waitForTimeout(1500);
     await p.locator(".scene").focus();
     await p.keyboard.down("d");
@@ -239,6 +324,18 @@ fs.mkdirSync(shots, { recursive: true });
     await p.waitForTimeout(1000);
     await verifyProjection();
     checks.push("drag stays attached, no floating fallback");
+    await p.locator(".scene").focus();
+    await p.keyboard.down("d");
+    await p.waitForFunction(
+      () =>
+        Number(document.querySelector(".screen-surface")?.dataset.yaw) > 110,
+    );
+    await p.keyboard.up("d");
+    await p.waitForTimeout(800);
+    assert.equal(await p.locator(".error-banner").count(), 0);
+    checks.push(
+      "orbit exceeds neck angles without invalid server pose commands",
+    );
     await p
       .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
       .click();

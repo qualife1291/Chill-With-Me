@@ -179,8 +179,14 @@ export type Room = {
   revision: number;
   expires: number;
 };
+const seatCache = new Map<
+  number,
+  { id: number; x: number; y: number; z: number }[]
+>();
 export function seats(n: number) {
   if (!Number.isInteger(n) || n < 2 || n > 10) throw Error("CAPACITY");
+  const cached = seatCache.get(n);
+  if (cached) return cached;
   const rows =
     n < 6
       ? [n]
@@ -192,12 +198,16 @@ export function seats(n: number) {
             Math.floor((n - Math.ceil(n / 3)) / 2),
           ];
   let id = 0;
-  return rows.flatMap((count, row) =>
+  const result = rows.flatMap((count, row) =>
     Array.from({ length: count }, (_, i) => {
       const x = (i - (count - 1) / 2) * 1.25;
       return { id: id++, x, y: row * 0.5, z: row * 2.2 - 0.4 };
     }),
   );
+  result.forEach(Object.freeze);
+  Object.freeze(result);
+  seatCache.set(n, result);
+  return result;
 }
 export function videoId(input: string) {
   let u: URL;

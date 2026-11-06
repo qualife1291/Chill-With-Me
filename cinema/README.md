@@ -88,13 +88,15 @@ node tests/artifact.integration.mjs
 
 Preserve `encodeBody: "manual"`; embedded assets consume Worker requests. Regular Static Assets deployment is preferred. Generated artifacts/state are ignored by Git.
 
+Male scalp hair is derived from the pinned CC0 Rogue head mesh, follows the head bone and uses the selected hair color. Scene quantization retains one skin per model; runtime clones share a skeleton across body parts within each avatar. To regenerate, use the documented offline glTF toolchain with `AVATAR_TOOLS` and run `tools/prepare-avatars.mjs` against the two original source GLBs; it invokes `tools/add-male-hair.mjs`. Never add the offline toolchain to app dependencies.
+
 KayKit GLB provenance/checksums/license: `public/models/manifest.json`. The offline preparation tool lives in `tools/prepare-avatars.mjs`; keep tools outside app dependencies and update hashes/tests intentionally.
 
 ## View and social controls
 
 Choose male/female and clothing/hair colors before creating/requesting entry to a room; a 3D preview shows the result. Appearance is retained through approval/reconnect and cannot be edited inside the room. Legacy profiles retain their original textures.
 
-Select eye/overview/shoulder/social from the view menu. Drag/swipe or WASD/arrows to look; scroll the room background to narrow/widen the lens. Video stays on the physical 8.8×4.95 screen, with heads/chairs correctly in front of it. It naturally leaves view when you look away; there is no automatic floating player. Reset returns your gaze to the screen. The native iframe stays interactive/mounted; explicit light mode provides a flat player. Character actions include sit, wave and a targeted poke (approved peers only, 3s cooldown). Seats are centered: 2–5 in one row, 6–8 in two, 9–10 in three. Click or keyboard-focus the local-file tile to open the native picker.
+Select eye or free orbit from the view menu. Free orbit combines the previous overview/shoulder/social views: drag around the seats, scroll nearer/farther. Drag/swipe or WASD/arrows to look; scroll the room background to change eye-view FOV or orbit distance. Video stays on the physical 8.8×4.95 screen, with heads/chairs correctly in front of it. The visible screen stays lit even when some corners cross behind the camera; it naturally leaves view when you look fully away. There is no automatic floating player. Reset returns your gaze to the screen. The native iframe stays interactive/mounted; explicit light mode provides a flat player. Character actions include sit, wave and a targeted poke (approved peers only, 3s cooldown). Seats are centered: 2–5 in one row, 6–8 in two, 9–10 in three. Click or keyboard-focus the local-file tile to open the native picker.
 
 The optional temporary-storage core in `worker/temp-media.ts` has fake-object unit coverage only. R2 activation, binding, authenticated routes, client upload/prefetch, alarm reconciliation and real-service tests remain required before use. Absolute TTL is 6h; long-playback/renewal policy and resumable upload are not implemented.
 

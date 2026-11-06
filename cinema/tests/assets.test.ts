@@ -20,7 +20,12 @@ for (const model of manifest.models)
     assert(b.length < 400_000);
     const j = JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)).toString());
     assert(j.skins.length > 0);
-    assert.equal(j.meshes.length, 6);
+    assert.equal(j.meshes.length, model.avatar === "male" ? 7 : 6);
+    assert.equal(j.skins.length, 1);
+    if (model.avatar === "male")
+      assert(
+        j.nodes.some((n: { name: string }) => n.name === "Barbarian_HeadHair"),
+      );
     for (const name of [
       "Idle",
       "Walking_A",

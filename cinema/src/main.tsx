@@ -130,7 +130,7 @@ function App() {
     [visibility, setVisibility] = useState<"public" | "private">("public"),
     [error, setError] = useState(""),
     [tab, setTab] = useState("chat"),
-    [camera, setCamera] = useState("third"),
+    [camera, setCamera] = useState("orbit"),
     [zoom, setZoom] = useState(0),
     [yaw, setYaw] = useState(0),
     [pitch, setPitch] = useState(0),
@@ -158,7 +158,7 @@ function App() {
   const [avatar, setAvatar] = useState<"male" | "female">("male");
   const [appearance, setAppearance] = useState({
     clothing: "#4d6c82",
-    hair: "#978f86",
+    hair: "#51372b",
   });
   const [previewSlot, setPreviewSlot] = useState(
     invitedSlot >= 1 && invitedSlot <= 3 ? invitedSlot : 1,
@@ -649,7 +649,12 @@ function App() {
   useEffect(() => {
     if (!room || status !== "joined") return;
     const timer = setTimeout(() => {
-      void command({ type: "look", yaw, pitch, bodyYaw });
+      void command({
+        type: "look",
+        yaw: Math.max(-75, Math.min(75, yaw)),
+        pitch: Math.max(-45, Math.min(35, pitch)),
+        bodyYaw,
+      });
     }, 600);
     return () => clearTimeout(timer);
   }, [yaw, pitch, bodyYaw, room?.session, status]);
@@ -678,11 +683,20 @@ function App() {
   ]);
   const viewOpener = useRef<HTMLButtonElement>(null);
   const head = useRef({ yaw, pitch, bodyYaw });
-  head.current = { yaw, pitch, bodyYaw };
-  const turn = React.useCallback((dx: number, dy: number) => {
-    setYaw((v) => Math.max(-75, Math.min(75, v + dx)));
-    setPitch((v) => Math.max(-45, Math.min(35, v + dy)));
-  }, []);
+  head.current = {
+    yaw: Math.max(-75, Math.min(75, yaw)),
+    pitch: Math.max(-45, Math.min(35, pitch)),
+    bodyYaw,
+  };
+  const turn = React.useCallback(
+    (dx: number, dy: number) => {
+      setYaw((v) =>
+        camera === "first" ? Math.max(-75, Math.min(75, v + dx)) : v + dx,
+      );
+      setPitch((v) => Math.max(-45, Math.min(35, v + dy)));
+    },
+    [camera],
+  );
   const headDrag = useHeadDrag(turn, status === "joined" && !light);
   const resetView = () => {
     setYaw(0);
@@ -828,7 +842,7 @@ function App() {
         data-clock-calibrated={clock.calibrated}
         className={
           status === "joined" && room
-            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""}`
+            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""}`
             : undefined
         }
       >
@@ -953,7 +967,7 @@ function App() {
                           setAvatar("male");
                           setAppearance({
                             clothing: "#4d6c82",
-                            hair: "#978f86",
+                            hair: "#51372b",
                           });
                         }}
                       />{" "}
@@ -1226,6 +1240,24 @@ function App() {
           </section>
         ) : room ? (
           <>
+            {me && (
+              <aside className="session-badge" aria-label="Thông tin của bạn">
+                <span
+                  className="session-initials"
+                  style={{ background: me.appearance?.clothing || "#b3976d" }}
+                >
+                  {[...me.name].slice(0, 2).join("").toLocaleUpperCase("vi")}
+                </span>
+                <div>
+                  <strong>{me.name}</strong>
+                  <small>{room.title}</small>
+                  <span>
+                    {host ? "Chủ phòng" : "Thành viên"} · {room.members.length}/
+                    {room.capacity} người
+                  </span>
+                </div>
+              </aside>
+            )}
             <nav className="cinema-toolbar" aria-label="Bảng trong phòng">
               {(
                 [

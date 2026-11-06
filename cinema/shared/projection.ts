@@ -67,3 +67,35 @@ export function screenMatrix(
     1,
   ];
 }
+
+// Compose clip-space directly instead of solving a homography from divided
+// corners. Signed W is preserved so the browser clips a partially-behind plane.
+export function screenClipMatrix(
+  vp: ArrayLike<number>,
+  width: number,
+  height: number,
+) {
+  const { width: w, height: h, y, z } = SCREEN;
+  const result: number[] = [];
+  for (let col = 0; col < 4; col++) {
+    const c = Array.from({ length: 4 }, (_, r) =>
+      col === 0
+        ? (vp[r] * w) / 640
+        : col === 1
+          ? (-vp[4 + r] * h) / 360
+          : col === 2
+            ? vp[8 + r]
+            : (-vp[r] * w) / 2 +
+              vp[4 + r] * (y + h / 2) +
+              vp[8 + r] * z +
+              vp[12 + r],
+    );
+    result.push(
+      ((c[0] + c[3]) * width) / 2,
+      ((-c[1] + c[3]) * height) / 2,
+      c[2],
+      c[3],
+    );
+  }
+  return result;
+}

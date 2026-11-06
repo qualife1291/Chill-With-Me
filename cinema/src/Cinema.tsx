@@ -1,4 +1,5 @@
-import Cushion from "./RoundedGeometry";
+import Seating from "./Seating";
+import Walkways from "./Walkways";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import React, {
   Suspense,
@@ -10,10 +11,10 @@ import React, {
 import ModelAvatar from "./ModelAvatar";
 import ModelBoundary from "./ModelBoundary";
 import * as THREE from "three";
-import { seats, type Room, type Member } from "../shared/model";
-import { cameraView } from "../shared/camera";
-import { SCREEN, screenCorners, screenMatrix } from "../shared/projection";
-import { avatarMotion, avatarPosition } from "../shared/avatar";
+import { type Room, type Member } from "../shared/model";
+import { cameraView, orbitView } from "../shared/camera";
+import { SCREEN, screenCorners, screenClipMatrix } from "../shared/projection";
+import { avatarMotion, avatarPosition, aisleHeight } from "../shared/avatar";
 function position(m: Member, capacity: number, now: number) {
   const p = avatarPosition(m, capacity, now);
   return new THREE.Vector3(p.x, p.y, p.z);
@@ -234,63 +235,6 @@ function Avatar(props: React.ComponentProps<typeof ModelAvatar>) {
     </ModelBoundary>
   );
 }
-function Chair({
-  x,
-  y,
-  z,
-  occupied,
-  sofa = false,
-  left = true,
-  right = true,
-}: {
-  x: number;
-  y: number;
-  z: number;
-  occupied: boolean;
-  sofa?: boolean;
-  left?: boolean;
-  right?: boolean;
-}) {
-  return (
-    <group position={[x, y, z]}>
-      <mesh position={[0, 0.42, 0]}>
-        {sofa ? (
-          <Cushion width={1.25} height={0.18} depth={0.8} />
-        ) : (
-          <Cushion width={0.86} height={0.18} depth={0.72} />
-        )}
-        <meshStandardMaterial
-          color={occupied ? "#92755b" : "#526b64"}
-          roughness={0.9}
-        />
-      </mesh>
-      <mesh position={[0, 0.79, 0.28]} rotation={[-0.08, 0, 0]}>
-        {sofa ? (
-          <Cushion width={1.25} height={0.62} depth={0.18} />
-        ) : (
-          <Cushion width={0.86} height={0.62} depth={0.18} />
-        )}
-        <meshStandardMaterial color="#536b63" roughness={0.95} />
-      </mesh>
-      {[-0.44, 0.44]
-        .filter((x) => !sofa || (x < 0 ? left : right))
-        .map((x) => (
-          <mesh key={x} position={[x, 0.65, 0]}>
-            <boxGeometry args={[0.12, 0.16, 0.8]} />
-            <meshStandardMaterial color="#272932" />
-          </mesh>
-        ))}
-      <mesh position={[0, 0.39, -0.53]}>
-        <Cushion width={0.65} height={0.1} depth={0.32} />
-        <meshStandardMaterial color="#41564f" roughness={0.95} />
-      </mesh>
-      <mesh position={[0, 0.16, 0]}>
-        <boxGeometry args={[0.5, 0.32, 0.4]} />
-        <meshStandardMaterial color="#191c24" />
-      </mesh>
-    </group>
-  );
-}
 function Camera({
   room,
   id,
@@ -332,10 +276,30 @@ function Camera({
   ]);
   const aim = useMemo(() => new THREE.Vector3(0, 1.25, -5.7), []);
   const p = useMemo(() => new THREE.Vector3(), []);
+  const math = useMemo(
+    () => ({
+      target: new THREE.Vector3(),
+      look: new THREE.Vector3(),
+      right: new THREE.Vector3(),
+      up: new THREE.Vector3(0, 1, 0),
+      vp: new THREE.Matrix4(),
+      point: new THREE.Vector4(),
+      corners: screenCorners(),
+      points: Array.from({ length: 4 }, () => ({ x: 0, y: 0 })),
+    }),
+    [],
+  );
+  const lastProjection = useRef("");
   const smoothYaw = useRef(0),
     smoothPitch = useRef(0);
   useFrame((_, dt) => {
     gl.domElement.dataset.renderFrame = String(gl.info.render.frame);
+    gl.domElement.dataset.renderStats = JSON.stringify({
+      calls: gl.info.render.calls,
+      triangles: gl.info.render.triangles,
+      geometries: gl.info.memory.geometries,
+      textures: gl.info.memory.textures,
+    });
     const m = room.members.find((m) => m.id === id);
     if (!m) return;
     const now = Date.now() + offset;
@@ -345,25 +309,30 @@ function Camera({
       mode,
       reducedMotion && m.seated ? Math.max(now, (m.sitAt || 0) + 5000) : now,
     );
-    p.set(view.position[0], view.position[1], view.position[2]);
-    if (mode === "third") {
-      const aspect = Math.max(0.2, size.width / size.height);
-      p.z = Math.max(
-        p.z,
-        SCREEN.z +
-          (SCREEN.width / (2 * Math.tan((view.fov * Math.PI) / 360) * aspect)) *
-            1.1,
-      );
-    }
-    const desiredAim = new THREE.Vector3(
-      view.target[0],
-      view.target[1],
-      view.target[2],
-    );
+    const desiredAim = math.target;
+    const headBlend = reducedMotion ? 1 : 1 - Math.exp(-dt * 6);
+    smoothPitch.current += (pitch - smoothPitch.current) * headBlend;
+    smoothYaw.current += (bodyYaw + yaw - smoothYaw.current) * headBlend;
+    const selected =
+      mode === "first"
+        ? view
+        : orbitView(
+            room.capacity,
+            smoothYaw.current,
+            smoothPitch.current,
+            zoom,
+            size.width / size.height,
+          );
+    p.set(selected.position[0], selected.position[1], selected.position[2]);
+    desiredAim.set(selected.target[0], selected.target[1], selected.target[2]);
     const blend = reducedMotion ? 1 : 1 - Math.exp(-dt * 5);
     camera.position.lerp(p, blend);
     aim.lerp(desiredAim, blend);
-    const fov = THREE.MathUtils.clamp(view.fov + zoom, 32, 80);
+    const fov = THREE.MathUtils.clamp(
+      selected.fov + (mode === "first" ? zoom : 0),
+      32,
+      80,
+    );
     let lensMoving = false;
     if (camera instanceof THREE.PerspectiveCamera) {
       camera.fov = reducedMotion
@@ -372,21 +341,14 @@ function Camera({
       lensMoving = Math.abs(camera.fov - fov) > 0.01;
       camera.updateProjectionMatrix();
     }
-    const headBlend = reducedMotion ? 1 : 1 - Math.exp(-dt * 6);
-    smoothPitch.current += (pitch - smoothPitch.current) * headBlend;
-    smoothYaw.current += (bodyYaw + yaw - smoothYaw.current) * headBlend;
-    const look = aim
-      .clone()
-      .sub(camera.position)
-      .applyAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        (-smoothYaw.current * Math.PI) / 180,
-      );
-    const right = new THREE.Vector3()
-      .crossVectors(look, new THREE.Vector3(0, 1, 0))
-      .normalize();
-    look.applyAxisAngle(right, (smoothPitch.current * Math.PI) / 180);
-    camera.lookAt(camera.position.clone().add(look));
+    const look = math.look.copy(aim).sub(camera.position);
+    if (mode === "first") {
+      look.applyAxisAngle(math.up, (-smoothYaw.current * Math.PI) / 180);
+      math.right.crossVectors(look, math.up).normalize();
+      look.applyAxisAngle(math.right, (smoothPitch.current * Math.PI) / 180);
+    }
+    camera.lookAt(math.target.copy(camera.position).add(look));
+    desiredAim.set(selected.target[0], selected.target[1], selected.target[2]);
     camera.updateMatrixWorld();
     if (
       camera.position.distanceTo(p) > 0.002 ||
@@ -419,30 +381,47 @@ function Camera({
         : pose.sitting === 1
           ? "sit"
           : "stand";
-    const world = screenCorners().map((v) => new THREE.Vector3(...v));
-    const inFront = world.every(
-      (v) => v.clone().applyMatrix4(camera.matrixWorldInverse).z < -camera.near,
+    math.vp.multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse,
     );
-    const points = world
-      .map((v) => v.project(camera))
-      .map((v) => ({
-        x: ((v.x + 1) * size.width) / 2,
-        y: ((1 - v.y) * size.height) / 2,
-      }));
-    const mat = inFront ? screenMatrix(points) : null;
-    el.style.width = "640px";
-    el.style.height = "360px";
-    el.style.left = "0";
-    el.style.top = "0";
-    el.style.visibility = mat ? "visible" : "hidden";
-    el.style.pointerEvents = mat ? "auto" : "none";
-    if (mat) el.style.transform = "matrix3d(" + mat.join(",") + ")";
-    el.dataset.mode = mat ? "projected" : "offscreen";
-    el.dataset.corners = JSON.stringify(points);
+    let front = 0;
+    for (let i = 0; i < 4; i++) {
+      const v = math.corners[i],
+        c = math.point.set(v[0], v[1], v[2], 1).applyMatrix4(math.vp);
+      if (c.w > 0) front++;
+      math.points[i].x = ((c.x / c.w + 1) * size.width) / 2;
+      math.points[i].y = ((1 - c.y / c.w) * size.height) / 2;
+    }
+    const matrix = screenClipMatrix(math.vp.elements, size.width, size.height);
+    const transform =
+      "matrix3d(" + matrix.map((n) => n.toFixed(8)).join(",") + ")";
+    if (lastProjection.current !== transform) {
+      el.style.width = "640px";
+      el.style.height = "360px";
+      el.style.left = "0";
+      el.style.top = "0";
+      el.style.transform = transform;
+      lastProjection.current = transform;
+      el.dataset.corners = JSON.stringify(math.points);
+      el.dataset.viewProjection = JSON.stringify(math.vp.elements);
+      el.dataset.clipW = JSON.stringify(
+        math.corners.map(
+          (v) => math.point.set(v[0], v[1], v[2], 1).applyMatrix4(math.vp).w,
+        ),
+      );
+    }
+    el.style.visibility = front ? "visible" : "hidden";
+    el.style.pointerEvents = front ? "auto" : "none";
+    el.dataset.mode = front ? "projected" : "offscreen";
   });
   return null;
 }
-function TheatreInterior() {
+const TheatreInterior = React.memo(function TheatreInterior({
+  capacity,
+}: {
+  capacity: number;
+}) {
   return (
     <group>
       <directionalLight position={[0, 5, 6]} intensity={1.5} color="#ede5d6" />
@@ -488,7 +467,7 @@ function TheatreInterior() {
       ))}
     </group>
   );
-}
+});
 export default function Cinema({
   room,
   id,
@@ -514,12 +493,15 @@ export default function Cinema({
   mode: string;
   offset: number;
 }) {
-  const layout = useMemo(() => seats(room.capacity), [room.capacity]);
+  const occupied = room.members
+    .map((m) => m.seat)
+    .sort((a, b) => a - b)
+    .join(",");
   return (
     <Canvas
       frameloop="demand"
       dpr={[1, 1.3]}
-      camera={{ position: [0, 3.3, 7], fov: 60 }}
+      camera={{ position: [0, 3.3, 7], fov: 60, near: 0.15, far: 80 }}
       gl={{ antialias: true, alpha: true }}
       style={{
         position: "absolute",
@@ -528,10 +510,10 @@ export default function Cinema({
         pointerEvents: "none",
       }}
     >
-      <TheatreInterior />
+      <TheatreInterior capacity={room.capacity} />
       <color attach="background" args={["#101b19"]} />
       <fog attach="fog" args={["#101b19", 18, 38]} />
-      <ambientLight intensity={room.playing ? 0.65 : 1.0} />
+      <ambientLight intensity={0.8} />
       <hemisphereLight args={["#c3d1ea", "#18121d", 1.1]} />
       <pointLight
         position={[0, 3, -4]}
@@ -539,7 +521,7 @@ export default function Cinema({
         color="#a8bce6"
         distance={14}
       />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
         <planeGeometry args={[12, 16]} />
         <meshStandardMaterial color="#202b29" roughness={1} />
       </mesh>
@@ -618,7 +600,10 @@ export default function Cinema({
             <meshBasicMaterial color="#b29b80" />
           </mesh>
           {[-2, 0, 2, 4].map((z) => (
-            <mesh key={z} position={[x, 0.12, z]}>
+            <mesh
+              key={z}
+              position={[x, aisleHeight(room.capacity, z) + 0.12, z]}
+            >
               <boxGeometry args={[0.045, 0.06, 0.32]} />
               <meshBasicMaterial color="#cda875" />
             </mesh>
@@ -631,89 +616,12 @@ export default function Cinema({
           <meshStandardMaterial color="#29303e" />
         </mesh>
       ))}
-      {Array.from(new Set(layout.map((s) => s.y)))
-        .filter((y) => y > 0)
-        .map((y) => {
-          const row = layout.find((s) => s.y === y)!;
-          return (
-            <group key={"tier" + y}>
-              <mesh position={[0, y / 2 - 0.04, row.z]}>
-                <boxGeometry args={[6.3, y, 2.2]} />
-                <meshStandardMaterial color="#293833" roughness={1} />
-              </mesh>
-              <mesh position={[0, y + 0.015, row.z - 0.91]}>
-                <boxGeometry args={[6.3, 0.025, 0.035]} />
-                <meshBasicMaterial color="#dba45f" />
-              </mesh>
-            </group>
-          );
-        })}
-      {layout[layout.length - 1].y > 0 &&
-        (() => {
-          const rear = layout[layout.length - 1],
-            front = layout[0].z - 0.95,
-            end = rear.z - 0.95,
-            length = end - front;
-          return (
-            <group>
-              {[-4.05, 4.05].map((x) => (
-                <group key={x}>
-                  <mesh
-                    position={[x, rear.y / 2, (front + end) / 2]}
-                    rotation={[-Math.PI / 2 - Math.atan2(rear.y, length), 0, 0]}
-                  >
-                    <planeGeometry args={[1.8, Math.hypot(length, rear.y)]} />
-                    <meshStandardMaterial color="#39443f" roughness={1} />
-                  </mesh>
-                  <mesh position={[x, rear.y / 2 - 0.04, rear.z + 0.65]}>
-                    <boxGeometry args={[1.8, rear.y, 3.2]} />
-                    <meshStandardMaterial color="#39443f" roughness={1} />
-                  </mesh>
-                </group>
-              ))}
-              <mesh position={[0, rear.y / 2 - 0.04, rear.z + 2.1]}>
-                <boxGeometry args={[10.4, rear.y, 2.3]} />
-                <meshStandardMaterial color="#39443f" roughness={1} />
-              </mesh>
-            </group>
-          );
-        })()}
-      {layout.map((s) => (
-        <Chair
-          key={s.id}
-          {...s}
-          occupied={room.members.some((m) => m.seat === s.id)}
-          sofa={room.seating === "sofa"}
-          left={
-            !layout.some(
-              (other) =>
-                other.id !== s.id &&
-                other.y === s.y &&
-                Math.abs(other.z - s.z) < 0.01 &&
-                Math.abs(other.x - (s.x - 1.25)) < 0.01,
-            )
-          }
-          right={
-            !layout.some(
-              (other) =>
-                other.id !== s.id &&
-                other.y === s.y &&
-                Math.abs(other.z - s.z) < 0.01 &&
-                Math.abs(other.x - (s.x + 1.25)) < 0.01,
-            )
-          }
-        />
-      ))}
-      {[-3.25, 3.25].map((x) => (
-        <mesh
-          key={x}
-          position={[x, 0.015, 1.2]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <planeGeometry args={[0.035, 7]} />
-          <meshBasicMaterial color="#dba45f" />
-        </mesh>
-      ))}
+      <Walkways capacity={room.capacity} />
+      <Seating
+        capacity={room.capacity}
+        sofa={room.seating === "sofa"}
+        occupied={occupied}
+      />
       {room.members
         .filter((m) => mode !== "first" || m.id !== id)
         .map((m) => (
@@ -725,7 +633,11 @@ export default function Cinema({
             reducedMotion={reducedMotion}
             look={
               m.id === id
-                ? { yaw, pitch, bodyYaw }
+                ? {
+                    yaw: THREE.MathUtils.clamp(yaw, -75, 75),
+                    pitch: THREE.MathUtils.clamp(pitch, -45, 35),
+                    bodyYaw,
+                  }
                 : m.look || { yaw: 0, pitch: 0, bodyYaw: 0 }
             }
           />

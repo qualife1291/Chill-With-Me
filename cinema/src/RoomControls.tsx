@@ -41,9 +41,7 @@ export default function RoomControls({
             onChange={(e) => onCamera(e.target.value)}
           >
             <option value="first">Mắt người</option>
-            <option value="third">Toàn cảnh</option>
-            <option value="shoulder">Sau vai</option>
-            <option value="side">Giao lưu</option>
+            <option value="orbit">Tự do · nhìn quanh phòng</option>
           </select>
         </label>
         <button

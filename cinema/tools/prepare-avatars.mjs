@@ -43,7 +43,6 @@ for (const [name, expected] of Object.entries(sources)) {
         "Walking_A",
         "Sit_Chair_Down",
         "Sit_Chair_Idle",
-        "Cheer",
       ].includes(a.getName())
     ) {
       const samplers = a.listSamplers();
@@ -59,7 +58,14 @@ for (const [name, expected] of Object.entries(sources)) {
       ).test(n.getName())
     )
       n.setMesh(null);
-  await doc.transform(resample(), dedup(), weld(), quantize(), prune());
+  await doc.transform(
+    resample(),
+    dedup(),
+    weld(),
+    quantize({ quantizationVolume: "scene" }),
+    dedup(),
+    prune(),
+  );
   const optimized = await io.writeBinary(doc);
   const filename = name === "Barbarian" ? "male.glb" : "female.glb";
   await writeFile(resolve(output, filename), optimized);
@@ -72,3 +78,5 @@ for (const [name, expected] of Object.entries(sources)) {
     }),
   );
 }
+
+await import("./add-male-hair.mjs");
