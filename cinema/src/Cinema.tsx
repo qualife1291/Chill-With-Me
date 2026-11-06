@@ -1,4 +1,4 @@
-import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import Cushion from "./RoundedGeometry";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import React, {
   Suspense,
@@ -42,6 +42,7 @@ function ProceduralAvatar({
     look.bodyYaw,
     m.sitAt,
     m.waveAt,
+    m.pokedAt,
     m.seated,
     invalidate,
   ]);
@@ -55,6 +56,7 @@ function ProceduralAvatar({
       body = torso.current;
     if (!root || !body || !neck.current) return;
     root.position.copy(position(m, capacity, now));
+    root.position.y += Math.abs(pose.reaction) * 0.08;
     // Face the direction of travel, then turn towards the screen before sitting.
     const next = avatarPosition(m, capacity, now + 20);
     const dx = next.x - root.position.x,
@@ -62,7 +64,9 @@ function ProceduralAvatar({
     const desired =
       pose.walking && Math.hypot(dx, dz) > 0.00001
         ? Math.atan2(-dx, -dz)
-        : (-look.bodyYaw * Math.PI) / 180;
+        : m.seated
+          ? 0
+          : (-look.bodyYaw * Math.PI) / 180;
     const delta = Math.atan2(
       Math.sin(desired - root.rotation.y),
       Math.cos(desired - root.rotation.y),
@@ -229,29 +233,6 @@ function Avatar(props: React.ComponentProps<typeof ModelAvatar>) {
     </ModelBoundary>
   );
 }
-function Cushion({
-  width,
-  height,
-  depth,
-}: {
-  width: number;
-  height: number;
-  depth: number;
-}) {
-  const geometry = useMemo(
-    () =>
-      new RoundedBoxGeometry(
-        width,
-        height,
-        depth,
-        2,
-        Math.min(height, width, depth) * 0.25,
-      ),
-    [width, height, depth],
-  );
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  return <primitive object={geometry} attach="geometry" />;
-}
 function Chair({
   x,
   y,
@@ -273,22 +254,22 @@ function Chair({
     <group position={[x, y, z]}>
       <mesh position={[0, 0.42, 0]}>
         {sofa ? (
-          <Cushion width={1.05} height={0.18} depth={0.8} />
+          <Cushion width={1.25} height={0.18} depth={0.8} />
         ) : (
-          <boxGeometry args={[0.76, 0.18, 0.66]} />
+          <Cushion width={0.86} height={0.18} depth={0.72} />
         )}
         <meshStandardMaterial
-          color={occupied ? "#a54151" : "#652838"}
+          color={occupied ? "#92755b" : "#526b64"}
           roughness={0.9}
         />
       </mesh>
       <mesh position={[0, 0.79, 0.28]} rotation={[-0.08, 0, 0]}>
         {sofa ? (
-          <Cushion width={1.05} height={0.62} depth={0.18} />
+          <Cushion width={1.25} height={0.62} depth={0.18} />
         ) : (
-          <boxGeometry args={[0.76, 0.62, 0.18]} />
+          <Cushion width={0.86} height={0.62} depth={0.18} />
         )}
-        <meshStandardMaterial color="#7d3042" roughness={0.95} />
+        <meshStandardMaterial color="#536b63" roughness={0.95} />
       </mesh>
       {[-0.44, 0.44]
         .filter((x) => !sofa || (x < 0 ? left : right))
@@ -298,6 +279,10 @@ function Chair({
             <meshStandardMaterial color="#272932" />
           </mesh>
         ))}
+      <mesh position={[0, 0.39, -0.53]}>
+        <Cushion width={0.65} height={0.1} depth={0.32} />
+        <meshStandardMaterial color="#41564f" roughness={0.95} />
+      </mesh>
       <mesh position={[0, 0.16, 0]}>
         <boxGeometry args={[0.5, 0.32, 0.4]} />
         <meshStandardMaterial color="#191c24" />
@@ -314,6 +299,7 @@ function Camera({
   pitch,
   bodyYaw,
   controlsOpen,
+  zoom,
   reducedMotion,
   surface,
 }: {
@@ -321,6 +307,7 @@ function Camera({
   pitch: number;
   bodyYaw: number;
   controlsOpen: boolean;
+  zoom: number;
   reducedMotion: boolean;
   surface: RefObject<HTMLDivElement | null>;
   room: Room;
@@ -336,6 +323,7 @@ function Camera({
     pitch,
     bodyYaw,
     mode,
+    zoom,
     controlsOpen,
     reducedMotion,
     room.revision,
@@ -365,12 +353,13 @@ function Camera({
     const blend = reducedMotion ? 1 : 1 - Math.exp(-dt * 5);
     camera.position.lerp(p, blend);
     aim.lerp(desiredAim, blend);
+    const fov = THREE.MathUtils.clamp(view.fov + zoom, 32, 80);
     let lensMoving = false;
     if (camera instanceof THREE.PerspectiveCamera) {
       camera.fov = reducedMotion
-        ? view.fov
-        : THREE.MathUtils.damp(camera.fov, view.fov, 5, dt);
-      lensMoving = Math.abs(camera.fov - view.fov) > 0.01;
+        ? fov
+        : THREE.MathUtils.damp(camera.fov, fov, 5, dt);
+      lensMoving = Math.abs(camera.fov - fov) > 0.01;
       camera.updateProjectionMatrix();
     }
     const headBlend = reducedMotion ? 1 : 1 - Math.exp(-dt * 6);
@@ -401,6 +390,8 @@ function Camera({
     const el = surface.current;
     if (!el) return;
     el.dataset.camera = mode;
+    el.dataset.fov =
+      camera instanceof THREE.PerspectiveCamera ? camera.fov.toFixed(2) : "0";
     el.dataset.avatar = m.avatar || "male";
     el.dataset.transitioning = String(
       camera.position.distanceTo(p) > 0.002 ||
@@ -440,8 +431,8 @@ function Camera({
     const safe = {
       left: 16,
       top: 72,
-      right: controlsOpen && short ? 154 : 16,
-      bottom: controlsOpen && !short ? (narrow ? 210 : 180) : 64,
+      right: controlsOpen && short ? 264 : 16,
+      bottom: controlsOpen && !short ? (narrow ? 260 : 250) : 64,
     };
     // Tiny split views prioritize the video over generous padding.
     if (size.height - safe.top - safe.bottom < 200) {
@@ -463,7 +454,21 @@ function Camera({
       fits && mode !== "side" && mode !== "shoulder"
         ? screenMatrix(points)
         : null;
-    if (mat) {
+    const lookingAway =
+      Math.abs(smoothYaw.current) > 8 ||
+      Math.abs(smoothPitch.current) > 8 ||
+      mode === "side" ||
+      mode === "shoulder";
+    if (lookingAway) {
+      const w = Math.min(240, size.width * 0.32);
+      el.style.width = w + "px";
+      el.style.height = (w * 9) / 16 + "px";
+      el.style.left =
+        (controlsOpen && short ? 16 : Math.max(12, size.width - w - 16)) + "px";
+      el.style.top = "72px";
+      el.style.transform = "none";
+      el.dataset.mode = "mini";
+    } else if (mat) {
       el.style.width = "640px";
       el.style.height = "360px";
       el.style.left = "0";
@@ -483,7 +488,8 @@ function Camera({
       el.style.width = w + "px";
       el.style.height = h + "px";
       el.style.left = safe.left + (availableWidth - w) / 2 + "px";
-      el.style.top = safe.top + (social ? 0 : (availableHeight - h) / 2) + "px";
+      el.style.top =
+        safe.top + (social || narrow ? 0 : (availableHeight - h) / 2) + "px";
       el.style.transform = "none";
       el.dataset.mode = "docked";
     }
@@ -568,6 +574,7 @@ export default function Cinema({
   pitch,
   bodyYaw,
   controlsOpen,
+  zoom,
   reducedMotion,
   surface,
 }: {
@@ -575,6 +582,7 @@ export default function Cinema({
   pitch: number;
   bodyYaw: number;
   controlsOpen: boolean;
+  zoom: number;
   reducedMotion: boolean;
   surface: RefObject<HTMLDivElement | null>;
   room: Room;
@@ -656,32 +664,47 @@ export default function Cinema({
           const row = layout.find((s) => s.y === y)!;
           return (
             <group key={"tier" + y}>
-              {[-2.9, 2.9].map((x) => (
-                <mesh key={x} position={[x, y / 2 - 0.04, row.z]}>
-                  <boxGeometry args={[4.6, y, 1.8]} />
-                  <meshStandardMaterial color="#302331" roughness={1} />
-                </mesh>
-              ))}
-              {[0, 1, 2].map((i) => (
-                <mesh
-                  key={i}
-                  position={[
-                    0,
-                    (y - 0.5 + (i + 1) / 6) / 2 - 0.04,
-                    row.z - 0.6 + i * 0.6,
-                  ]}
-                >
-                  <boxGeometry args={[1.2, y - 0.5 + (i + 1) / 6, 0.6]} />
-                  <meshStandardMaterial color="#302331" />
-                </mesh>
-              ))}
+              <mesh position={[0, y / 2 - 0.04, row.z]}>
+                <boxGeometry args={[6.3, y, 2.2]} />
+                <meshStandardMaterial color="#302331" roughness={1} />
+              </mesh>
               <mesh position={[0, y + 0.015, row.z - 0.91]}>
-                <boxGeometry args={[10.4, 0.025, 0.035]} />
+                <boxGeometry args={[6.3, 0.025, 0.035]} />
                 <meshBasicMaterial color="#dba45f" />
               </mesh>
             </group>
           );
         })}
+      {layout[layout.length - 1].y > 0 &&
+        (() => {
+          const rear = layout[layout.length - 1],
+            front = layout[0].z - 0.95,
+            end = rear.z - 0.95,
+            length = end - front;
+          return (
+            <group>
+              {[-4.05, 4.05].map((x) => (
+                <group key={x}>
+                  <mesh
+                    position={[x, rear.y / 2, (front + end) / 2]}
+                    rotation={[-Math.PI / 2 - Math.atan2(rear.y, length), 0, 0]}
+                  >
+                    <planeGeometry args={[1.8, Math.hypot(length, rear.y)]} />
+                    <meshStandardMaterial color="#39443f" roughness={1} />
+                  </mesh>
+                  <mesh position={[x, rear.y / 2 - 0.04, rear.z + 0.65]}>
+                    <boxGeometry args={[1.8, rear.y, 3.2]} />
+                    <meshStandardMaterial color="#39443f" roughness={1} />
+                  </mesh>
+                </group>
+              ))}
+              <mesh position={[0, rear.y / 2 - 0.04, rear.z + 2.1]}>
+                <boxGeometry args={[10.4, rear.y, 2.3]} />
+                <meshStandardMaterial color="#39443f" roughness={1} />
+              </mesh>
+            </group>
+          );
+        })()}
       {layout.map((s) => (
         <Chair
           key={s.id}
@@ -694,7 +717,7 @@ export default function Cinema({
                 other.id !== s.id &&
                 other.y === s.y &&
                 Math.abs(other.z - s.z) < 0.01 &&
-                Math.abs(other.x - (s.x - 1.05)) < 0.01,
+                Math.abs(other.x - (s.x - 1.25)) < 0.01,
             )
           }
           right={
@@ -703,12 +726,12 @@ export default function Cinema({
                 other.id !== s.id &&
                 other.y === s.y &&
                 Math.abs(other.z - s.z) < 0.01 &&
-                Math.abs(other.x - (s.x + 1.05)) < 0.01,
+                Math.abs(other.x - (s.x + 1.25)) < 0.01,
             )
           }
         />
       ))}
-      {[-0.6, 0.6].map((x) => (
+      {[-3.25, 3.25].map((x) => (
         <mesh
           key={x}
           position={[x, 0.015, 1.2]}
@@ -743,6 +766,7 @@ export default function Cinema({
         pitch={pitch}
         bodyYaw={bodyYaw}
         controlsOpen={controlsOpen}
+        zoom={zoom}
         reducedMotion={reducedMotion}
         surface={surface}
       />

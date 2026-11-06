@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  aisleHeight,
   avatarMotion,
   avatarPosition,
   smoothHeadAngle,
@@ -57,4 +58,39 @@ test("head interpolation is bounded, time-based and reaches an exact idle state"
   assert(
     smoothHeadAngle(0, 75, 1 / 60) > 0 && smoothHeadAngle(0, 75, 1 / 60) < 75,
   );
+});
+
+test("walking corridor clears every chair footprint before the final seat approach", () => {
+  for (let n = 2; n <= 10; n++)
+    for (const seat of seats(n)) {
+      const m = { seat: seat.id, seated: true, sitAt: 0 } as Member;
+      for (let time = 0; time < 3900; time += 20) {
+        const p = avatarPosition(m, n, time);
+        for (const other of seats(n)) {
+          if (other.id === seat.id) continue;
+          assert(
+            !(Math.abs(p.x - other.x) < 0.5 && Math.abs(p.z - other.z) < 0.55),
+            `capacity ${n}, seat ${seat.id} intersects ${other.id} at ${time}`,
+          );
+        }
+      }
+    }
+});
+test("poke reaction expires and demand rendering returns to rest", () => {
+  const m = { seat: 0, seated: true, sitAt: 0, pokedAt: 6000 } as Member;
+  assert.equal(avatarMotion(m, 6500).poked, true);
+  assert.equal(avatarMotion(m, 7000).poked, false);
+  assert.equal(avatarMotion(m, 7000).moving, false);
+});
+
+test("aisle follows the ramp and enters every raised platform at floor height", () => {
+  for (let n = 2; n <= 10; n++)
+    for (const seat of seats(n)) {
+      const m = { seat: seat.id, seated: true, sitAt: 0 } as Member;
+      for (let t = 0; t < 4000; t += 20) {
+        const p = avatarPosition(m, n, t);
+        if (p.x > 3.2) assert(Math.abs(p.y - aisleHeight(n, p.z)) < 1e-8);
+        else assert(Math.abs(p.y - seat.y) < 1e-8);
+      }
+    }
 });

@@ -15,12 +15,14 @@ export default function ModelAvatar({
   offset,
   look,
   reducedMotion = false,
+  preview = false,
 }: {
   m: Member;
   capacity: number;
   offset: number;
   look: { yaw: number; pitch: number; bodyYaw: number };
   reducedMotion?: boolean;
+  preview?: boolean;
 }) {
   const style = m.avatar || "male";
   const gltf = useLoader(GLTFLoader, `/models/${style}.glb`);
@@ -81,6 +83,7 @@ export default function ModelAvatar({
   }, [
     m.sitAt,
     m.waveAt,
+    m.pokedAt,
     m.seated,
     look.yaw,
     look.pitch,
@@ -121,15 +124,21 @@ export default function ModelAvatar({
     if (!root) return;
     const now = Date.now() + offset,
       pose = avatarMotion(m, now),
-      p = avatarPosition(m, capacity, now),
-      next = avatarPosition(m, capacity, now + 20);
-    root.position.set(p.x, p.y, p.z);
+      p = preview ? { x: 0, y: 0, z: 0 } : avatarPosition(m, capacity, now),
+      next = preview ? p : avatarPosition(m, capacity, now + 20);
+    root.position.set(
+      p.x,
+      p.y + pose.sitting * 0.22 + Math.abs(pose.reaction) * 0.05,
+      p.z - pose.sitting * 0.5,
+    );
     const dx = next.x - p.x,
       dz = next.z - p.z;
     const desired =
       pose.walking && Math.hypot(dx, dz) > 0.00001
         ? Math.atan2(-dx, -dz)
-        : (-look.bodyYaw * Math.PI) / 180;
+        : m.seated
+          ? 0
+          : (-look.bodyYaw * Math.PI) / 180;
     const delta = Math.atan2(
       Math.sin(desired - root.rotation.y),
       Math.cos(desired - root.rotation.y),

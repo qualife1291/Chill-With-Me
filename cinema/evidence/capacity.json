@@ -6,13 +6,13 @@
   "members_per_room": 10,
   "authenticated_websockets": 30,
   "broadcast_all_members_ms": [
-    109,
-    125,
-    167
+    164,
+    111,
+    122
   ],
   "http_requests_measured": 92,
-  "http_p50_ms": 19.2,
-  "http_p95_ms": 31.8,
+  "http_p50_ms": 24.9,
+  "http_p95_ms": 41.6,
   "overflow_rejected": true,
   "limitations": "Short backend smoke; no media/GPU/WAN/sustained throughput. Own test rooms closed."
 }

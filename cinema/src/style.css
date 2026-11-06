@@ -1034,45 +1034,6 @@ body.cinema-active {
   font-size: 10px;
   padding: 6px 9px;
 }
-.head-pad {
-  display: grid;
-  grid-template-columns: 38px 38px 38px;
-  grid-template-rows: 32px 32px 32px;
-  align-items: center;
-  justify-items: center;
-  touch-action: none;
-  background: #1b2535;
-  border-radius: 50%;
-  padding: 5px;
-  cursor: grab;
-}
-.head-pad button {
-  min-height: 30px;
-  width: 34px;
-  padding: 4px;
-  font-size: 11px;
-}
-.pad-up {
-  grid-area: 1/2;
-}
-.pad-left {
-  grid-area: 2/1;
-}
-.pad-center {
-  grid-area: 2/2;
-  color: var(--accent);
-}
-.pad-right {
-  grid-area: 2/3;
-}
-.pad-down {
-  grid-area: 3/2;
-}
-.head-help {
-  font-size: 10px;
-  color: var(--muted);
-  max-width: 130px;
-}
 .close-panel {
   position: absolute;
   right: 7px;
@@ -1174,9 +1135,6 @@ body.cinema-active {
   .head-help {
     display: none;
   }
-  .head-pad {
-    transform: scale(0.9);
-  }
   .cinema-app.show-controls .transport {
     bottom: auto;
     top: 50px;
@@ -1224,9 +1182,6 @@ body.cinema-active {
   .cinema-app.show-controls .camera-options {
     max-width: 140px;
   }
-  .cinema-app.show-controls .head-pad {
-    transform: scale(0.8);
-  }
 }
 .cinema-app .stage-column > p[role="status"] {
   position: absolute;
@@ -1260,10 +1215,7 @@ body.cinema-active {
     width: 130px;
     padding: 4px;
   }
-  .cinema-app.show-controls .camera-options,
-  .cinema-app.show-controls .head-help {
-    display: none;
-  }
+  .cinema-app.show-controls .head-help { display: none; }
   .cinema-app.show-controls .screen-surface {
     /* Camera framing reserves the control area without distorting the video. */
   }
@@ -1399,10 +1351,10 @@ body.cinema-active {
     --flat-height: calc(100dvh - 148px);
     width: min(
       900px,
-      calc(100% - 180px),
+      calc(100% - 290px),
       calc(var(--flat-height) * 1.7777778)
     ) !important;
-    left: calc((100% - 154px) / 2) !important;
+    left: calc((100% - 264px) / 2) !important;
   }
 }
 
@@ -1702,3 +1654,33 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 .readiness-body p { font-size:13px; margin:8px 0; }
 .readiness-body small { display:block; color:#b7bdc9; margin-top:6px; }
 @media(max-width:800px){ .readiness-body { position:fixed; left:12px; right:auto; top:64px; } }
+
+/* Compact view controls: one selector, gestures for looking, discrete actions. */
+.cinema-app.show-controls .scene-controls { max-width:min(360px,calc(100% - 24px)); padding:14px; }
+.camera-options { max-width:none; width:100%; }
+.view-select { display:flex; align-items:center; justify-content:space-between; width:100%; gap:12px; font-size:13px; color:#cbd5d1; }
+.view-select select,.avatar-actions select { min-height:44px; border-radius:10px; border:1px solid #52645e; background:#202d2b; color:#f6f1e7; padding:8px 12px; font:inherit; max-width:100%; }
+.avatar-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; gap:8px; }
+.cinema-app .head-help { display:none; }
+.view-select select:focus-visible,.avatar-actions select:focus-visible { outline:2px solid #edc28c; outline-offset:3px; }
+.file-picker { position:relative; display:flex; flex-direction:column; gap:7px; border:1px dashed #8a9c90; border-radius:16px; padding:18px; background:#22322b66; cursor:pointer; }
+.file-picker:hover,.file-picker:focus-within { border-color:#f1c38b; background:#33433988; }
+.file-picker-title { font-weight:600; color:#f6e6cc; }
+.file-picker small { color:#bac8bf; font-size:12px; }
+.file-picker input { font-size:13px; color:#c4cec6; }
+.file-picker input::file-selector-button { border:1px solid #738478; border-radius:9px; background:#3b4d41; color:#fff5e4; padding:10px 14px; margin-right:12px; cursor:pointer; }
+.file-picker:has(input:disabled) { opacity:.55; cursor:progress; }
+.screen-surface[data-mode="mini"] { border-radius:10px; overflow:hidden; box-shadow:0 5px 24px #0008; }
+.poke-notice { position:absolute; left:50%; top:78px; transform:translateX(-50%); max-width:65%; padding:10px 16px; border-radius:24px; background:#253c32ed; color:#fff1d9; pointer-events:none; z-index:4; }
+@media(max-height:480px) { .cinema-app.show-controls .scene-controls { max-width:240px; padding:10px; } .camera-options button { padding:6px; } }
+
+/* The whole upload tile is the native input target, including keyboard focus. */
+.file-picker input[type="file"] { position:absolute; inset:0; width:100%; height:100%; opacity:0; margin:0; cursor:pointer; }
+.file-picker:has(input:focus-visible) { outline:2px solid #edc28c; outline-offset:3px; }
+
+.camera-options { display:flex; flex-wrap:wrap; }
+.cinema-app.show-controls .camera-options { max-width:none; }
+@media(max-height:480px) {
+ .cinema-app.show-controls .scene-controls { width:240px; max-height:calc(100dvh - 74px); overflow:auto; }
+ .cinema-app.show-controls .camera-options { display:flex; }
+}

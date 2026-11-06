@@ -13,7 +13,14 @@ export function avatarMotion(m: Member, now: number) {
   const waveAge = now - (m.waveAt ?? -Infinity);
   const waving = waveAge >= 0 && waveAge < 2400;
   const wave = waving ? Math.sin(Math.PI * clamp(waveAge / 2400)) : 0;
+  const pokeAge = now - (m.pokedAt ?? -Infinity);
+  const poked = pokeAge >= 0 && pokeAge < 1000;
+  const reaction = poked
+    ? Math.sin((pokeAge / 1000) * Math.PI) * Math.sin(pokeAge * 0.025)
+    : 0;
   return {
+    poked,
+    reaction,
     travel,
     sitting,
     walking,
@@ -22,29 +29,46 @@ export function avatarMotion(m: Member, now: number) {
     wave,
     hand: waving ? Math.sin(waveAge * 0.018) * 0.35 * wave : 0,
     moving:
-      walking || (m.seated && elapsed >= 4000 && elapsed < 5000) || waving,
+      walking ||
+      (m.seated && elapsed >= 4000 && elapsed < 5000) ||
+      waving ||
+      poked,
   };
 }
 
-// Aisle -> row -> sit. Preserve the lobby starting point when admission seats a member.
+export function aisleHeight(capacity: number, z: number) {
+  const layout = seats(capacity),
+    highest = layout[layout.length - 1].y;
+  return Math.min(
+    highest,
+    Math.max(0, ((z - (layout[0].z - 0.95)) * 0.5) / 2.2),
+  );
+}
+
+// Approach outside the chairs, cross in front of the row, then back into the seat.
 export function avatarPosition(m: Member, capacity: number, now: number) {
-  const start = {
-    x: ((m.seat % 3) - 1) * 0.6,
-    y: 0,
-    z: 4 + (m.seat % 2) * 0.4,
-  };
+  const layout = seats(capacity),
+    rear = layout[layout.length - 1];
+  const start = { x: 4.15, y: rear.y, z: rear.z + 2.2 + (m.seat % 2) * 0.35 };
   if (!m.seated) return start;
   const s = seats(capacity)[m.seat];
   const t = avatarMotion(m, now).travel;
-  if (t < 0.55) {
-    const along = smooth(t / 0.55);
-    return {
-      x: start.x * (1 - along),
-      y: s.y * along,
-      z: start.z + (s.z - start.z) * along,
-    };
-  }
-  return { x: s.x * smooth((t - 0.55) / 0.45), y: s.y, z: s.z };
+  const points = [
+    start,
+    { x: 4.15, y: s.y, z: s.z - 0.95 },
+    { x: s.x, y: s.y, z: s.z - 0.95 },
+    s,
+  ];
+  const segment = Math.min(2, Math.floor(t * 3));
+  const u = smooth(t * 3 - segment),
+    a = points[segment],
+    b = points[segment + 1];
+  const z = a.z + (b.z - a.z) * u;
+  return {
+    x: a.x + (b.x - a.x) * u,
+    y: segment === 0 ? aisleHeight(capacity, z) : s.y,
+    z: a.z + (b.z - a.z) * u,
+  };
 }
 
 // Time-based visual smoothing; snap at rest so on-demand rendering can go idle.

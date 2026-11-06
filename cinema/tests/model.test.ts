@@ -14,7 +14,20 @@ test("all nine capacities produce exact unique seats", () => {
     const s = seats(n);
     assert.equal(s.length, n);
     assert.equal(new Set(s.map((s) => `${s.x},${s.z}`)).size, n);
-    assert(s.every((s) => Math.abs(s.x) > 0.6));
+    const rows = [...new Set(s.map((p) => p.z))].map((z) =>
+      s.filter((p) => p.z === z),
+    );
+    assert.equal(rows.length, n < 6 ? 1 : n <= 8 ? 2 : 3);
+    for (const row of rows) {
+      assert(Math.abs(row.reduce((sum, p) => sum + p.x, 0)) < 1e-9);
+      for (let i = 1; i < row.length; i++)
+        assert(Math.abs(row[i].x - row[i - 1].x - 1.25) < 1e-9);
+    }
+    assert(
+      Math.max(...rows.map((r) => r.length)) -
+        Math.min(...rows.map((r) => r.length)) <=
+        1,
+    );
   }
   assert.throws(() => seats(11));
 });
@@ -182,5 +195,30 @@ test("avatar choice survives creation, pending approval and snapshots with legac
   );
   assert.throws(() =>
     createRoom("h", "Host", "Bad", 2, 1000, "invalid" as never),
+  );
+});
+
+test("poke targets approved peers, is actor scoped, and has a three-second cooldown", () => {
+  const r = createRoom("h", "H", "Poke", 3, 0);
+  requestJoin(r, "g", "G", 1);
+  assert.throws(
+    () => apply(r, "h", { type: "poke", id: "g" }, 2),
+    /INVALID_TARGET/,
+  );
+  apply(r, "h", { type: "accept", id: "g" }, 3);
+  apply(r, "g", { type: "poke", id: "h" }, 4);
+  assert.equal(r.members[0].pokedAt, 4);
+  assert.equal(r.members[0].pokedBy, "g");
+  apply(r, "g", { type: "poke", id: "h" }, 100);
+  assert.equal(r.members[0].pokedAt, 4);
+  apply(r, "g", { type: "poke", id: "h" }, 3004);
+  assert.equal(r.members[0].pokedAt, 3004);
+  assert.throws(
+    () => apply(r, "h", { type: "poke", id: "h" }, 4000),
+    /INVALID_TARGET/,
+  );
+  assert.throws(
+    () => apply(r, "outsider", { type: "poke", id: "h" }, 4000),
+    /FORBIDDEN/,
   );
 });

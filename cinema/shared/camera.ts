@@ -13,7 +13,7 @@ export function cameraView(
     seated = avatarMotion(m, now).sitting;
   if (mode === "first")
     return {
-      position: [base.x, base.y + 1.65 - seated * 0.15, base.z - 0.08],
+      position: [base.x, base.y + 1.65 - seated * 0.4, base.z - 0.08],
       target: [0, 2.3, -5.7],
       fov: 60,
     };
@@ -25,8 +25,8 @@ export function cameraView(
     };
   if (mode === "side")
     return {
-      position: [4.7, highest + 2.7, rear + 3.4],
-      target: [0, 1.2, Math.max(0, rear - 1)],
+      position: [4.1, highest + 1.8, -2.7],
+      target: [0, highest + 0.9, rear * 0.5],
       fov: 54,
     };
   return {

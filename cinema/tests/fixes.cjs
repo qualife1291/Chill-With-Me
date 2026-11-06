@@ -132,6 +132,8 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   });
   await host.getByPlaceholder("Mọi người gọi bạn là…").fill("Host fixes");
   await host.getByLabel("Tên phòng mới").fill(testTitle);
+  await host.getByLabel("Số ghế", { exact: true }).selectOption("5");
+  await host.getByLabel("Kiểu chỗ ngồi", { exact: true }).selectOption("sofa");
   await host.getByRole("button", { name: "Tạo phòng" }).first().click();
   const quick = host.getByRole("dialog", { name: "Thêm video để bắt đầu" });
   await quick.waitFor();
@@ -216,13 +218,17 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .getAttribute("data-mode");
   if (projection !== "projected")
     throw Error("screen not projected: " + projection);
-  await host.getByRole("button", { name: "Ngoái ra sau", exact: true }).click();
+  await host.locator(".scene").focus();
+  await host.keyboard.down("ArrowRight");
   await host.waitForFunction(
-    () => document.querySelector(".screen-surface")?.dataset.mode === "docked",
+    () => Number(document.querySelector(".screen-surface")?.dataset.yaw) > 25,
+  );
+  await host.keyboard.up("ArrowRight");
+  await host.waitForFunction(
+    () => document.querySelector(".screen-surface")?.dataset.mode === "mini",
   );
   if (
-    (await host.locator(".screen-surface").getAttribute("data-mode")) !==
-    "docked"
+    (await host.locator(".screen-surface").getAttribute("data-mode")) !== "mini"
   )
     throw Error("rear camera dock missing");
   await host
@@ -380,73 +386,49 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
       Math.abs(Number(document.querySelector(".screen-surface")?.dataset.yaw)) <
       0.01,
   );
-  const beforeYaw = Number(
-    await host.locator(".screen-surface").getAttribute("data-yaw"),
-  );
-  await host.getByRole("button", { name: "Quay phải", exact: true }).click();
-  await host.waitForTimeout(500);
-  const afterYaw = Number(
-    await host.locator(".screen-surface").getAttribute("data-yaw"),
-  );
-  if (afterYaw - beforeYaw > 1.2 || afterYaw - beforeYaw < 0.5)
-    throw Error(
-      "rotation is not one degree per click " +
-        JSON.stringify({ beforeYaw, afterYaw }),
-    );
-  await host
-    .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
-    .click();
-  await host.waitForTimeout(1000);
-  await host.bringToFront();
-  const turnButton = await host
-    .getByRole("button", { name: "Quay phải", exact: true })
-    .boundingBox();
-  await host.mouse.move(
-    turnButton.x + turnButton.width / 2,
-    turnButton.y + turnButton.height / 2,
-  );
-  await host.mouse.down();
+  await host.locator(".scene").focus();
+  await host.keyboard.down("ArrowRight");
   await host.waitForFunction(
-    () => Number(document.querySelector(".screen-surface")?.dataset.yaw) > 2,
+    () => Number(document.querySelector(".screen-surface")?.dataset.yaw) > 3,
   );
   await host.evaluate(() => window.dispatchEvent(new Event("blur")));
-  await host.waitForTimeout(1300);
-  const padStop = Number(
+  await host.keyboard.up("ArrowRight");
+  await host.waitForTimeout(1200);
+  const stopped = Number(
     await host.locator(".screen-surface").getAttribute("data-yaw"),
   );
-  await host.waitForTimeout(900);
-  const padAfter = Number(
-    await host.locator(".screen-surface").getAttribute("data-yaw"),
-  );
-  await host.mouse.up();
-  if (padStop > 60 || Math.abs(padAfter - padStop) > 0.3)
-    throw Error("Held D-pad keeps turning after window blur");
+  await host.waitForTimeout(500);
+  if (
+    Math.abs(
+      Number(await host.locator(".screen-surface").getAttribute("data-yaw")) -
+        stopped,
+    ) > 0.3
+  )
+    throw Error("Held camera key survives blur");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
+  const zoomPlayer = await host.evaluateHandle(() => window.__yt);
+  await host.mouse.move(40, 250);
+  await host.mouse.wheel(0, 700);
   await host.waitForFunction(
-    () =>
-      Math.abs(Number(document.querySelector(".screen-surface")?.dataset.yaw)) <
-      0.01,
+    () => Number(document.querySelector(".screen-surface")?.dataset.fov) > 49,
   );
-  const padCenter = await host.locator(".pad-center").boundingBox();
-  await host.mouse.move(
-    padCenter.x + padCenter.width / 2,
-    padCenter.y + padCenter.height / 2,
-  );
-  await host.mouse.down({ button: "right" });
-  await host.mouse.move(
-    padCenter.x + padCenter.width / 2 + 30,
-    padCenter.y + padCenter.height / 2,
-  );
-  await host.mouse.up({ button: "right" });
-  await host.waitForTimeout(200);
-  if (
-    Math.abs(
-      Number(await host.locator(".screen-surface").getAttribute("data-yaw")),
-    ) > 0.1
-  )
-    throw Error("Right-button pad drag turned head");
+  await host.mouse.wheel(0, -700);
+  await host.waitForTimeout(1000);
+  if (!(await host.evaluate((p) => p === window.__yt, zoomPlayer)))
+    throw Error("Zoom remounted video");
+  await zoomPlayer.dispose();
+  await host
+    .getByLabel("Chọc bạn", { exact: true })
+    .selectOption({ label: "Guest fixes" });
+  await guest
+    .getByRole("status")
+    .filter({ hasText: "Host fixes vừa chọc bạn" })
+    .waitFor();
+  await host
+    .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
+    .click();
   await host.evaluate(() => {
     window.__yt.video = "ZZZZZZZZZZZ";
   });
@@ -466,7 +448,12 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await guest.waitForFunction(() => window.__yt.video === "5qap5aO4i9A");
   await openPanel(host, "Chat");
   await host.bringToFront();
-  await host.getByRole("button", { name: "Ngước lên", exact: true }).click();
+  await host.locator(".scene").focus();
+  await host.keyboard.down("ArrowUp");
+  await host.waitForFunction(
+    () => Number(document.querySelector(".screen-surface")?.dataset.pitch) > 1,
+  );
+  await host.keyboard.up("ArrowUp");
   await host.waitForFunction(
     () =>
       Number(document.querySelector(".screen-surface")?.dataset.pitch) > 0.5,
@@ -569,7 +556,8 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   const gazeBefore = await host
     .locator(".scene canvas")
     .getAttribute("data-female-gaze");
-  // A no-op server pose snapshot schedules another render without changing gaze.
+  await host.waitForTimeout(2500);
+  // An older persisted snapshot must not replace an unchanged live pose after two seconds.
   await host.evaluate(async () => {
     const rooms = await (await fetch("/api/rooms")).json();
     const slot = rooms.find((r) => r.open && r.count === 2).slot;
@@ -712,13 +700,17 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   if ((await viewButton.getAttribute("aria-pressed")) !== "true")
     await viewButton.click();
   const originalPlayer = await host.evaluateHandle(() => window.__yt);
-  await host.getByRole("button", { name: "Mắt người", exact: true }).click();
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("first");
   await host.waitForFunction(
     () => document.querySelector(".screen-surface")?.dataset.camera === "first",
   );
   await host.getByRole("button", { name: "Chế độ nhẹ", exact: true }).click();
   await host.locator(".screen-surface.flat").waitFor();
   await host.setViewportSize({ width: 844, height: 390 });
+  if (!(await host.getByLabel("Chọn góc nhìn", { exact: true }).isVisible()))
+    throw Error("Landscape hides compact camera controls");
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("side");
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("first");
   const flatBounds = await host.locator(".screen-surface.flat").boundingBox();
   if (
     flatBounds.x < 0 ||
@@ -736,7 +728,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   )
     throw Error("Light mode remounted video");
   await host.getByRole("button", { name: "Bật 3D", exact: true }).click();
-  await host.getByRole("button", { name: "Toàn cảnh", exact: true }).click();
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("third");
   await host.waitForFunction(
     () => document.querySelector(".screen-surface")?.dataset.camera === "third",
   );
@@ -750,7 +742,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     ["Sau vai", "shoulder"],
     ["Giao lưu", "side"],
   ]) {
-    await host.getByRole("button", { name: label, exact: true }).click();
+    await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption(mode);
     await host.waitForFunction((mode) => {
       const s = document.querySelector(".screen-surface");
       return s?.dataset.camera === mode && s.dataset.transitioning === "false";
@@ -769,9 +761,29 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
       throw Error("New camera clips video " + label);
     await host.screenshot({ path: `evidence/view-${mode}.png` });
   }
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+  ]) {
+    await host.setViewportSize(viewport);
+    await host.waitForTimeout(1000);
+    if (!(await host.getByLabel("Chọn góc nhìn", { exact: true }).isVisible()))
+      throw Error("Camera selector hidden in mobile orientation");
+    const video = await host.locator(".screen-surface").boundingBox(),
+      controls = await host.locator(".scene-controls").boundingBox();
+    if (
+      Math.min(video.x + video.width, controls.x + controls.width) >
+        Math.max(video.x, controls.x) &&
+      Math.min(video.y + video.height, controls.y + controls.height) >
+        Math.max(video.y, controls.y)
+    )
+      throw Error("Corner player overlaps camera controls");
+    await host.screenshot({ path: `evidence/social-${viewport.width}.png` });
+  }
+  await host.setViewportSize({ width: 1440, height: 1000 });
   await cameraPlayer.dispose();
   await host.emulateMedia({ reducedMotion: "reduce" });
-  await host.getByRole("button", { name: "Mắt người", exact: true }).click();
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("first");
   await host.waitForFunction(
     () => {
       const s = document.querySelector(".screen-surface");
@@ -783,7 +795,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     { timeout: 1500 },
   );
   await host.emulateMedia({ reducedMotion: "no-preference" });
-  await host.getByRole("button", { name: "Toàn cảnh", exact: true }).click();
+  await host.getByLabel("Chọn góc nhìn", { exact: true }).selectOption("third");
   await host.waitForFunction(() => {
     const s = document.querySelector(".screen-surface");
     return s?.dataset.camera === "third" && s.dataset.transitioning === "false";
@@ -1049,7 +1061,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
           "failed playlist submit preserves URL; mobile queue controls are 44px",
           "idle 3D scene stops continuous rendering while video remains active",
           "stale playlist action reports conflict, refreshes and is not replayed",
-          "held D-pad stops after window blur and ignores right-button pad drag",
+          "held camera key stops after window blur",
           "smoothed host rig head settles exactly and matches the avatar in guest renderer",
           "blocked localStorage does not break room, chat or voice controls",
           "autoplay-blocked feedback and user-gesture playback recovery",
@@ -1067,18 +1079,21 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
           "both sessions see two members",
           "centered approval dialog",
           "DOM player projects onto 3D screen",
-          "rear camera and dock fallback",
+          "looking around keeps a small corner player clear of faces",
           "chat speech queue and volume 80 to 20 to 80",
           "mobile no overflow",
           "full viewport default theater",
           "required link modal cannot defer or Escape",
           "keyboard head controls",
+          "targeted poke is shared and announces the actor",
+          "five-seat sofa room renders alongside ten-seat cinema smoke",
+          "compact camera selector remains usable in landscape",
           "Enter starts video atomically",
           "neck pose shared",
           "default screen centered",
           "host empty queue voice once and restart",
           "viewer controls disabled",
-          "one-degree turn click",
+          "wheel zoom retains the existing player",
           "YouTube recommendation restored to room item",
           "ended advances both sessions to next room queue item",
         ],

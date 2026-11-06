@@ -1,6 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo } from "react";
 import ModelAvatar from "./ModelAvatar";
+import Cushion from "./RoundedGeometry";
 import ModelBoundary from "./ModelBoundary";
 import type { AvatarStyle, Member } from "../shared/model";
 import * as THREE from "three";
@@ -67,8 +68,8 @@ export default function Lobby({
       camera={{ position: [0, 3.2, 12], fov: 46 }}
       gl={{ antialias: true, alpha: false }}
     >
-      <color attach="background" args={["#16151d"]} />
-      <fog attach="fog" args={["#16151d", 18, 35]} />
+      <color attach="background" args={["#182326"]} />
+      <fog attach="fog" args={["#182326", 18, 35]} />
       <ambientLight intensity={0.85} />
       <hemisphereLight args={["#d8d6f0", "#39291f", 1.5]} />
       <directionalLight position={[0, 5, 6]} intensity={2} color="#ffdfb0" />
@@ -80,15 +81,15 @@ export default function Lobby({
       />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 1]}>
         <planeGeometry args={[18, 20]} />
-        <meshStandardMaterial color="#4d3940" roughness={0.9} />
+        <meshStandardMaterial color="#333b3a" roughness={0.48} />
       </mesh>
       <mesh position={[0, 2.3, -4.2]}>
         <boxGeometry args={[16, 4.6, 0.25]} />
-        <meshStandardMaterial color="#292836" />
+        <meshStandardMaterial color="#223735" />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 1]}>
         <planeGeometry args={[8.6, 12]} />
-        <meshStandardMaterial color="#613445" roughness={1} />
+        <meshStandardMaterial color="#51605a" roughness={1} />
       </mesh>
       {[-4.4, 4.4].map((x) => (
         <mesh key={x} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.01, 1]}>
@@ -102,9 +103,9 @@ export default function Lobby({
         return (
           <group key={slot} position={[x, 0, -3.9]}>
             <mesh position={[0, 1.4, 0]} onClick={() => onSelect(slot)}>
-              <boxGeometry args={[2.05, 2.8, 0.2]} />
+              <Cushion width={2.05} height={2.8} depth={0.2} />
               <meshStandardMaterial
-                color={active ? "#8f6347" : "#513c40"}
+                color={active ? "#8a7359" : "#3e514b"}
                 roughness={0.75}
               />
             </mesh>
@@ -175,28 +176,87 @@ export default function Lobby({
           ))}
         </group>
       ))}
-      {[-5, 5].map((x) => (
-        <group key={x} position={[x, 0, 1.7]}>
-          <mesh position={[0, 0.5, 0]}>
-            <boxGeometry args={[1.8, 1, 0.8]} />
-            <meshStandardMaterial color="#302d39" />
+      {/* Lounge islands: soft upholstery, timber, brass and foliage. */}
+      {[-5.6, 5.6].map((x) => (
+        <group key={x} position={[x, 0, 0.7]}>
+          <mesh position={[0, 0.26, 0]}>
+            <boxGeometry args={[2.3, 0.13, 1.05]} />
+            <meshStandardMaterial color="#b2936a" roughness={0.55} />
           </mesh>
-          <mesh position={[0, 1.04, 0]}>
-            <boxGeometry args={[2, 0.08, 0.95]} />
-            <meshStandardMaterial color="#c49a69" />
+          {[-0.58, 0.58].map((dx) => (
+            <mesh key={dx} position={[dx, 0.43, 0]} scale={[1.04, 0.22, 0.87]}>
+              <sphereGeometry args={[0.65, 20, 12]} />
+              <meshStandardMaterial color="#819487" roughness={0.95} />
+            </mesh>
+          ))}
+          {[-0.9, 0.9].map((dx) => (
+            <mesh key={dx} position={[dx, 0.13, 0]}>
+              <cylinderGeometry args={[0.04, 0.05, 0.26, 8]} />
+              <meshStandardMaterial
+                color="#cba671"
+                metalness={0.55}
+                roughness={0.4}
+              />
+            </mesh>
+          ))}
+          <mesh position={[0, 0.71, -0.34]}>
+            <Cushion width={2.2} height={0.48} depth={0.18} />
+            <meshStandardMaterial color="#6e887a" roughness={0.95} />
           </mesh>
-          <mesh position={[0, 1.45, 0]}>
-            <boxGeometry args={[0.16, 0.8, 0.16]} />
-            <meshStandardMaterial color="#ac8659" />
+          <group position={[0, 0, -1.6]}>
+            <mesh position={[0, 0.25, 0]}>
+              <cylinderGeometry args={[0.3, 0.23, 0.5, 20]} />
+              <meshStandardMaterial color="#c5b29b" roughness={0.85} />
+            </mesh>
+            {Array.from({ length: 7 }, (_, i) => (
+              <group key={i} rotation={[0, (i * Math.PI * 2) / 7, 0]}>
+                <mesh
+                  position={[0, 0.85, 0.18]}
+                  rotation={[0.3, 0, 0]}
+                  scale={[0.16, 0.64, 0.07]}
+                >
+                  <sphereGeometry args={[1, 12, 10]} />
+                  <meshStandardMaterial
+                    color={i % 2 ? "#537d65" : "#779b76"}
+                    roughness={0.85}
+                  />
+                </mesh>
+              </group>
+            ))}
+          </group>
+        </group>
+      ))}
+      {/* Narrow timber fluting catches soft light without texture downloads. */}
+      {Array.from({ length: 43 }, (_, i) =>
+        i % 9 < 3 ? null : (
+          <mesh key={i} position={[-7.4 + i * 0.35, 2.3, -4.03]}>
+            <boxGeometry args={[0.065, 4.6, 0.07]} />
+            <meshStandardMaterial color="#65746a" roughness={0.75} />
           </mesh>
-          <mesh position={[0, 1.9, 0]}>
-            <sphereGeometry args={[0.23, 12, 8]} />
-            <meshBasicMaterial color="#ffe2ad" />
+        ),
+      )}
+      {[-3.15, 0, 3.15].map((x) => (
+        <group key={x} position={[x, 3.8, -1]}>
+          <mesh>
+            <cylinderGeometry args={[0.025, 0.025, 2.1, 8]} />
+            <meshStandardMaterial color="#bca079" metalness={0.6} />
+          </mesh>
+          <mesh position={[0, -0.62, 0]}>
+            <sphereGeometry args={[0.2, 20, 12]} />
+            <meshBasicMaterial color="#ffe6bc" />
+          </mesh>
+          <mesh position={[0, -0.52, 0]}>
+            <cylinderGeometry args={[0.34, 0.38, 0.12, 24]} />
+            <meshStandardMaterial
+              color="#b99b6e"
+              metalness={0.6}
+              roughness={0.35}
+            />
           </mesh>
         </group>
       ))}
       {[-2, 1, 4].map((z) => (
-        <group key={z} position={[0, 4.5, z]}>
+        <group key={z} position={[0, 5.35, z]}>
           <mesh>
             <boxGeometry args={[15, 0.14, 0.28]} />
             <meshStandardMaterial color="#272732" />
@@ -213,6 +273,7 @@ export default function Lobby({
         <ModelBoundary key={avatar}>
           <Suspense fallback={null}>
             <ModelAvatar
+              preview
               m={member}
               capacity={2}
               offset={0}

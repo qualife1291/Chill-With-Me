@@ -39,7 +39,13 @@ import {
   RotateCcw,
   MousePointer2,
 } from "lucide-react";
-import { apply, createRoom, type Room, type Command } from "../shared/model";
+import {
+  apply,
+  createRoom,
+  type Room,
+  type Command,
+  type Member,
+} from "../shared/model";
 import Player from "./Player";
 import { useChatSpeech } from "./useChatSpeech";
 import { useHeadDrag } from "./useHeadDrag";
@@ -123,6 +129,7 @@ function App() {
     [error, setError] = useState(""),
     [tab, setTab] = useState("chat"),
     [camera, setCamera] = useState("third"),
+    [zoom, setZoom] = useState(0),
     [yaw, setYaw] = useState(0),
     [pitch, setPitch] = useState(0),
     [bodyYaw, setBodyYaw] = useState<0 | 180>(0),
@@ -179,7 +186,7 @@ function App() {
   const liveLook = useRef(
     new Map<
       string,
-      { look: NonNullable<Room["members"][number]["look"]>; at: number }
+      { look: NonNullable<Room["members"][number]["look"]>; session: string }
     >(),
   );
   const history = useRef<HTMLDivElement>(null),
@@ -246,16 +253,22 @@ function App() {
         (e instanceof Error ? e.message : "Không thực hiện được."),
     );
   const receive = (v: Snapshot) => {
-    if (v.room)
+    if (v.room) {
+      const session = v.room.session,
+        ids = new Set(v.room.members.map((m) => m.id));
+      for (const [id, pose] of liveLook.current)
+        if (pose.session !== session || !ids.has(id))
+          liveLook.current.delete(id);
       v.room = {
         ...v.room,
         members: v.room.members.map((m) => {
           const recent = liveLook.current.get(m.id);
-          return recent && Date.now() - recent.at < 2000
+          return recent && recent.session === session
             ? { ...m, look: recent.look }
             : m;
         }),
       };
+    }
     const current = latestRoom.current;
     if (
       v.room &&
@@ -337,9 +350,20 @@ function App() {
           return;
         }
         if (v.type === "look") {
-          liveLook.current.set(v.id, { look: v.look, at: Date.now() });
           const r = latestRoom.current;
-          if (r && r.session === v.session) {
+          if (
+            r &&
+            r.session === v.session &&
+            r.members.some((m) => m.id === v.id)
+          ) {
+            liveLook.current.set(v.id, { look: v.look, session: v.session });
+            const previous = r.members.find((m) => m.id === v.id)?.look;
+            if (
+              previous?.yaw === v.look.yaw &&
+              previous?.pitch === v.look.pitch &&
+              previous?.bodyYaw === v.look.bodyYaw
+            )
+              return;
             const next = {
               ...r,
               members: r.members.map((m) =>
@@ -430,6 +454,7 @@ function App() {
     setYaw(0);
     setPitch(0);
     setBodyYaw(0);
+    setZoom(0);
     setPanel("");
     setShowControls(false);
     setTts(speech.enable());
@@ -654,17 +679,20 @@ function App() {
     setYaw(0);
     setPitch(0);
     setBodyYaw(0);
+    setZoom(0);
   };
   useEffect(() => {
     if (status !== "joined") return;
-    let previous = "";
+    let previous = "",
+      sentAt = 0;
     const t = setInterval(() => {
       const r = latestRoom.current,
         ws = chatSocket.current;
       if (!r || ws?.readyState !== WebSocket.OPEN) return;
       const text = JSON.stringify({ ...head.current });
-      if (text !== previous) {
+      if (text !== previous || Date.now() - sentAt >= 2000) {
         previous = text;
+        sentAt = Date.now();
         ws.send(
           JSON.stringify({ type: "look", session: r.session, ...head.current }),
         );
@@ -964,6 +992,7 @@ function App() {
                         <label>
                           Số ghế
                           <select
+                            aria-label="Số ghế"
                             value={capacity}
                             onChange={(e) =>
                               setCapacity(Number(e.target.value))
@@ -979,6 +1008,7 @@ function App() {
                         <label>
                           Kiểu chỗ ngồi
                           <select
+                            aria-label="Kiểu chỗ ngồi"
                             value={seating}
                             onChange={(e) =>
                               setSeating(e.target.value as "cinema" | "sofa")
@@ -1316,6 +1346,22 @@ function App() {
                     tabIndex={0}
                     aria-label="Rạp phim, giữ chuột và kéo hoặc dùng WASD, phím mũi tên để nhìn"
                     {...headDrag.handlers}
+                    onWheel={(e) => {
+                      if (
+                        light ||
+                        e.ctrlKey ||
+                        (e.target as HTMLElement).closest(
+                          ".screen-surface,button,input,select",
+                        )
+                      )
+                        return;
+                      setZoom((v) =>
+                        Math.max(
+                          -24,
+                          Math.min(24, v + Math.sign(e.deltaY) * 3),
+                        ),
+                      );
+                    }}
                     onPointerDownCapture={(e) => {
                       const target = e.target as HTMLElement;
                       if (
@@ -1384,6 +1430,7 @@ function App() {
                             pitch={pitch}
                             bodyYaw={bodyYaw}
                             controlsOpen={showControls}
+                            zoom={zoom}
                             surface={surface}
                           />
                         </SceneBoundary>
@@ -1393,7 +1440,7 @@ function App() {
                   {!light && !headDrag.used && !showControls && (
                     <div className="view-hint" aria-hidden="true">
                       <MousePointer2 size={14} />
-                      <span>Giữ và kéo nền rạp để nhìn quanh</span>
+                      <span>Kéo để nhìn quanh · Cuộn để thu/phóng</span>
                     </div>
                   )}
                   {(Math.abs(yaw) > 0.5 ||
@@ -1409,47 +1456,35 @@ function App() {
                         <RotateCcw size={18} aria-hidden="true" />
                       </button>
                     )}
+                  {me && (
+                    <PokeNotice
+                      member={me}
+                      members={room.members}
+                      offset={offset}
+                    />
+                  )}
                   <div className="scene-controls">
                     <div
                       className="camera-options"
                       role="group"
                       aria-label="Góc nhìn và hành động"
                     >
-                      <div
-                        className="camera-presets"
-                        role="group"
-                        aria-label="Chọn góc nhìn"
-                      >
-                        <button
-                          title="Góc nhìn từ chỗ ngồi"
-                          aria-pressed={camera === "first"}
-                          className={camera === "first" ? "selected" : ""}
-                          onClick={() => setCamera("first")}
+                      <label className="view-select">
+                        Góc nhìn
+                        <select
+                          aria-label="Chọn góc nhìn"
+                          value={camera}
+                          onChange={(e) => {
+                            setCamera(e.target.value);
+                            resetView();
+                          }}
                         >
-                          Mắt người
-                        </button>
-                        <button
-                          aria-pressed={camera === "third"}
-                          className={camera === "third" ? "selected" : ""}
-                          onClick={() => setCamera("third")}
-                        >
-                          Toàn cảnh
-                        </button>
-                        <button
-                          aria-pressed={camera === "shoulder"}
-                          className={camera === "shoulder" ? "selected" : ""}
-                          onClick={() => setCamera("shoulder")}
-                        >
-                          Sau vai
-                        </button>
-                        <button
-                          aria-pressed={camera === "side"}
-                          className={camera === "side" ? "selected" : ""}
-                          onClick={() => setCamera("side")}
-                        >
-                          Giao lưu
-                        </button>
-                      </div>
+                          <option value="first">Mắt người</option>
+                          <option value="third">Toàn cảnh</option>
+                          <option value="shoulder">Sau vai</option>
+                          <option value="side">Giao lưu</option>
+                        </select>
+                      </label>
                       <div
                         className="avatar-actions"
                         role="group"
@@ -1466,16 +1501,27 @@ function App() {
                           Vẫy tay
                         </button>
                         <button onClick={resetView}>Nhìn màn chiếu</button>
-                        <button
-                          aria-pressed={bodyYaw === 180}
-                          onClick={() => {
-                            setBodyYaw((v) => (v === 0 ? 180 : 0));
-                            setYaw(0);
-                            setPitch(0);
+                        <select
+                          aria-label="Chọc bạn"
+                          value=""
+                          disabled={room.members.length < 2}
+                          onChange={(e) => {
+                            if (e.target.value)
+                              void command({
+                                type: "poke",
+                                id: e.target.value,
+                              });
                           }}
                         >
-                          Ngoái ra sau
-                        </button>
+                          <option value="">Chọc bạn…</option>
+                          {room.members
+                            .filter((m) => m.id !== id)
+                            .map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name}
+                              </option>
+                            ))}
+                        </select>
                         <button
                           aria-pressed={light}
                           onClick={() => setLight((v) => !v)}
@@ -1484,9 +1530,9 @@ function App() {
                         </button>
                       </div>
                     </div>
-                    <HeadPad onTurn={turn} />
+
                     <small className="head-help">
-                      Kéo nền rạp · WASD / mũi tên
+                      Kéo để nhìn · Cuộn để thu/phóng · WASD
                       <br />
                       {Math.round(yaw)}° / {Math.round(pitch)}°
                     </small>
@@ -1538,7 +1584,10 @@ function App() {
                         placeholder="https://youtu.be/…"
                       />
                       <label className="file-picker">
-                        Hoặc chọn video / nhạc từ máy (tối đa 100 MB)
+                        <span className="file-picker-title">
+                          ＋ Chọn video hoặc nhạc từ máy
+                        </span>
+                        <small>MP4, MOV, WebM, MP3… · Tối đa 100 MB</small>
                         <input
                           aria-label="Chọn video để bắt đầu"
                           type="file"
@@ -1863,7 +1912,10 @@ function App() {
                     )}
                     {host && (
                       <label className="file-picker">
-                        Thêm video / nhạc từ máy · tối đa 100 MB
+                        <span className="file-picker-title">
+                          ＋ Thêm file từ máy
+                        </span>
+                        <small>Video hoặc nhạc · Tối đa 100 MB</small>
                         <input
                           aria-label="Thêm file vào playlist"
                           type="file"
@@ -2182,131 +2234,27 @@ class SceneBoundary extends React.Component<
 }
 createRoot(document.getElementById("root")!).render(<App />);
 
-function TurnButton({
-  direction,
-  onTurn,
-  label,
+function PokeNotice({
+  member,
+  members,
+  offset,
 }: {
-  direction: number;
-  onTurn: (n: number) => void;
-  label: string;
+  member: Member;
+  members: Member[];
+  offset: number;
 }) {
-  const frame = useRef(0),
-    last = useRef(0),
-    callback = useRef(onTurn);
-  callback.current = onTurn;
-  const stop = () => {
-    cancelAnimationFrame(frame.current);
-    frame.current = 0;
-  };
-  const start = () => {
-    stop();
-    callback.current(direction);
-    last.current = performance.now();
-    const tick = (now: number) => {
-      callback.current(direction * Math.min(now - last.current, 50) * 0.035);
-      last.current = now;
-      frame.current = requestAnimationFrame(tick);
-    };
-    frame.current = requestAnimationFrame(tick);
-  };
+  const [active, setActive] = useState(false);
   useEffect(() => {
-    const hidden = () => {
-      if (document.hidden) stop();
-    };
-    window.addEventListener("blur", stop);
-    document.addEventListener("visibilitychange", hidden);
-    return () => {
-      stop();
-      window.removeEventListener("blur", stop);
-      document.removeEventListener("visibilitychange", hidden);
-    };
-  }, []);
-  return (
-    <button
-      style={{ touchAction: "none" }}
-      aria-label={label}
-      onPointerDown={(e) => {
-        if (e.button !== 0 || !e.isPrimary) return;
-        e.preventDefault();
-        e.currentTarget.focus({ preventScroll: true });
-        e.currentTarget.setPointerCapture(e.pointerId);
-        start();
-      }}
-      onPointerUp={stop}
-      onPointerCancel={stop}
-      onLostPointerCapture={stop}
-      onBlur={stop}
-      onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && !e.repeat) {
-          e.preventDefault();
-          start();
-        }
-      }}
-      onKeyUp={stop}
-      onClick={(e) => {
-        if (e.detail === 0) callback.current(direction);
-      }}
-    >
-      {label === "Ngước lên"
-        ? "▲"
-        : label === "Cúi xuống"
-          ? "▼"
-          : direction < 0
-            ? "◀"
-            : "▶"}
-    </button>
-  );
-}
-
-function HeadPad({ onTurn }: { onTurn: (x: number, y: number) => void }) {
-  const pad = useHeadDrag(
-    (dx, dy) => onTurn((dx * 11) / 9, (dy * 11) / 9),
-    true,
-  );
-  return (
-    <div
-      className="head-pad"
-      role="group"
-      tabIndex={0}
-      aria-label="Điều khiển đầu"
-      {...pad.handlers}
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        pad.handlers.onPointerDown(e);
-      }}
-    >
-      <span className="pad-up">
-        <TurnButton
-          direction={1}
-          onTurn={(n) => onTurn(0, n)}
-          label="Ngước lên"
-        />
-      </span>
-      <span className="pad-left">
-        <TurnButton
-          direction={-1}
-          onTurn={(n) => onTurn(n, 0)}
-          label="Quay trái"
-        />
-      </span>
-      <span className="pad-center" aria-hidden="true">
-        ◉
-      </span>
-      <span className="pad-right">
-        <TurnButton
-          direction={1}
-          onTurn={(n) => onTurn(n, 0)}
-          label="Quay phải"
-        />
-      </span>
-      <span className="pad-down">
-        <TurnButton
-          direction={-1}
-          onTurn={(n) => onTurn(0, n)}
-          label="Cúi xuống"
-        />
-      </span>
+    const left = (member.pokedAt ?? -Infinity) + 3000 - (Date.now() + offset);
+    setActive(left > 0);
+    if (left <= 0) return;
+    const timer = setTimeout(() => setActive(false), left);
+    return () => clearTimeout(timer);
+  }, [member.pokedAt, offset]);
+  return active ? (
+    <div className="poke-notice" role="status">
+      {members.find((m) => m.id === member.pokedBy)?.name || "Một người bạn"}{" "}
+      vừa chọc bạn 👋
     </div>
-  );
+  ) : null;
 }

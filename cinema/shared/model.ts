@@ -104,6 +104,7 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("sit"), instant: z.boolean().optional() }),
   z.object({ type: z.literal("ping") }),
   z.object({ type: z.literal("wave") }),
+  z.object({ type: z.literal("poke"), id: z.string().min(1).max(128) }),
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export type Member = {
@@ -113,6 +114,9 @@ export type Member = {
   seated: boolean;
   sitAt?: number;
   waveAt?: number;
+  pokeAt?: number;
+  pokedAt?: number;
+  pokedBy?: string;
   avatar?: AvatarStyle;
   lastSuggestedAt?: number;
   joinedAt: number;
@@ -166,7 +170,7 @@ export type Room = {
 export function seats(n: number) {
   if (!Number.isInteger(n) || n < 2 || n > 10) throw Error("CAPACITY");
   const rows =
-    n <= 4
+    n < 6
       ? [n]
       : n <= 8
         ? [Math.ceil(n / 2), Math.floor(n / 2)]
@@ -178,9 +182,8 @@ export function seats(n: number) {
   let id = 0;
   return rows.flatMap((count, row) =>
     Array.from({ length: count }, (_, i) => {
-      const left = Math.floor(count / 2);
-      const x = i < left ? -(left - i) * 1.05 - 0.35 : (i - left) * 1.05 + 1.4;
-      return { id: id++, x, y: row * 0.5, z: row * 1.8 - 0.4 };
+      const x = (i - (count - 1) / 2) * 1.25;
+      return { id: id++, x, y: row * 0.5, z: row * 2.2 - 0.4 };
     }),
   );
 }
@@ -291,6 +294,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       "ping",
       "look",
       "wave",
+      "poke",
       "suggest",
       "wait",
       "ready",
@@ -441,6 +445,13 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   } else if (c.type === "wave") {
     if (member.waveAt !== undefined && now - member.waveAt < 2400) return;
     member.waveAt = now;
+  } else if (c.type === "poke") {
+    const friend = r.members.find((m) => m.id === c.id && m.id !== actor);
+    if (!friend) throw Error("INVALID_TARGET");
+    if (member.pokeAt !== undefined && now - member.pokeAt < 3000) return;
+    member.pokeAt = now;
+    friend.pokedAt = now;
+    friend.pokedBy = actor;
   } else if (c.type === "look") {
     member.look = { yaw: c.yaw, pitch: c.pitch, bodyYaw: c.bodyYaw };
   } else if (c.type === "sit") {
