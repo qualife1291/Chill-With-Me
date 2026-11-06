@@ -69,7 +69,7 @@ SQLite holds one room JSON row, bounded metadata/queue/chat, ≤200 command ID/t
 
 ## Release
 
-Cloudflare credentials go through secure Environment settings, never source/chat. Deployment is already authorized for the existing target, but current runtime has no Cloudflare auth. Once ready:
+Cloudflare credentials go through secure Environment settings, never source/chat. Deployment is authorized for the existing target. Runtime Cloudflare auth was verified and code fd6b209 deployed on 06/11/2026; current version/evidence is in PROJECT_STATE. Command:
 
 ```bash
 CLOUDFLARE_ACCOUNT_ID=966c7ceee358485648b935a07877ec45 npx wrangler deploy --config wrangler.jsonc

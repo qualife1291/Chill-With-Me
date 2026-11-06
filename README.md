@@ -20,4 +20,4 @@ npm run verify:local
 
 Lệnh nghiệm thu tổng hợp cần Playwright/Chromium và ffmpeg; xem [runtime README](cinema/README.md). Không chạy test thay đổi phòng trên production.
 
-Public cũ: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema6. Push GitHub không deploy. Cloudflare auth, thiết bị thật, tải dài hạn/quota và full voice vẫn có cổng nghiệm thu riêng; không cam kết mọi codec/Drive link, 60 FPS, drift dưới một giây hoặc free tier vô hạn.
+Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema6. Push GitHub không deploy. Bản fd6b209 đã deploy và kiểm tra asset/API; R2 chưa được bật trong tài khoản. Thiết bị thật, tải dài hạn/quota và full voice vẫn có cổng nghiệm thu riêng; không cam kết mọi codec/Drive link, 60 FPS, drift dưới một giây hoặc free tier vô hạn.

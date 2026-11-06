@@ -37,8 +37,12 @@ Still open: physical iOS/Android/desktop YouTube autoplay/ads/embed/touch/voice 
 
 ## Deployment boundary
 
-Already authorized, but blocked: latest runtime has **no Cloudflare secret/identity bindings**; `wrangler whoami` unauthenticated. User must supply `CLOUDFLARE_API_TOKEN` securely through Environment settings and apply that configuration. Never print/read secret values or use a temporary account. Once ready, deploy without asking again to existing Worker `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, SQLite binding `ROOMS`/class `RoomSlot`, migration `v1`. Preserve production rooms/billing. Optional embedded release must retain `encodeBody: "manual"`. Only read-only production smoke after deployment.
+Cloudflare auth is ready: runtime revision 4 reports `CLOUDFLARE_API_TOKEN` ready; real Wrangler whoami authenticated the expected account. Never print/read token values. Deployment already authorized for Worker `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, `ROOMS`/`RoomSlot`, migration `v1`; preserve rooms/billing.
 
-Public remains the older release: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema6 (last recorded deployment `80520b2dd07d411ea28aee473d445c3d`). GitHub push is not deployment. Do not repeat historical changes; inspect HEAD and the current diff.
+Deployed code `fd6b209` on 06/11/2026 via Wrangler Static Assets. Version `7b950a22-8a63-485e-ab4c-7be7f08c681a`. Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/ . Read-only smoke matched all 10 dist files (including both GLBs) byte-for-byte and the 3-room API; `cinema/evidence/production.json`. No production room mutations. GitHub workflow still checks source only; push is not automatic deployment.
+
+R2 remains blocked by account service activation, not missing runtime token: real `wrangler r2 bucket list` returned Cloudflare code 10042, “Please enable R2 through the Cloudflare Dashboard.” No buckets were created or billing changed. User must enable R2 in the account Dashboard before temporary media storage can be provisioned. No R2 upload/cache implementation is claimed.
+
+Optional embedded builds retain `encodeBody: "manual"`; current deployment uses regular Static Assets. Check Git HEAD/current diff before changing code.
 
 YouTube Premium is per eligible signed-in viewer, not inherited through the host URL. Embeds may not recognize login; ads can cause drift. Official-source notes: [Premium research](docs/YOUTUBE_PREMIUM.md).

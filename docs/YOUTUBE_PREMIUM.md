@@ -22,4 +22,4 @@ Panel Đồng bộ phòng cho phép thành viên báo quảng cáo/tải: timeli
 
 Kho R2 private là hướng đề xuất cho file local và nguồn media có quyền sao chép: DB chỉ metadata, prefetch đang phát + kế tiếp, cap dung lượng, upload resumable, Range streaming, quyền đọc membership/epoch. Xóa mục/phát hết/đóng phòng giảm tham chiếu; chỉ xóa object khi hết tham chiếu, có tombstone/retry alarm và lifecycle dự phòng. Không xóa file còn được mục/phòng khác dùng. YouTube giữ iframe; live không tải toàn bộ.
 
-R2/quota/credentials chưa được cấu hình, nên kho tạm chưa phải chức năng đã triển khai. Relay hiện tại không lưu binary vào DB.
+Token deploy đã xác thực, nhưng R2 chưa được bật trong Dashboard (API code 10042); bucket/quota chưa cấu hình, nên kho tạm chưa phải chức năng đã triển khai. Relay hiện tại không lưu binary vào DB.

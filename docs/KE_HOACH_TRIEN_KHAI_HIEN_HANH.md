@@ -20,7 +20,7 @@ Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKi
 | S5 lifecycle/hardening | Reserve 20s, reconnect 30s, pending TTL/cancel, takeover, designated successor/transfer, alarm/empty room; cookie/role guards; phòng riêng có capability fragment, summary ẩn, host-only key, thu hồi lời mời/pending | Operator moderation/privacy/retention đầy đủ còn backlog |
 | S6 graphics polish | Model CC0 có hash/manifest, tool tối ưu ngoài app deps, clone skeleton độc lập và disposal, demand render/DPR cap, reduced motion, fallback | Cổng GPU: cần số đo FPS/memory/thermal trên thiết bị thật, không lấy software WebGL của máy test làm kết quả mobile |
 | S7 playlist/player QA | Video/audio/file cleanup; import TXT/M3U/batch atomic (20 link/16 KiB); drag/up/down CAS; suggest/review bounded; RTT theo nonce/socket/epoch và monotonic player clock; giữ native iframe | Không phát HLS/playlist URL tuỳ ý; actual YouTube/ad/autoplay/foreground drift và mạng bất đối xứng vẫn cần pilot |
-| S8 load/release | Short smoke 3×10 authenticated WS và broadcast, kiểm tra asset/gzip; có config/deploy artifact | Chưa có sustained media/GPU soak, quota/account/rollback drill; deploy bản mới bị chặn bởi Cloudflare auth |
+| S8 load/release | Short smoke 3×10 authenticated WS và broadcast, kiểm tra asset/gzip; có config/deploy artifact | Chưa có sustained media/GPU soak, quota/account/rollback drill; code fd6b209 đã deploy và GET asset/API đã đạt; R2 chưa bật (10042) |
 | S9 full voice/cloning | Research/corpus và voice thiết bị fallback; không thu mic hoặc giả nút clone | Provider production phù hợp, credential/quota, consent/enrollment/delete, chất lượng/latency và signed audio đều chưa qua gate |
 
 ## Acceptance cho UI/UX và độ mượt
@@ -33,7 +33,7 @@ Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKi
 
 ## Việc tiếp theo và điều kiện mở khóa
 
-1. **Deploy đúng Worker hiện tại:** cần `CLOUDFLARE_API_TOKEN` được cấp qua Environment settings; account `966c7ceee358485648b935a07877ec45`, Worker `cung-xem-cinema-alpha`, ROOMS/RoomSlot, migration `v1`. Đã có authorization của người dùng; không dùng temporary account, không reset dữ liệu hoặc đổi billing. Chỉ xác nhận deploy sau khi API thành công và public HTML/JS/CSS/GLB khớp artifact.
+1. **Deploy đúng Worker hiện tại:** đã xác thực token và deploy code fd6b209, kiểm tra asset/API chỉ đọc đạt; account `966c7ceee358485648b935a07877ec45`, Worker `cung-xem-cinema-alpha`, ROOMS/RoomSlot, migration `v1`. Đã có authorization của người dùng; không dùng temporary account, không reset dữ liệu hoặc đổi billing. Chỉ xác nhận deploy sau khi API thành công và public HTML/JS/CSS/GLB khớp artifact.
 2. **Nghiệm thu tổng hợp local:** `npm run verify:local` là điểm vào chuẩn; không chạy source build đồng thời với browser/load. Report `cinema/evidence/verification.json`. Bộ này không thay thế cổng thiết bị/production.
 3. **Pilot thiết bị/media:** iOS Safari + Android Chrome + desktop, thực tế autoplay/ads/embed restrictions, voice Việt và touch/background. Checklist trong README; không tạo view bot.
 4. **Release gate:** sustained 3×10, reconnect/eviction, memory và quota theo account; rollback/recovery drill và vận hành. Chưa có credential/budget/thiết bị phù hợp thì giữ trạng thái chưa xác minh.
