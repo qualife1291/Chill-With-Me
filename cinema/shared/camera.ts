@@ -19,8 +19,8 @@ export function cameraView(
     };
   if (mode === "shoulder")
     return {
-      position: [base.x + 0.7, base.y + 1.8, base.z + 2.7],
-      target: [0, 2, -5.7],
+      position: [base.x + 1.0, base.y + 2.0, base.z + 2.7],
+      target: [0, 2.3, -5.7],
       fov: 58,
     };
   if (mode === "side")

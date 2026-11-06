@@ -1302,26 +1302,34 @@ function App() {
                       </button>
                     )}
                   <div className="scene-controls">
-                    <div className="camera-options">
+                    <div
+                      className="camera-options"
+                      role="group"
+                      aria-label="Góc nhìn và hành động"
+                    >
                       <button
+                        aria-pressed={camera === "first"}
                         className={camera === "first" ? "selected" : ""}
                         onClick={() => setCamera("first")}
                       >
                         Mắt người
                       </button>
                       <button
+                        aria-pressed={camera === "third"}
                         className={camera === "third" ? "selected" : ""}
                         onClick={() => setCamera("third")}
                       >
                         Trên cao · sau nhân vật
                       </button>
                       <button
+                        aria-pressed={camera === "shoulder"}
                         className={camera === "shoulder" ? "selected" : ""}
                         onClick={() => setCamera("shoulder")}
                       >
                         Sau vai
                       </button>
                       <button
+                        aria-pressed={camera === "side"}
                         className={camera === "side" ? "selected" : ""}
                         onClick={() => setCamera("side")}
                       >
@@ -1339,6 +1347,7 @@ function App() {
                       </button>
                       <button onClick={resetView}>Nhìn màn chiếu</button>
                       <button
+                        aria-pressed={bodyYaw === 180}
                         onClick={() => {
                           setBodyYaw((v) => (v === 0 ? 180 : 0));
                           setYaw(0);
@@ -1347,7 +1356,10 @@ function App() {
                       >
                         Ngoái ra sau
                       </button>
-                      <button onClick={() => setLight((v) => !v)}>
+                      <button
+                        aria-pressed={light}
+                        onClick={() => setLight((v) => !v)}
+                      >
                         {light ? "Bật 3D" : "Chế độ nhẹ"}
                       </button>
                     </div>

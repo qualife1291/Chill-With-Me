@@ -64,3 +64,9 @@ Không lấy screenshot model làm texture. Nếu dùng CC-BY phải giữ tác 
 ## Trạng thái bàn giao
 
 Có danh sách nguồn cụ thể và lựa chọn ưu tiên; **chưa tải file đồ họa**. Manifest [assets/sources.json](../assets/sources.json) ghi trạng thái candidate, chưa có hash/đường dẫn runtime. Chỉ sau kiểm file và render mới nâng trạng thái approved.
+
+## Review ngày 06/11/2026
+
+Đã mở lại trang tác giả Quaternius: [Universal Base Characters](https://quaternius.com/packs/universalbasecharacters.html) công bố 6 base nam/nữ theo ba tỷ lệ cơ thể, định dạng FBX/OBJ/Blend/glTF, CC0. [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) công bố hơn 120 animation humanoid, FBX/GLB/Blend, CC0. Hai trang có cả lựa chọn mở rộng/tài trợ; chỉ license đi kèm file tải cụ thể mới xác lập quyền cho file đó.
+
+Ưu tiên thử base Regular nam/nữ thay phong cách Knight/Mage cho bối cảnh xem phim. Chưa tải/retarget/benchmark các file mới nên chưa kết luận đẹp hoặc nhẹ hơn bản KayKit đang dùng (khoảng 333–342 KB/model). Điều kiện thay: license/hash đi kèm, rig đầu và tay đúng, walk/sit/wave không lỗi, kiểm thử 10 skeleton độc lập và đo dung lượng/GPU. Không coi shortlist là model đã tích hợp.
