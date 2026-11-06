@@ -66,8 +66,10 @@ type Snapshot = {
   room?: Room;
   serverTime?: number;
   session?: string;
+  reason?: string;
 };
 type Summary = {
+  recovering?: boolean;
   private?: boolean;
   slot: number;
   open: boolean;
@@ -76,6 +78,16 @@ type Summary = {
   count?: number;
 };
 const errors: Record<string, string> = {
+  HOST_RECONNECTING:
+    "Chủ phòng đang mất kết nối. Hãy đợi chủ quay lại trước khi xin vào.",
+  NETWORK_ERROR: "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.",
+  NETWORK_TIMEOUT: "Kết nối phản hồi chậm. Hãy thử lại sau một chút.",
+  STALE_SESSION: "Phiên phòng cũ đã kết thúc. Hãy chọn lại phòng ở sảnh.",
+  FORBIDDEN: "Bạn không còn quyền thực hiện thao tác trong phiên phòng này.",
+  REQUEST_EXPIRED: "Yêu cầu vào phòng đã hết hạn. Hãy gửi lại yêu cầu.",
+  REQUEST_QUEUE_FULL: "Có nhiều người đang chờ duyệt. Hãy thử lại sau.",
+  INVALID_INPUT: "Thông tin chưa hợp lệ. Hãy kiểm tra rồi thử lại.",
+  FAILED: "Chưa thực hiện được thao tác. Hãy thử lại.",
   REACTION_BUSY: "Cảm xúc đang diễn ra. Đợi một chút nhé.",
   REACTION_COOLDOWN: "Bạn chờ 5 giây giữa hai cảm xúc nhé.",
   INVITE_REQUIRED: "Phòng riêng cần link mời hợp lệ từ chủ phòng.",
@@ -109,16 +121,33 @@ const errors: Record<string, string> = {
   SUGGESTION_COOLDOWN: "Hãy chờ 10 giây giữa hai lần đề xuất.",
   DUPLICATE_SUGGESTION: "Bạn đã đề xuất video này rồi.",
 };
-async function api(path: string, data?: unknown) {
-  const r = await fetch("/api" + path, {
-    method: data === undefined ? "GET" : "POST",
-    headers: data === undefined ? {} : { "Content-Type": "application/json" },
-    body: data === undefined ? undefined : JSON.stringify(data),
-  });
-  const value = await r.json();
+async function api(path: string, data?: unknown, signal?: AbortSignal) {
+  let r: Response;
+  try {
+    r = await fetch("/api" + path, {
+      method: data === undefined ? "GET" : "POST",
+      headers: data === undefined ? {} : { "Content-Type": "application/json" },
+      body: data === undefined ? undefined : JSON.stringify(data),
+      signal: signal || AbortSignal.timeout(12000),
+    });
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    throw Error(
+      e instanceof DOMException && e.name === "TimeoutError"
+        ? "NETWORK_TIMEOUT"
+        : "NETWORK_ERROR",
+    );
+  }
+  let value;
+  try {
+    value = await r.json();
+  } catch {
+    throw Error("NETWORK_ERROR");
+  }
   if (!r.ok) throw Error(value.error || "NETWORK_ERROR");
   return value;
 }
+
 function App() {
   const [id, setId] = useState(""),
     [slot, setSlot] = useState<number | null>(null),
@@ -262,7 +291,38 @@ function App() {
       errors[e instanceof Error ? e.message : ""] ||
         (e instanceof Error ? e.message : "Không thực hiện được."),
     );
+  const exitIntent = useRef(false);
+  const finishRoom = (reason: string) => {
+    latestRoom.current = null;
+    setRoom(null);
+    setSlot(null);
+    setStatus("lobby");
+    setPendingSession("");
+    setConnection("Sẵn sàng");
+    clock.disconnect();
+    for (const waiter of waiters.current.values())
+      waiter.reject(Error("ROOM_CLOSED"));
+    waiters.current.clear();
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    const voluntary = exitIntent.current;
+    exitIntent.current = false;
+    setError(
+      voluntary
+        ? ""
+        : reason === "TAB_REPLACED"
+          ? "Phòng đã được mở ở tab khác. Tab này đã ngắt kết nối."
+          : reason === "ROOM_CLOSED"
+            ? "Phòng đã đóng do chủ rời phòng hoặc phiên chiếu kết thúc."
+            : reason === "STALE_SESSION"
+              ? errors.STALE_SESSION
+              : "Yêu cầu hoặc chỗ giữ của bạn đã hết hạn, bị từ chối hoặc đã thu hồi. Hãy chọn lại phòng.",
+    );
+  };
   const receive = (v: Snapshot) => {
+    if (v.status === "removed") {
+      finishRoom(v.reason || "MEMBERSHIP_ENDED");
+      return;
+    }
     if (v.room) {
       const session = v.room.session,
         ids = new Set(v.room.members.map((m) => m.id));
@@ -295,13 +355,6 @@ function App() {
     setStatus(v.status);
     if (v.session) setPendingSession(v.session);
     if (v.room) setRoom(v.room);
-    else if (v.status === "removed") {
-      setRoom(null);
-      setSlot(null);
-      setStatus("lobby");
-      if ("speechSynthesis" in window) speechSynthesis.cancel();
-      setError("Bạn đã rời phòng hoặc phòng đã đóng.");
-    }
     if (v.serverTime) clock.fallback(v.serverTime, v.room?.session);
   };
   useEffect(() => {
@@ -327,28 +380,99 @@ function App() {
   useEffect(() => {
     if (!slot || demo) return;
     let stop = false,
-      socket: WebSocket | undefined,
-      retry: ReturnType<typeof setTimeout>;
+      busy = false,
+      attempts = 0,
+      nextRetryAt = 0;
+    let socket: WebSocket | undefined,
+      retry: ReturnType<typeof setTimeout> | undefined;
+    let lastMessageAt = performance.now(),
+      connectingAt = performance.now();
+    const controller = new AbortController();
+    const ended = (e: unknown) =>
+      e instanceof Error &&
+      ["ROOM_CLOSED", "STALE_SESSION", "MEMBERSHIP_EXPIRED"].includes(
+        e.message,
+      );
+    const schedule = () => {
+      if (stop || retry) return;
+      const delay = Math.min(15000, 3000 * 2 ** Math.min(attempts++, 3));
+      nextRetryAt = performance.now() + delay;
+      retry = setTimeout(() => {
+        retry = undefined;
+        void recover();
+      }, delay);
+    };
+    const snapshot = () =>
+      api(
+        `/rooms/${slot}/state`,
+        undefined,
+        AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]),
+      );
+    const recover = async (force = false) => {
+      if (
+        stop ||
+        busy ||
+        (socket &&
+          (socket.readyState === WebSocket.OPEN ||
+            socket.readyState === WebSocket.CONNECTING))
+      )
+        return;
+      if (!force && performance.now() < nextRetryAt) return;
+      busy = true;
+      if (retry) {
+        clearTimeout(retry);
+        retry = undefined;
+      }
+      try {
+        const v = await snapshot();
+        if (stop) return;
+        receive(v);
+        if (v.status === "joined") connect();
+        else if (v.status === "removed") stop = true;
+      } catch (e) {
+        if (stop) return;
+        if (ended(e)) {
+          finishRoom((e as Error).message);
+          stop = true;
+        } else {
+          setConnection("Mất kết nối · đang thử lại");
+          schedule();
+        }
+      } finally {
+        busy = false;
+      }
+    };
     const connect = () => {
       if (stop) return;
-      socket = new WebSocket(
+      const ws = new WebSocket(
         `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/rooms/${slot}/ws`,
       );
-      socket.binaryType = "arraybuffer";
-      chatSocket.current = socket;
-      socket.onopen = () => {
+      socket = ws;
+      connectingAt = performance.now();
+      ws.binaryType = "arraybuffer";
+      chatSocket.current = ws;
+      ws.onopen = () => {
+        if (stop || socket !== ws) {
+          ws.close();
+          return;
+        }
+        attempts = 0;
+        nextRetryAt = 0;
+        lastMessageAt = performance.now();
         setConnection("Đã kết nối");
-        clock.connect(socket!);
+        clock.connect(ws);
         files.transport(true);
       };
-      socket.onmessage = (e) => {
+      ws.onmessage = (e) => {
+        if (stop || socket !== ws) return;
+        lastMessageAt = performance.now();
         if (e.data instanceof ArrayBuffer) {
           files.onChunk(e.data);
           return;
         }
         const v = JSON.parse(e.data);
         if (v.type === "clock") {
-          clock.pong(v, socket!);
+          clock.pong(v, ws);
           return;
         }
         if (v.type === "file-error") {
@@ -411,38 +535,71 @@ function App() {
           waiters.current.get(v.commandId)?.reject(Error(v.error));
         else if (v.status) receive(v);
       };
-      socket.onclose = (e) => {
-        clock.disconnect(socket);
+      ws.onclose = (e) => {
+        if (stop || socket !== ws) return;
+        clock.disconnect(ws);
         files.transport(false);
-        if (stop) return;
         if (e.code === 4002) {
-          setConnection("Đã mở ở tab khác");
+          finishRoom("TAB_REPLACED");
+          stop = true;
           return;
         }
-        setConnection("Đang kết nối lại");
-        retry = setTimeout(() => {
-          void api(`/rooms/${slot}/state`)
-            .then((v) => {
-              receive(v);
-              if (v.status === "joined") connect();
-            })
-            .catch(report);
-        }, 3000);
+        setConnection("Đang kết nối lại · giữ chỗ tối đa 30 giây");
+        schedule();
       };
     };
     if (status === "joined") connect();
     const poll = setInterval(() => {
-      if (
-        status === "pending" ||
-        (status === "joined" &&
-          chatSocket.current?.readyState !== WebSocket.OPEN)
-      )
-        void api(`/rooms/${slot}/state`).then(receive).catch(report);
+      if (stop) return;
+      if (status === "pending") {
+        if (busy) return;
+        busy = true;
+        void snapshot()
+          .then((v) => {
+            if (!stop) receive(v);
+          })
+          .catch((e) => {
+            if (stop) return;
+            if (ended(e)) {
+              finishRoom((e as Error).message);
+              stop = true;
+            } else setConnection("Mất kết nối · đang thử lại");
+          })
+          .finally(() => {
+            busy = false;
+          });
+      } else if (status === "joined") {
+        const stuck =
+          socket &&
+          ((socket.readyState === WebSocket.OPEN &&
+            performance.now() - lastMessageAt > 75000) ||
+            (socket.readyState === WebSocket.CONNECTING &&
+              performance.now() - connectingAt > 15000));
+        if (stuck) {
+          socket!.close();
+          void recover(true);
+        } else void recover();
+      }
     }, 5000);
+    const online = () => {
+      if (!document.hidden) void recover(true);
+    };
+    const hide = () => {
+      socket?.close();
+    };
+    window.addEventListener("online", online);
+    window.addEventListener("pageshow", online);
+    document.addEventListener("visibilitychange", online);
+    window.addEventListener("pagehide", hide);
     return () => {
       stop = true;
+      controller.abort();
       clearTimeout(retry);
       clearInterval(poll);
+      window.removeEventListener("online", online);
+      window.removeEventListener("pageshow", online);
+      document.removeEventListener("visibilitychange", online);
+      window.removeEventListener("pagehide", hide);
       if (chatSocket.current === socket) chatSocket.current = null;
       files.transport(false);
       clock.disconnect(socket);
@@ -548,8 +705,19 @@ function App() {
           waiters.current.delete(commandId);
         }
       }
-      receive(await api(`/rooms/${slot}/command`, envelope));
+      const v = await api(`/rooms/${slot}/command`, envelope);
+      if (latestRoom.current?.session === current.session) receive(v);
     } catch (e) {
+      if (latestRoom.current?.session !== current.session) return;
+      if (
+        e instanceof Error &&
+        ["ROOM_CLOSED", "STALE_SESSION", "MEMBERSHIP_EXPIRED"].includes(
+          e.message,
+        )
+      ) {
+        finishRoom(e.message);
+        return;
+      }
       setPendingMessages((p) =>
         p.map((m) => (m.id === commandId ? { ...m, failed: true } : m)),
       );
@@ -562,6 +730,8 @@ function App() {
       return;
     }
 
+    const commandSession = room?.session;
+    if (c.type === "close" || c.type === "leave") exitIntent.current = true;
     setError("");
     try {
       if (demo && room) {
@@ -581,7 +751,8 @@ function App() {
           command: c,
         };
         const send = async () => {
-          receive(await api(`/rooms/${slot}/command`, envelope));
+          const v = await api(`/rooms/${slot}/command`, envelope);
+          if (latestRoom.current?.session === commandSession) receive(v);
         };
         if (
           [
@@ -601,6 +772,17 @@ function App() {
         } else await send();
       }
     } catch (e) {
+      if (!demo && latestRoom.current?.session !== commandSession) return;
+      exitIntent.current = false;
+      if (
+        e instanceof Error &&
+        ["ROOM_CLOSED", "STALE_SESSION", "MEMBERSHIP_EXPIRED"].includes(
+          e.message,
+        )
+      ) {
+        finishRoom(e.message);
+        return;
+      }
       if (e instanceof Error && e.message === "STALE_QUEUE" && !demo)
         await api(`/rooms/${slot}/state`)
           .then(receive)
@@ -608,7 +790,13 @@ function App() {
       report(e);
       return;
     }
-    onSuccess?.();
+    if (
+      demo ||
+      latestRoom.current?.session === commandSession ||
+      c.type === "close" ||
+      c.type === "leave"
+    )
+      onSuccess?.();
   }
   async function uploadFile(file: File, mode: "start" | "queue") {
     if (!room || quickBusy || queueBusy) return;
@@ -923,9 +1111,11 @@ function App() {
                       <b>{["Hổ phách", "Đêm xanh", "Nhung tím"][n - 1]}</b>
                       <small>
                         {summary?.open
-                          ? summary.private
-                            ? "Phòng riêng · cần lời mời"
-                            : `${summary.count || 0}/${summary.capacity} ghế · đang mở`
+                          ? summary.recovering
+                            ? "Chờ chủ kết nối lại"
+                            : summary.private
+                              ? "Phòng riêng · cần lời mời"
+                              : `${summary.count || 0}/${summary.capacity} ghế · đang mở`
                           : "Sẵn sàng đón bạn"}
                       </small>
                     </button>
@@ -1167,7 +1357,11 @@ function App() {
                     <div className="card-content">
                       <div className="card-top">
                         <span className={s.open ? "badge occupied" : "badge"}>
-                          {s.open ? "Đang mở" : "Sẵn sàng đón bạn"}
+                          {s.recovering
+                            ? "Chờ chủ kết nối lại"
+                            : s.open
+                              ? "Đang mở"
+                              : "Sẵn sàng đón bạn"}
                         </span>
                         <span className="muted">
                           {s.private
@@ -1187,7 +1381,9 @@ function App() {
                         {s.open
                           ? s.private
                             ? "Tên phòng và danh sách người xem được ẩn. Thành viên có thể vào lại."
-                            : "Gửi yêu cầu để chủ phòng duyệt bạn vào."
+                            : s.recovering
+                              ? "Chủ phòng đang mất kết nối. Chỉ thành viên đã duyệt có thể trở lại trong thời gian giữ chỗ."
+                              : "Gửi yêu cầu để chủ phòng duyệt bạn vào."
                           : "Tạo phòng và phát ngay, không cần đợi đủ người."}
                       </p>
                       <button
@@ -1244,6 +1440,12 @@ function App() {
           </section>
         ) : room ? (
           <>
+            {room.members.find((m) => m.id === room.host)?.online === false && (
+              <div className="host-offline-notice" role="status">
+                Chủ phòng đang mất kết nối. Chờ tối đa 30 giây; phòng sẽ đóng
+                nếu không có người kế nhiệm hợp lệ.
+              </div>
+            )}
             {me && (
               <RoomActivity
                 key={room.session}

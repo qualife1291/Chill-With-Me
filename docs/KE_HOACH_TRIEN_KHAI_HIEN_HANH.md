@@ -16,6 +16,13 @@ Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKi
 - [x] Thêm tung hoa / vỗ tay / mếu / troll dùng chung cả rạp: tên người gửi, hiệu ứng giữa màn hình khoảng 3 giây, âm thanh phù hợp; chỉ thành viên đã duyệt, giới hạn tần suất, không tích lũy lịch sử hiệu ứng.
 - [x] Test quyền, chống gửi lặp/cooldown, hết hạn, nhiều profile, chat đóng/mở, âm thanh, reduced motion, mobile và hồi quy media/camera; cập nhật evidence trước push/deploy.
 
+## Việc cần làm thoát đột ngột — 06/11/2026
+
+- [x] Hết 30 giây giữ chỗ khi chủ ngắt kết nối: chỉ chuyển cho người kế nhiệm được chỉ định còn kết nối hợp lệ; nếu không thì đóng phòng, không để chủ rỗng. Chặn yêu cầu mới khi đang chờ chủ trở lại.
+- [x] Lease heartbeat 90 giây chống socket chết âm thầm; tận dụng clock probe hiện có, gộp ghi trạng thái tối đa mỗi 30 giây/kết nối, không broadcast heartbeat hoặc polling mới.
+- [x] Reconnect có backoff, giới hạn request, phục hồi sau offline/online, bỏ callback của socket cũ; đóng phòng/hết chỗ giữ/tab bị thay thế có thông báo rõ và dừng retry.
+- [x] Test đóng tab/browser, socket câm, refresh, mất mạng, host/guest, kế nhiệm online/offline, takeover và stale epoch; hồi quy toàn bộ rồi push/deploy.
+
 ## Bảng đối chiếu plan với implementation
 
 | Mốc | Source / test local | Phần chưa thể đánh dấu hoàn tất |

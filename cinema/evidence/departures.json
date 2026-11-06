@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "checks": [
+    "real app offline/online recovers after failed requests without remounting player",
+    "replacement tab ends old UI with a friendly message and zero room-state polling",
+    "actual host tab close blocks new joins during grace, then closes room and returns viewer to lobby",
+    "designated live successor takes over a closed host tab without losing room",
+    "socket left open without heartbeat expires server-side within lease and closes orphan room",
+    "guest tab expiry removes its seat while the live host room stays open",
+    "reused slot has a fresh epoch; stale close cannot delete the new room"
+  ],
+  "pageErrors": [],
+  "limits": "Local real sockets, tab closes, silent heartbeat expiry and offline emulation; not a WAN or operating-system power-loss certification."
+}

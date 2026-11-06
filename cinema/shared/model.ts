@@ -25,6 +25,9 @@ export const fileMetadataSchema = z.object({
 export const reactionSchema = z.enum(["flowers", "applause", "sad", "troll"]);
 export type ReactionKind = z.infer<typeof reactionSchema>;
 export const REACTION_MS = 3000;
+export const CONNECTION_LEASE_MS = 90000;
+export const LEASE_RENEW_MS = 30000;
+export const RECONNECT_GRACE_MS = 30000;
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("chat"),
@@ -133,6 +136,7 @@ export type Member = {
   joinedAt: number;
   deadline?: number;
   connectionId?: string;
+  leaseUntil?: number;
   online?: boolean;
   look?: { yaw: number; pitch: number; bodyYaw: 0 | 180 };
 };
@@ -310,6 +314,7 @@ export function requestJoin(
   if (r.banned.includes(id)) throw Error("BANNED");
   if (r.members.some((m) => m.id === id)) return;
   if (r.pending.some((m) => m.id === id)) return;
+  if (hostRecovering(r)) throw Error("HOST_RECONNECTING");
   if (r.visibility === "private" && (!r.inviteKey || inviteKey !== r.inviteKey))
     throw Error("INVITE_REQUIRED");
   if (r.members.length >= r.capacity) throw Error("ROOM_FULL");
@@ -638,6 +643,10 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     r.waiting = r.waiting.filter((id) => r.members.some((m) => m.id === id));
   r.revision++;
 }
+export function hostRecovering(r: Room) {
+  const host = r.members.find((m) => m.id === r.host);
+  return !host || (!host.connectionId && host.leaseUntil !== undefined);
+}
 export function roomSummary(r: Room | null) {
   if (!r) return { open: false };
   if (r.visibility === "private") return { open: true, private: true };
@@ -646,6 +655,7 @@ export function roomSummary(r: Room | null) {
     title: r.title,
     capacity: r.capacity,
     count: r.members.length,
+    ...(hostRecovering(r) ? { recovering: true } : {}),
   };
 }
 export function view(r: Room, id: string) {
@@ -668,7 +678,13 @@ export function view(r: Room, id: string) {
       ...publicRoom,
       ...(id === r.host && inviteKey ? { inviteKey } : {}),
       members: r.members.map(
-        ({ connectionId, lastSuggestedAt, lastReactionAt, ...m }) => ({
+        ({
+          connectionId,
+          leaseUntil,
+          lastSuggestedAt,
+          lastReactionAt,
+          ...m
+        }) => ({
           ...m,
           online: !!connectionId,
         }),
@@ -687,16 +703,43 @@ export function connectMember(
   now: number,
 ) {
   const m = r.members.find((m) => m.id === id);
-  if (!m || (m.deadline !== undefined && m.deadline <= now))
+  if (
+    !m ||
+    (m.deadline !== undefined && m.deadline <= now) ||
+    (m.connectionId && m.leaseUntil !== undefined && m.leaseUntil <= now)
+  )
     throw Error("MEMBERSHIP_EXPIRED");
   if (!m.seated) {
     m.seated = true;
     m.sitAt = now;
   }
   m.connectionId = connectionId;
+  m.leaseUntil = now + CONNECTION_LEASE_MS;
   delete m.deadline;
   delete r.emptySince;
   r.revision++;
+}
+/** Renew only the current live connection, coalescing writes and never reviving an expired lease. */
+export function renewMember(
+  r: Room,
+  id: string,
+  connectionId: string,
+  now: number,
+) {
+  const m = r.members.find((m) => m.id === id);
+  if (
+    !m ||
+    m.connectionId !== connectionId ||
+    (m.leaseUntil !== undefined && m.leaseUntil <= now)
+  )
+    throw Error("MEMBERSHIP_EXPIRED");
+  if (
+    m.leaseUntil !== undefined &&
+    m.leaseUntil - now > CONNECTION_LEASE_MS - LEASE_RENEW_MS
+  )
+    return false;
+  m.leaseUntil = now + CONNECTION_LEASE_MS;
+  return true;
 }
 export function disconnectMember(
   r: Room,
@@ -708,7 +751,7 @@ export function disconnectMember(
   // A previous tab's close event must not disconnect its replacement.
   if (!m || m.connectionId !== connectionId) return false;
   delete m.connectionId;
-  m.deadline = now + 30000;
+  m.deadline = Math.min(now + RECONNECT_GRACE_MS, m.leaseUntil ?? Infinity);
   r.revision++;
   return true;
 }
@@ -723,8 +766,16 @@ export function sweep(r: Room, now: number) {
     r.pending = pending;
     r.revision++;
   }
+  // Upgrade old persisted sockets once; thereafter a silent connection has a finite deadline.
+  for (const m of r.members)
+    if (m.connectionId && m.leaseUntil === undefined) {
+      m.leaseUntil = now + CONNECTION_LEASE_MS;
+      r.revision++;
+    }
   const expired = r.members.filter(
-    (m) => m.deadline !== undefined && m.deadline <= now,
+    (m) =>
+      (m.deadline !== undefined && m.deadline <= now) ||
+      (!!m.connectionId && m.leaseUntil !== undefined && m.leaseUntil <= now),
   );
   if (expired.length) {
     r.members = r.members.filter((m) => !expired.includes(m));
@@ -754,6 +805,7 @@ export function sweep(r: Room, now: number) {
   return {
     changed: r.revision !== before,
     closed:
+      !r.members.some((m) => m.id === r.host) ||
       now >= r.expires ||
       (r.emptySince !== undefined && now >= r.emptySince + 60000),
   };
@@ -763,7 +815,10 @@ export function nextDeadline(r: Room) {
     r.expires,
     ...(r.reaction ? [r.reaction.at + REACTION_MS] : []),
     ...r.pending.map((p) => p.at + 120000),
-    ...r.members.flatMap((m) => (m.deadline === undefined ? [] : [m.deadline])),
+    ...r.members.flatMap((m) => [
+      ...(m.deadline === undefined ? [] : [m.deadline]),
+      ...(m.connectionId && m.leaseUntil !== undefined ? [m.leaseUntil] : []),
+    ]),
     ...(r.emptySince === undefined ? [] : [r.emptySince + 60000]),
   );
 }

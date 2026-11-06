@@ -15,6 +15,7 @@ import {
   appearanceSchema,
   connectMember,
   disconnectMember,
+  renewMember,
   sweep,
   nextDeadline,
   commandSchema,
@@ -163,7 +164,16 @@ export class RoomSlot extends DurableObject<Env> {
           a.session !== r.session ||
           !r.members.some((m) => m.id === a.id)
         ) {
-          ws.send(JSON.stringify({ status: "removed" }));
+          ws.send(
+            JSON.stringify({
+              status: "removed",
+              reason: !r
+                ? "ROOM_CLOSED"
+                : a.session !== r.session
+                  ? "STALE_SESSION"
+                  : "MEMBERSHIP_ENDED",
+            }),
+          );
           ws.close(4001, "Membership ended");
         } else
           ws.send(JSON.stringify({ ...view(r, a.id), serverTime: Date.now() }));
@@ -412,6 +422,17 @@ export class RoomSlot extends DurableObject<Env> {
           )
         )
           throw Error("FORBIDDEN");
+        const now = Date.now();
+        const member = r.members.find((m) => m.id === a.id)!;
+        if (member.leaseUntil !== undefined && member.leaseUntil <= now) {
+          this.cleanup(now);
+          ws.close(4001, "Membership expired");
+          return;
+        }
+        if (renewMember(r, a.id, a.connectionId, now)) {
+          this.save(r);
+          this.schedule();
+        }
         const limited = a as typeof a & { lastClockAt?: number };
         if (Date.now() - (limited.lastClockAt || 0) < 200) return;
         limited.lastClockAt = Date.now();
@@ -653,7 +674,11 @@ export class RoomSlot extends DurableObject<Env> {
       this.schedule();
       this.send();
     }
-    ws.close();
+    try {
+      ws.close();
+    } catch {
+      /* Transport may already be gone. */
+    }
   }
   webSocketError(ws: WebSocket) {
     this.webSocketClose(ws);

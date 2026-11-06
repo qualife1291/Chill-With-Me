@@ -107,3 +107,9 @@ The optional temporary-storage core in `worker/temp-media.ts` has fake-object un
 UI tests mock YouTube/device speech. Native tests decode generated WebM, MP3 and H.264 MOV, compare transferred bytes and exercise play/pause/seek/ended, speech-volume duck/restore and DB/Blob cleanup. Managed Chromium blocks non-proxied UDP, so relay delivery is verified separately from WebRTC/WAN connectivity. Ten SwiftShader avatars and 30 backend sockets do not certify device FPS, thermal behavior, WAN drift or sustained media quota. Actual iOS/Android YouTube ads/autoplay, touch, voice quality, production eviction/rollback/privacy operations and full voice-provider gates remain open.
 
 YouTube Premium is not shared through the host video URL. See [official-source findings](../docs/YOUTUBE_PREMIUM.md); each iframe/viewer needs its own eligible signed-in account, and ads can cause drift.
+
+## Abrupt departure
+
+Closing a tab closes its transport and retains its seat for up to 30 seconds, allowing refresh/rejoin. When the host expires, only the designated successor with a live, unexpired connection can continue; otherwise the room closes immediately, including pending requests. Public lobby cards indicate host recovery and new requests are rejected until the host returns. A silent connection has a 90-second lease, renewed using existing 15-second clock probes; saves coalesce to every 30 seconds, without heartbeat broadcasts. Browser suspension beyond the lease requires joining again. Private lobby summaries retain their existing privacy boundary.
+
+Reconnect uses one bounded request at a time and backoff (3–15s), resumes on online/pageshow, ignores old socket callbacks and stale command responses, and stops after takeover/closed/expired membership. Healthy rooms do not add HTTP polls. Lease tests use real local sockets/tab close/offline emulation, not a hardware power-loss or WAN certification; see `evidence/departures.json`.

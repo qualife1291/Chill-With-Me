@@ -1785,3 +1785,5 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 @keyframes flower-fall { 10% {opacity:1;} 90% {opacity:1;} to {top:110%;transform:rotate(160deg);opacity:0;} }
 @media(prefers-reduced-motion:reduce) { .room-reaction,.reaction-symbol,.flower-shower i {animation:none;} .flower-shower {display:none;} }
 @media(max-width:800px) { .chat-toasts {bottom:82px;right:12px;} }
+.host-offline-notice { position:fixed; left:50%; top:74px; transform:translateX(-50%); z-index:22; width:max-content; max-width:calc(100% - 28px); padding:10px 16px; border:1px solid #e6bd7566; border-radius:14px; background:#392d1cf2; color:#ffe6b5; font-size:12px; pointer-events:none; text-align:center; }
+@media(max-width:800px) { .host-offline-notice {top:128px;} }
