@@ -29,6 +29,7 @@ const base = "http://localhost:8787",
   const toolbar = (page, name) =>
     page.locator(".cinema-toolbar").getByRole("button", { name, exact: true });
   const controls = async (page) => {
+    await page.bringToFront();
     if (
       (await toolbar(page, "Góc nhìn 🎮").getAttribute("aria-pressed")) !==
       "true"
@@ -37,7 +38,7 @@ const base = "http://localhost:8787",
   };
   const sounds = (page) => page.evaluate(() => window.__sounds.length);
   try {
-    for (const page of [h, g, p]) {
+    for (const page of [h, g]) {
       page.setDefaultTimeout(30000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.addInitScript(() => {
@@ -62,7 +63,12 @@ const base = "http://localhost:8787",
       );
       await page.goto(base);
     }
+    // The rejected applicant only exercises authenticated API commands; avoid a
+    // third software-rendered lobby. UI actions activate their intended tab.
+    await p.goto(base + "/api/rooms");
+    await api(p, "/session", {});
     assert(!(await api(h, "/rooms")).data.find((r) => r.slot === slot).open);
+    await h.bringToFront();
     await h
       .locator(".room-card")
       .nth(slot - 1)
@@ -77,6 +83,7 @@ const base = "http://localhost:8787",
       .click();
     await h.getByRole("dialog", { name: "Thêm video để bắt đầu" }).waitFor();
     epoch = (await api(h, `/rooms/${slot}/state`)).data.room.session;
+    await g.bringToFront();
     await g.reload();
     await g
       .locator(".room-card")
@@ -89,6 +96,7 @@ const base = "http://localhost:8787",
       .getByRole("dialog", { name: "Thông tin vào phòng", exact: true })
       .getByRole("button", { name: "Xin vào phòng", exact: true })
       .click();
+    await h.bringToFront();
     const approval = h.getByRole("dialog", { name: "Yêu cầu vào phòng" });
     await approval.waitFor();
     assert.equal(
@@ -156,6 +164,7 @@ const base = "http://localhost:8787",
       0,
       "own messages must not create a toast",
     );
+    await h.bringToFront();
     await toast.getByRole("button", { name: "Mở chat: Social guest" }).click();
     await h
       .locator(".chat-history")
@@ -243,6 +252,7 @@ const base = "http://localhost:8787",
     checks.push(
       "flowers and sound reach both members; duplicate command does not replay audio; room-wide cooldown, disabled controls, 3-second removal and DB cleanup",
     );
+    await g.bringToFront();
     await g
       .getByRole("button", { name: "Âm thanh tương tác: Bật", exact: true })
       .click();
@@ -261,6 +271,7 @@ const base = "http://localhost:8787",
     await g.emulateMedia({ reducedMotion: "reduce" });
     await g.setViewportSize({ width: 390, height: 844 });
     hn = await sounds(h);
+    await h.bringToFront();
     await h.getByRole("button", { name: "Mếu mào", exact: true }).click();
     await g
       .getByRole("status", { name: "Social host: Mếu mào", exact: true })
@@ -281,6 +292,7 @@ const base = "http://localhost:8787",
       ),
     });
     await g.locator(".room-reaction").waitFor({ state: "detached" });
+    await g.bringToFront();
     await g.getByRole("button", { name: "Trêu vui", exact: true }).click();
     await h
       .getByRole("status", { name: "Social guest: Trêu vui", exact: true })
@@ -288,6 +300,7 @@ const base = "http://localhost:8787",
     checks.push(
       "sad/troll actions broadcast; mobile fits; reduced motion suppresses animation",
     );
+    await g.bringToFront();
     await g.reload();
     await g
       .locator(".room-card")
@@ -325,6 +338,26 @@ const base = "http://localhost:8787",
       JSON.stringify(report, null, 2) + "\n",
     );
     console.log(JSON.stringify(report, null, 2));
+  } catch (e) {
+    console.error(
+      "Social browser state",
+      await Promise.all(
+        [h, g].map((page) =>
+          page
+            .evaluate(() => ({
+              path: location.pathname,
+              visibility: document.visibilityState,
+              focused: document.hasFocus(),
+              activeTag: document.activeElement?.tagName,
+              dialog: document
+                .querySelector('[role="dialog"]')
+                ?.getAttribute("aria-label"),
+            }))
+            .catch(() => ({ unavailable: true })),
+        ),
+      ),
+    );
+    throw e;
   } finally {
     if (epoch) await cmd(h, { type: "close" }).catch(() => {});
     await browser.close();

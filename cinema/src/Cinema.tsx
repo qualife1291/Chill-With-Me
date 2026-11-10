@@ -1,6 +1,9 @@
 import Seating from "./Seating";
 import Walkways from "./Walkways";
 import SceneRecovery from "./SceneRecovery";
+import SceneEnvironment from "./SceneEnvironment";
+import { spaceInfo } from "../shared/spaces";
+import { sceneDiagnostics } from "./diagnostics";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import React, {
   Suspense,
@@ -15,11 +18,7 @@ import * as THREE from "three";
 import { type Room, type Member } from "../shared/model";
 import { cameraView, orbitView } from "../shared/camera";
 import { SCREEN, screenCorners, screenClipMatrix } from "../shared/projection";
-import { avatarMotion, avatarPosition, aisleHeight } from "../shared/avatar";
-function position(m: Member, capacity: number, now: number) {
-  const p = avatarPosition(m, capacity, now);
-  return new THREE.Vector3(p.x, p.y, p.z);
-}
+import { avatarMotion, avatarPosition } from "../shared/avatar";
 function ProceduralAvatar({
   m,
   capacity,
@@ -55,7 +54,8 @@ function ProceduralAvatar({
     const root = group.current,
       body = torso.current;
     if (!root || !body || !neck.current) return;
-    root.position.copy(position(m, capacity, now));
+    const p = avatarPosition(m, capacity, now);
+    root.position.set(p.x, p.y, p.z);
     root.position.y += Math.abs(pose.reaction) * 0.08;
     // Face the direction of travel, then turn towards the screen before sitting.
     const next = avatarPosition(m, capacity, now + 20);
@@ -262,6 +262,7 @@ function Camera({
   offset: number;
 }) {
   const { camera, size, invalidate, gl } = useThree();
+  const own = room.members.find((member) => member.id === id);
   useEffect(() => {
     invalidate();
   }, [
@@ -272,7 +273,10 @@ function Camera({
     zoom,
     controlsOpen,
     reducedMotion,
-    room.revision,
+    room.capacity,
+    own?.seat,
+    own?.seated,
+    own?.sitAt,
     invalidate,
   ]);
   const aim = useMemo(() => new THREE.Vector3(0, 1.25, -5.7), []);
@@ -294,13 +298,15 @@ function Camera({
   const smoothYaw = useRef(0),
     smoothPitch = useRef(0);
   useFrame((_, dt) => {
-    gl.domElement.dataset.renderFrame = String(gl.info.render.frame);
-    gl.domElement.dataset.renderStats = JSON.stringify({
-      calls: gl.info.render.calls,
-      triangles: gl.info.render.triangles,
-      geometries: gl.info.memory.geometries,
-      textures: gl.info.memory.textures,
-    });
+    if (sceneDiagnostics) {
+      gl.domElement.dataset.renderFrame = String(gl.info.render.frame);
+      gl.domElement.dataset.renderStats = JSON.stringify({
+        calls: gl.info.render.calls,
+        triangles: gl.info.render.triangles,
+        geometries: gl.info.memory.geometries,
+        textures: gl.info.memory.textures,
+      });
+    }
     const m = room.members.find((m) => m.id === id);
     if (!m) return;
     const now = Date.now() + offset;
@@ -362,26 +368,29 @@ function Camera({
       invalidate();
     const el = surface.current;
     if (!el) return;
-    el.dataset.camera = mode;
-    el.dataset.fov =
-      camera instanceof THREE.PerspectiveCamera ? camera.fov.toFixed(2) : "0";
-    el.dataset.avatar = m.avatar || "male";
-    el.dataset.transitioning = String(
-      camera.position.distanceTo(p) > 0.002 ||
-        aim.distanceTo(desiredAim) > 0.002 ||
-        lensMoving,
-    );
-    el.dataset.yaw = smoothYaw.current.toFixed(2);
-    el.dataset.pitch = smoothPitch.current.toFixed(2);
-    el.dataset.seated = String(m.seated);
-    const pose = avatarMotion(m, Date.now() + offset);
-    el.dataset.action = pose.waving
-      ? "wave"
-      : pose.walking
-        ? "walk"
-        : pose.sitting === 1
-          ? "sit"
-          : "stand";
+    if (sceneDiagnostics) {
+      el.dataset.camera = mode;
+      el.dataset.fov =
+        camera instanceof THREE.PerspectiveCamera ? camera.fov.toFixed(2) : "0";
+      el.dataset.avatar = m.avatar || "male";
+      el.dataset.transitioning = String(
+        camera.position.distanceTo(p) > 0.002 ||
+          aim.distanceTo(desiredAim) > 0.002 ||
+          lensMoving,
+      );
+      el.dataset.yaw = smoothYaw.current.toFixed(2);
+      el.dataset.targetYaw = (bodyYaw + yaw).toFixed(2);
+      el.dataset.pitch = smoothPitch.current.toFixed(2);
+      el.dataset.seated = String(m.seated);
+      const pose = avatarMotion(m, Date.now() + offset);
+      el.dataset.action = pose.waving
+        ? "wave"
+        : pose.walking
+          ? "walk"
+          : pose.sitting === 1
+            ? "sit"
+            : "stand";
+    }
     math.vp.multiplyMatrices(
       camera.projectionMatrix,
       camera.matrixWorldInverse,
@@ -391,8 +400,10 @@ function Camera({
       const v = math.corners[i],
         c = math.point.set(v[0], v[1], v[2], 1).applyMatrix4(math.vp);
       if (c.w > 0) front++;
-      math.points[i].x = ((c.x / c.w + 1) * size.width) / 2;
-      math.points[i].y = ((1 - c.y / c.w) * size.height) / 2;
+      if (sceneDiagnostics) {
+        math.points[i].x = ((c.x / c.w + 1) * size.width) / 2;
+        math.points[i].y = ((1 - c.y / c.w) * size.height) / 2;
+      }
     }
     const matrix = screenClipMatrix(math.vp.elements, size.width, size.height);
     const transform =
@@ -404,71 +415,23 @@ function Camera({
       el.style.top = "0";
       el.style.transform = transform;
       lastProjection.current = transform;
-      el.dataset.corners = JSON.stringify(math.points);
-      el.dataset.viewProjection = JSON.stringify(math.vp.elements);
-      el.dataset.clipW = JSON.stringify(
-        math.corners.map(
-          (v) => math.point.set(v[0], v[1], v[2], 1).applyMatrix4(math.vp).w,
-        ),
-      );
+      if (sceneDiagnostics) {
+        el.dataset.corners = JSON.stringify(math.points);
+        el.dataset.viewProjection = JSON.stringify(math.vp.elements);
+        el.dataset.clipW = JSON.stringify(
+          math.corners.map(
+            (v) => math.point.set(v[0], v[1], v[2], 1).applyMatrix4(math.vp).w,
+          ),
+        );
+      }
     }
     el.style.visibility = front ? "visible" : "hidden";
     el.style.pointerEvents = front ? "auto" : "none";
-    el.dataset.mode = front ? "projected" : "offscreen";
+    const displayMode = front ? "projected" : "offscreen";
+    if (el.dataset.mode !== displayMode) el.dataset.mode = displayMode;
   });
   return null;
 }
-const TheatreInterior = React.memo(function TheatreInterior({
-  capacity,
-}: {
-  capacity: number;
-}) {
-  return (
-    <group>
-      <directionalLight position={[0, 5, 6]} intensity={1.5} color="#ede5d6" />
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          <pointLight
-            position={[side * 4.4, 3.1, 1.5]}
-            intensity={12}
-            distance={12}
-            color="#ffcb8a"
-          />
-          {[-3.5, 0, 3.5].map((z) => (
-            <group key={z} position={[side * 5.32, 2.3, z]}>
-              <mesh>
-                <boxGeometry args={[0.08, 3.4, 2.6]} />
-                <meshStandardMaterial color="#263b38" roughness={0.95} />
-              </mesh>
-              <mesh position={[-side * 0.065, 0.2, 0]}>
-                <boxGeometry args={[0.05, 0.7, 0.07]} />
-                <meshBasicMaterial color="#f7c281" />
-              </mesh>
-              <mesh position={[-side * 0.08, -1.58, 0]}>
-                <boxGeometry args={[0.06, 0.035, 2.6]} />
-                <meshBasicMaterial color="#bf8553" />
-              </mesh>
-            </group>
-          ))}
-        </group>
-      ))}
-      {[-3, 0, 3, 6].map((z) => (
-        <group key={z} position={[0, 6.45, z]}>
-          <mesh>
-            <boxGeometry args={[11.2, 0.14, 0.28]} />
-            <meshStandardMaterial color="#21302c" />
-          </mesh>
-          {[-3.5, 3.5].map((x) => (
-            <mesh key={x} position={[x, -0.09, 0]}>
-              <boxGeometry args={[1.5, 0.035, 0.12]} />
-              <meshBasicMaterial color="#f8d3a1" />
-            </mesh>
-          ))}
-        </group>
-      ))}
-    </group>
-  );
-});
 export default function Cinema({
   room,
   id,
@@ -516,25 +479,10 @@ export default function Cinema({
       }}
     >
       <SceneRecovery onUnavailable={onUnavailable} />
-      <TheatreInterior capacity={room.capacity} />
-      <color attach="background" args={["#101b19"]} />
-      <fog attach="fog" args={["#101b19", 18, 38]} />
-      <ambientLight intensity={0.8} />
-      <hemisphereLight args={["#c3d1ea", "#18121d", 1.1]} />
-      <pointLight
-        position={[0, 3, -4]}
-        intensity={12}
-        color="#a8bce6"
-        distance={14}
+      <SceneEnvironment
+        space={spaceInfo(room.space).id}
+        capacity={room.capacity}
       />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
-        <planeGeometry args={[12, 16]} />
-        <meshStandardMaterial color="#202b29" roughness={1} />
-      </mesh>
-      <mesh position={[0, 3.2, -6]}>
-        <boxGeometry args={[12, 6.4, 0.2]} />
-        <meshStandardMaterial color="#152422" />
-      </mesh>
       {/* Native media lives below WebGL. This transparent depth-writing plane
           opens the screen only where foreground avatars/chairs do not occlude it. */}
       <mesh position={[0, SCREEN.y, SCREEN.z]}>
@@ -550,78 +498,6 @@ export default function Cinema({
           fog={false}
         />
       </mesh>
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          <mesh
-            position={[
-              side * (SCREEN.width / 2 + 0.12),
-              SCREEN.y,
-              SCREEN.z - 0.05,
-            ]}
-          >
-            <boxGeometry args={[0.16, SCREEN.height + 0.35, 0.18]} />
-            <meshStandardMaterial
-              color="#9b7750"
-              metalness={0.45}
-              roughness={0.42}
-            />
-          </mesh>
-          <mesh position={[side * 5.1, 3.1, -5.82]}>
-            <boxGeometry args={[1.1, 6.2, 0.18]} />
-            <meshStandardMaterial color="#263b38" roughness={1} />
-          </mesh>
-          <mesh
-            position={[
-              side * (SCREEN.width / 2 + 0.03),
-              SCREEN.y,
-              SCREEN.z + 0.01,
-            ]}
-          >
-            <boxGeometry args={[0.025, SCREEN.height + 0.06, 0.025]} />
-            <meshBasicMaterial color="#e9d0a7" />
-          </mesh>
-        </group>
-      ))}
-      {[-1, 1].map((side) => (
-        <mesh
-          key={side}
-          position={[
-            0,
-            SCREEN.y + side * (SCREEN.height / 2 + 0.12),
-            SCREEN.z - 0.05,
-          ]}
-        >
-          <boxGeometry args={[SCREEN.width + 0.4, 0.16, 0.18]} />
-          <meshStandardMaterial
-            color="#9b7750"
-            metalness={0.45}
-            roughness={0.42}
-          />
-        </mesh>
-      ))}
-      {[-5.32, 5.32].map((x) => (
-        <group key={"cove" + x}>
-          <mesh position={[x, 3.8, 0]}>
-            <boxGeometry args={[0.04, 0.035, 10]} />
-            <meshBasicMaterial color="#b29b80" />
-          </mesh>
-          {[-2, 0, 2, 4].map((z) => (
-            <mesh
-              key={z}
-              position={[x, aisleHeight(room.capacity, z) + 0.12, z]}
-            >
-              <boxGeometry args={[0.045, 0.06, 0.32]} />
-              <meshBasicMaterial color="#cda875" />
-            </mesh>
-          ))}
-        </group>
-      ))}
-      {[-5.5, 5.5].map((x) => (
-        <mesh key={x} position={[x, 3.1, 0]}>
-          <boxGeometry args={[0.2, 6.2, 12]} />
-          <meshStandardMaterial color="#29303e" />
-        </mesh>
-      ))}
       <Walkways capacity={room.capacity} />
       <Seating
         capacity={room.capacity}

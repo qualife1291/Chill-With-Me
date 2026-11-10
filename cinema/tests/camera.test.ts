@@ -1,3 +1,4 @@
+import { heldLookStep } from "../shared/lookInput";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cameraView, orbitView } from "../shared/camera";
@@ -34,4 +35,22 @@ test("unified orbit stays inside side/front walls, clears heads and accepts a fu
     orbitView(6, 0, 0, -24, 1.7).position,
     orbitView(6, 0, 0, 24, 1.7).position,
   );
+});
+
+test("held look speed stays time-based from 4 to 60 frames per second", () => {
+  for (const fps of [4, 10, 30, 60]) {
+    const total = Array.from({ length: fps }, () =>
+      heldLookStep(1000 / fps),
+    ).reduce((a, b) => a + b, 0);
+    assert(
+      Math.abs(total - 40) < 1e-9,
+      `speed changed at ${fps} fps: ${total}`,
+    );
+  }
+});
+test("stale or invalid look-frame intervals cannot cause an unbounded jump", () => {
+  assert(heldLookStep(60000) <= 10);
+  assert.equal(heldLookStep(-100), 0);
+  assert.equal(heldLookStep(Number.NaN), 0);
+  assert.equal(heldLookStep(Infinity), 0);
 });

@@ -326,11 +326,29 @@ fs.mkdirSync(shots, { recursive: true });
     checks.push("drag stays attached, no floating fallback");
     await p.locator(".scene").focus();
     await p.keyboard.down("d");
-    await p.waitForFunction(
-      () =>
-        Number(document.querySelector(".screen-surface")?.dataset.yaw) > 110,
-    );
-    await p.keyboard.up("d");
+    try {
+      await p.waitForFunction(
+        () =>
+          Number(document.querySelector(".screen-surface")?.dataset.yaw) > 110,
+      );
+    } catch (e) {
+      console.error(
+        "Orbit input state",
+        await p.evaluate(() => {
+          const d = document.querySelector(".screen-surface")?.dataset;
+          return {
+            mode: d?.camera,
+            yaw: d?.yaw,
+            target: d?.targetYaw,
+            focus: document.activeElement?.tagName,
+            visibility: document.visibilityState,
+          };
+        }),
+      );
+      throw e;
+    } finally {
+      await p.keyboard.up("d");
+    }
     await p.waitForTimeout(800);
     assert.equal(await p.locator(".error-banner").count(), 0);
     checks.push(

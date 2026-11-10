@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "date": "2026-11-10T09:44:23.186931+00:00",
+  "fixture": {
+    "members": 10,
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "renderer": "Chromium headless SwiftShader; one renderer, not ten devices",
+    "comparison": "Same ten mixed-avatar cinema fixture, one local software renderer."
+  },
+  "baseline": {
+    "source": "68001a55d840ad8c65b42fff0a1d81440da126d6",
+    "resources": {
+      "calls": 137,
+      "triangles": 54130,
+      "geometries": 84,
+      "textures": 12
+    }
+  },
+  "current": {
+    "resources": {
+      "calls": 88,
+      "triangles": 54140,
+      "geometries": 35,
+      "textures": 12
+    },
+    "idleRenderedFrames": 0
+  },
+  "reductionsPercent": {
+    "calls": 35.8,
+    "geometries": 58.3
+  },
+  "behaviorEvidence": "spaces.json: all three environments idle; camera-only motion skips settled peer rig updates; chat-only changes do not render static 3D; diagnostics-off native playback remains projected.",
+  "limitations": "Draw calls and geometry-object counts are structural resource measurements, not FPS, RAM, battery, thermal, WAN or actual-device certification. Triangle count is nearly unchanged; ten extra triangles replace the cinema floor plane with a batched box."
+}

@@ -45,8 +45,13 @@ const base = "http://localhost:8787";
             name: `Host ${slot}`,
             title: `Capacity ${slot}`,
             capacity: 10,
+            space: ["cinema", "lounge", "rooftop"][slot - 1],
           });
           assert.equal(created.status, 200);
+          assert.equal(
+            created.body.room.space,
+            ["cinema", "lounge", "rooftop"][slot - 1],
+          );
           host.epoch = created.body.room.session;
         } else {
           assert.equal(

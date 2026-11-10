@@ -121,8 +121,8 @@ const assert = require("node:assert/strict");
       await h.locator(".scene canvas").getAttribute("data-render-stats"),
     );
     assert(resources.textures <= 12, JSON.stringify(resources));
-    assert(resources.calls <= 150, JSON.stringify(resources));
-    assert(resources.geometries <= 100, JSON.stringify(resources));
+    assert(resources.calls <= 100, JSON.stringify(resources));
+    assert(resources.geometries <= 45, JSON.stringify(resources));
     const report = {
       pass: true,
       members: 10,

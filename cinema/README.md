@@ -12,7 +12,7 @@ npm run build
 npm run serve -- --local --ip 127.0.0.1 --port 8787
 ```
 
-Home asks for a profile only after selecting create/join. Hosts choose cinema chairs or shared sofa seating at creation; all members receive the same layout, with unchanged capacity/seat anchors.
+Home asks for a profile only after selecting create/join. Hosts choose Rạp chiếu / Lounge ấm áp / Sân thượng đêm plus cinema chairs or shared sofas at creation. Environment is shared, persisted and immutable for that room; legacy rooms use cinema. Private summaries do not reveal the chosen environment. Capacity/seat anchors and the native world screen are shared across all three layouts.
 
 Use separate browser profiles for separate members. `/?demo` is a local simulation. Optional Vite HMR: `npm run dev` while Wrangler supplies the API. Never run room mutation tests on production.
 
@@ -47,6 +47,7 @@ node tests/roadmap.cjs              # private/import/drag/clock/panel UI, slot 2
 node tests/media.cjs                # native codecs/control/cleanup, slot 3
 node tests/relay-security.cjs       # binary ACL/cursor/size/stale item, slot 2
 node tests/render-capacity.cjs      # run alone; ten models, one software renderer
+node tests/spaces.cjs               # creation/admission, three scenes, idle rig cache, mobile layout, public diagnostics path
 ```
 
 GitHub `Source checks` checks build/logic/types/docs/dry-run on Node 22/24. It does not run physical devices or the local full-browser runner. CI configuration and an observed remote CI pass are separate facts.
@@ -101,6 +102,10 @@ Select eye or free orbit from the view menu. Free orbit combines the previous ov
 Host approval opens immediately in the center, even before the first video; new requests reopen a deferred dialog. When chat is closed, incoming messages appear bottom-right (up to 3, 6 seconds); click to open chat. Poke sounds only on the recipient. Flowers, applause, sad and playful reactions show the sender centrally for 3 seconds to all approved members. The room accepts one effect at a time and each sender waits 5 seconds; the event is deleted on expiry. The action panel toggles interaction sounds independently of chat speech; short WebAudio cues require a user gesture, never queue blocked audio and do not replay on rejoin. Reduced-motion preferences suppress animation.
 
 The optional temporary-storage core in `worker/temp-media.ts` has fake-object unit coverage only. R2 activation, binding, authenticated routes, client upload/prefetch, alarm reconciliation and real-service tests remain required before use. Absolute TTL is 6h; long-playback/renewal policy and resumable upload are not implemented.
+
+### Scene rendering and spaces
+
+Static room decorations use three instanced box batches, with one additional static points batch for rooftop stars. Settled avatar skeletons are not reevaluated for camera-only motion; state/pose/action changes wake them. Chat-only revisions do not invalidate the camera. In-room per-frame telemetry is disabled on public hosts by default; `?diagnostics=1` enables it, `?diagnostics=0` tests the public path on localhost. Held WASD/arrows use elapsed time (40°/s at 4–60 Hz), with bounded jumps and release on blur/focus changes. QA counters measure resource usage and work performed, not certified hardware FPS.
 
 ### Scene resource controls
 

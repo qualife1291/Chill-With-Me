@@ -5,14 +5,19 @@
   "rooms": 3,
   "members_per_room": 10,
   "authenticated_websockets": 30,
+  "spaces": [
+    "cinema",
+    "lounge",
+    "rooftop"
+  ],
   "broadcast_all_members_ms": [
-    282,
-    179,
-    244
+    397,
+    252,
+    224
   ],
   "http_requests_measured": 92,
-  "http_p50_ms": 36.9,
-  "http_p95_ms": 72.7,
+  "http_p50_ms": 44.1,
+  "http_p95_ms": 87.3,
   "overflow_rejected": true,
   "limitations": "Short backend smoke; no media/GPU/WAN/sustained throughput. Own test rooms closed."
 }

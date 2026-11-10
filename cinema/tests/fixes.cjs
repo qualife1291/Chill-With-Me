@@ -370,6 +370,22 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.waitForTimeout(200);
   await host.getByPlaceholder("Nói gì với mọi người…").focus();
   await host.waitForTimeout(1300);
+  const focusTarget = Number(
+    await host.locator(".screen-surface").getAttribute("data-target-yaw"),
+  );
+  await host.waitForTimeout(600);
+  const focusTargetAfter = Number(
+    await host.locator(".screen-surface").getAttribute("data-target-yaw"),
+  );
+  await host.keyboard.up("d");
+  if (Math.abs(focusTarget - focusTargetAfter) > 0.01)
+    throw Error("View input keeps turning while typing");
+  // Assert the released target AND eventual visual rest; fixed wall-clock waits
+  // conflate a slow software renderer's remaining easing with held keyboard input.
+  await host.waitForFunction(() => {
+    const d = document.querySelector(".screen-surface")?.dataset;
+    return d && Math.abs(Number(d.yaw) - Number(d.targetYaw)) < 0.05;
+  });
   const focusYaw = Number(
     await host.locator(".screen-surface").getAttribute("data-yaw"),
   );
@@ -377,9 +393,8 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   const focusYawAfter = Number(
     await host.locator(".screen-surface").getAttribute("data-yaw"),
   );
-  await host.keyboard.up("d");
   if (Math.abs(focusYaw - focusYawAfter) > 0.2)
-    throw Error("View keeps turning while typing");
+    throw Error("View did not settle after typing focus");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();

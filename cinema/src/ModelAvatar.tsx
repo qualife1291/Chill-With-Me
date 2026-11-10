@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { sceneDiagnostics } from "./diagnostics";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -29,6 +30,7 @@ export default function ModelAvatar({
   const { invalidate, gl } = useThree();
   const group = useRef<THREE.Group>(null);
   const initialized = useRef(false);
+  const settled = useRef(false);
   const gaze = useRef({ yaw: look.yaw, pitch: look.pitch });
   const rig = useMemo(() => {
     const scene = cloneSkeleton(gltf.scene);
@@ -166,8 +168,13 @@ export default function ModelAvatar({
     };
   }, [rig, gl, style, invalidate]);
   useEffect(() => {
+    settled.current = false;
     invalidate();
   }, [
+    rig,
+    capacity,
+    m.seat,
+    preview,
     m.sitAt,
     m.waveAt,
     m.pokedAt,
@@ -207,8 +214,13 @@ export default function ModelAvatar({
     }
   };
   useFrame((_, dt) => {
+    if (settled.current) return;
     const root = group.current;
     if (!root) return;
+    if (sceneDiagnostics)
+      gl.domElement.dataset.rigUpdates = String(
+        (Number(gl.domElement.dataset.rigUpdates) || 0) + 1,
+      );
     const now = Date.now() + offset,
       pose = avatarMotion(m, now),
       p = preview ? { x: 0, y: 0, z: 0 } : avatarPosition(m, capacity, now),
@@ -253,7 +265,8 @@ export default function ModelAvatar({
       : smoothHeadAngle(gaze.current.pitch, look.pitch, dt);
     const gazeMoving =
       gaze.current.yaw !== look.yaw || gaze.current.pitch !== look.pitch;
-    gl.domElement.dataset[style + "GazeSettled"] = String(!gazeMoving);
+    if (sceneDiagnostics)
+      gl.domElement.dataset[style + "GazeSettled"] = String(!gazeMoving);
     const elapsed = now - (m.sitAt || 0);
     if (pose.walking) {
       const entry = rig.actions.Walking_A;
@@ -286,7 +299,7 @@ export default function ModelAvatar({
       rotate(rig.bones.get("lowerarmr"), math.z, pose.hand);
     }
     const head = rig.bones.get("head");
-    if (head)
+    if (head && sceneDiagnostics)
       gl.domElement.dataset[style + "Gaze"] = head.quaternion
         .toArray()
         .map((v) => v.toFixed(5))
@@ -298,7 +311,14 @@ export default function ModelAvatar({
         : m.seated
           ? "sit"
           : "stand";
-    if (pose.moving || gazeMoving || Math.abs(delta) > 0.001) invalidate();
+    const pending =
+      (m.seated && m.sitAt !== undefined && now < m.sitAt) ||
+      (m.waveAt !== undefined && now < m.waveAt) ||
+      (m.pokedAt !== undefined && now < m.pokedAt);
+    const moving =
+      pose.moving || gazeMoving || Math.abs(delta) > 0.001 || pending;
+    settled.current = !moving;
+    if (moving) invalidate();
   });
   return (
     <group ref={group} name={"avatar-" + m.id}>

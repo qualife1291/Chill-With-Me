@@ -1,5 +1,7 @@
 import { parsePlaylist, MAX_IMPORT_ITEMS, MAX_IMPORT_BYTES } from "./playlist";
 import { z } from "zod";
+import { spaceSchema, type Space } from "./spaces";
+export { spaceSchema };
 import {
   parseMediaURL,
   MAX_LOCAL_BYTES,
@@ -150,6 +152,7 @@ export type Suggestion = {
   at: number;
 };
 export type Room = {
+  space?: Space;
   seating?: z.infer<typeof seatingSchema>;
   visibility?: z.infer<typeof visibilitySchema>;
   inviteKey?: string;
@@ -265,12 +268,14 @@ export function createRoom(
   visibility: z.infer<typeof visibilitySchema> = "public",
   seating: z.infer<typeof seatingSchema> = "cinema",
   appearance?: Appearance,
+  space: Space = "cinema",
 ): Room {
   seats(capacity);
   return {
     session: crypto.randomUUID(),
     visibility: visibilitySchema.parse(visibility),
     seating: seatingSchema.parse(seating),
+    space: spaceSchema.parse(space),
     ...(visibility === "private" ? { inviteKey: crypto.randomUUID() } : {}),
     title: nameSchema.parse(title),
     capacity,
@@ -655,6 +660,7 @@ export function roomSummary(r: Room | null) {
     title: r.title,
     capacity: r.capacity,
     count: r.members.length,
+    ...(r.space && r.space !== "cinema" ? { space: r.space } : {}),
     ...(hostRecovering(r) ? { recovering: true } : {}),
   };
 }

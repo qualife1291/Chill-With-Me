@@ -10,6 +10,7 @@ import {
   apply,
   visibilitySchema,
   seatingSchema,
+  spaceSchema,
   roomSummary,
   avatarSchema,
   appearanceSchema,
@@ -37,6 +38,7 @@ const createSchema = joinSchema.extend({
   capacity: z.number().int().min(2).max(10),
   visibility: visibilitySchema.default("public"),
   seating: seatingSchema.default("cinema"),
+  space: spaceSchema.default("cinema"),
 });
 const error = (code: string, status = 400) =>
   Response.json(
@@ -216,6 +218,7 @@ export class RoomSlot extends DurableObject<Env> {
             c.visibility,
             c.seating,
             c.appearance,
+            c.space,
           );
           this.save(r);
           this.schedule();

@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "checks": [
+    "cinema: creation UI, metadata/admission, shared space, camera-only rig freeze, idle render and native world screen",
+    "lounge: creation UI, metadata/admission, shared space, camera-only rig freeze, idle render and native world screen",
+    "rooftop: creation UI, metadata/admission, shared space, camera-only rig freeze, idle render and native world screen",
+    "invalid create space rejected; join cannot change shared environment; mobile picker stays compact; chat-only updates do not redraw 3D; diagnostics-off playback remains projected"
+  ],
+  "spaces": [
+    {
+      "space": "cinema",
+      "renderer": {
+        "calls": 34,
+        "triangles": 15316,
+        "geometries": 27,
+        "textures": 3
+      },
+      "settledPeerRigUpdatesDuringCameraMotion": 0,
+      "idleFrames": 0
+    },
+    {
+      "space": "lounge",
+      "renderer": {
+        "calls": 34,
+        "triangles": 16144,
+        "geometries": 27,
+        "textures": 3
+      },
+      "settledPeerRigUpdatesDuringCameraMotion": 0,
+      "idleFrames": 0
+    },
+    {
+      "space": "rooftop",
+      "renderer": {
+        "calls": 35,
+        "triangles": 16636,
+        "geometries": 28,
+        "textures": 3
+      },
+      "settledPeerRigUpdatesDuringCameraMotion": 0,
+      "idleFrames": 0
+    }
+  ],
+  "pageErrors": [],
+  "limitations": "Local SwiftShader scenes and authenticated backend; mocked YouTube. No physical-device FPS, battery or actual media certification."
+}

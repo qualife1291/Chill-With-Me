@@ -7,6 +7,8 @@ import { useSceneQuality } from "./useSceneQuality";
 import { useModalFocus } from "./useModalFocus";
 import { FileShare } from "./FileShare";
 import { mediaLabel, FILE_ACCEPT } from "../shared/media";
+import { spaces, spaceInfo, type Space } from "../shared/spaces";
+import { heldLookStep } from "../shared/lookInput";
 import React, {
   Suspense,
   lazy,
@@ -70,6 +72,7 @@ type Snapshot = {
   reason?: string;
 };
 type Summary = {
+  space?: Space;
   recovering?: boolean;
   private?: boolean;
   slot: number;
@@ -200,6 +203,7 @@ function App() {
   const entryModal = useRef<HTMLElement>(null),
     entryBusy = useRef(false);
   const [seating, setSeating] = useState<"cinema" | "sofa">("cinema");
+  const [space, setSpace] = useState<Space>("cinema");
   const [avatar, setAvatar] = useState<"male" | "female">("male");
   const [appearance, setAppearance] = useState({
     clothing: "#4d6c82",
@@ -649,6 +653,7 @@ function App() {
           visibility,
           seating,
           appearance,
+          space,
         );
         apply(r, id, { type: "sit" }, Date.now());
         setRoom(r);
@@ -659,7 +664,16 @@ function App() {
         const v = await api(
           `/rooms/${n}/${create ? "create" : "join"}`,
           create
-            ? { name, title, capacity, avatar, visibility, seating, appearance }
+            ? {
+                name,
+                title,
+                capacity,
+                avatar,
+                visibility,
+                seating,
+                appearance,
+                space,
+              }
             : {
                 name,
                 avatar,
@@ -940,7 +954,7 @@ function App() {
     let frame = 0,
       last = 0;
     const tick = (now: number) => {
-      const d = Math.min(now - last, 40) * 0.04;
+      const d = heldLookStep(now - last);
       last = now;
       turn(
         (Number(keys.has("ArrowRight") || keys.has("d")) -
@@ -1261,6 +1275,33 @@ function App() {
                     </label>
                     {entry.create && (
                       <>
+                        <fieldset className="space-picker">
+                          <legend>Không gian chiếu</legend>
+                          <div className="space-options">
+                            {spaces.map((option) => (
+                              <label
+                                className="space-card"
+                                key={option.id}
+                                style={
+                                  {
+                                    "--space-accent": option.accent,
+                                  } as React.CSSProperties
+                                }
+                              >
+                                <input
+                                  type="radio"
+                                  name="space"
+                                  value={option.id}
+                                  aria-label={option.label}
+                                  checked={space === option.id}
+                                  onChange={() => setSpace(option.id)}
+                                />
+                                <strong>{option.label}</strong>
+                                <small>{option.description}</small>
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
                         <label>
                           Tên phòng mới
                           <input
@@ -1353,17 +1394,25 @@ function App() {
                     }
                     key={s.slot}
                   >
-                    <div className={"room-cover cover-" + (s.slot - 1)}>
+                    <div
+                      className={
+                        "room-cover cover-" +
+                        (s.slot - 1) +
+                        (s.open && !s.private
+                          ? " preview-" + (s.space || "cinema")
+                          : "")
+                      }
+                    >
                       <span>PHÒNG 0{s.slot}</span>
                       <Armchair size={56} strokeWidth={1} />
                       <small>
-                        {
-                          [
-                            "THE AMBER ROOM",
-                            "THE MIDNIGHT ROOM",
-                            "THE VELVET ROOM",
-                          ][s.slot - 1]
-                        }
+                        {s.open && !s.private
+                          ? spaceInfo(s.space).label
+                          : [
+                              "THE AMBER ROOM",
+                              "THE MIDNIGHT ROOM",
+                              "THE VELVET ROOM",
+                            ][s.slot - 1]}
                       </small>
                     </div>
                     <div className="card-content">
@@ -1585,6 +1634,7 @@ function App() {
                 </p>
                 <h1>{room.title}</h1>
                 <p className="muted">
+                  {spaceInfo(room.space).label} ·{" "}
                   {room.seating === "sofa" ? "Sofa ngồi chung" : "Ghế rạp"} ·
                   Premium của chủ phòng không chia sẻ quyền bỏ quảng cáo cho
                   thành viên khác.
@@ -1687,6 +1737,7 @@ function App() {
                       (light ? " is-light" : "")
                     }
                     tabIndex={0}
+                    data-space={spaceInfo(room.space).id}
                     aria-label="Rạp phim, giữ chuột và kéo hoặc dùng WASD, phím mũi tên để nhìn"
                     {...headDrag.handlers}
                     onWheel={(e) => {
