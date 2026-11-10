@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-10T07:15:37.971304+00:00",
+  "source": "8247a1758fe5bc88b0405aeca60ad654f1a863ca",
+  "deployed": false,
+  "target": {
+    "account": "966c7ceee358485648b935a07877ec45",
+    "worker": "cung-xem-cinema-alpha",
+    "public": "https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/"
+  },
+  "blockedOperation": "Static Assets upload",
+  "attempts": [
+    {
+      "path": "issued upload-session JWT",
+      "httpStatus": 401,
+      "response": "Unauthorized"
+    },
+    {
+      "path": "connected Cloudflare API",
+      "httpStatus": 401,
+      "response": "Unauthorized",
+      "rayId": "a5833e984b0b811b-SIN"
+    }
+  ],
+  "localVerification": {
+    "passed": true,
+    "stages": 31,
+    "individualLogicCases": 79,
+    "sceneQualityGroups": 7
+  },
+  "readOnlyProductionCheck": {
+    "version": "aab8a845-d657-47c6-8c64-c65c21bdcd3f",
+    "percentage": 100,
+    "htmlMatchesPreviousVerifiedArtifact": true,
+    "htmlSha256": "afca693fa7b13b391e5cf8abb4a208a27bfb8c9f562abc3cc774c6d98de49902"
+  },
+  "preserved": [
+    "Worker module",
+    "ASSETS and ROOMS bindings",
+    "SQLite migration v1",
+    "room data",
+    "regular Static Assets deployment",
+    "billing"
+  ],
+  "next": "Use securely configured Cloudflare deployment credentials or repair the connection, verify authentication, deploy the existing target, then compare all public assets. Do not supply credentials in chat or replace Static Assets with embedded delivery."
+}
