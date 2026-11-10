@@ -1,5 +1,6 @@
 const { chromium, executablePath } = require("./browser-runtime.cjs");
 let activeBrowser;
+let activePages = [];
 const baseURL = process.env.CINEMA_TEST_BASE_URL || "http://localhost:8787";
 if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   throw Error("Room regression may only target a local runtime");
@@ -15,6 +16,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
       viewport: { width: 1440, height: 1000 },
     }),
     guest = await browser.newPage();
+  activePages = [host, guest];
   const errors = [];
   const liveLooks = [];
   guest.on("websocket", (ws) =>
@@ -26,6 +28,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     }),
   );
   const openPanel = async (p, name) => {
+    await p.bringToFront();
     const b = p
       .locator(".cinema-toolbar")
       .getByRole("button", { name, exact: true });
@@ -97,6 +100,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.waitForFunction(
     () => document.querySelector(".lobby-stage")?.dataset.previewSlot === "3",
   );
+  await host.bringToFront();
   await host.waitForFunction(
     () =>
       document.querySelector(".lobby-stage canvas")?.dataset.settled === "true",
@@ -178,6 +182,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   );
   if (await host.getByLabel("Màu tóc", { exact: true }).count())
     throw Error("Appearance editor leaked into room");
+  await guest.bringToFront();
   await guest.waitForFunction(
     () =>
       JSON.parse(
@@ -230,6 +235,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .getAttribute("data-mode");
   if (projection !== "projected")
     throw Error("screen not projected: " + projection);
+  await host.bringToFront();
   await host.locator(".scene").focus();
   await host.keyboard.down("ArrowRight");
   await host.waitForFunction(
@@ -358,6 +364,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     throw Error("New message stole position while reading history");
 
   // Switching focus to the composer releases held view keys even without keyup.
+  await host.bringToFront();
   await host.locator(".scene").focus();
   await host.keyboard.down("d");
   await host.waitForTimeout(200);
@@ -400,6 +407,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
       Math.abs(Number(document.querySelector(".screen-surface")?.dataset.yaw)) <
       0.01,
   );
+  await host.bringToFront();
   await host.locator(".scene").focus();
   await host.keyboard.down("ArrowRight");
   await host.waitForFunction(
@@ -1140,6 +1148,38 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     "PASS fullscreen cinema and direct-drag regression (local runtime; YouTube/speech mocked)",
   );
 })().catch(async (e) => {
+  for (const p of activePages) {
+    try {
+      console.error(
+        "UI failure state",
+        await p.evaluate(async () => ({
+          visibility: document.visibilityState,
+          members: document.querySelector(".cinema-app")?.dataset.members,
+          notices: Array.from(
+            document.querySelectorAll('[role="alert"],[role="status"]'),
+          ).map((el) => el.textContent?.slice(0, 250)),
+          rooms: await Promise.all(
+            [1, 2, 3].map(async (n) => {
+              const v = await (
+                await fetch("/api/rooms/" + n + "/state")
+              ).json();
+              return {
+                slot: n,
+                status: v.status,
+                revision: v.room?.revision,
+                members: v.room?.members?.map((m) => ({
+                  name: m.name,
+                  connected: m.connected,
+                  deadline: m.deadline,
+                  leaseUntil: m.leaseUntil,
+                })),
+              };
+            }),
+          ),
+        })),
+      );
+    } catch {}
+  }
   await activeBrowser?.close();
   console.error(e);
   process.exit(1);

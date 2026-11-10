@@ -139,6 +139,7 @@ try {
     "departures.cjs",
     "social.cjs",
     "world-screen.cjs",
+    "scene-quality.cjs",
     "media.cjs",
     "roadmap.cjs",
     "render-capacity.cjs",

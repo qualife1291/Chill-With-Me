@@ -69,7 +69,7 @@ SQLite holds one room JSON row, bounded metadata/queue/chat, ≤200 command ID/t
 
 ## Release
 
-Cloudflare credentials go through secure Environment settings, never source/chat. Deployment is authorized for the existing target. Runtime Cloudflare auth was verified and code fd6b209 deployed on 06/11/2026; current version/evidence is in PROJECT_STATE. Command:
+Cloudflare credentials go through secure Environment settings, never source/chat. Deployment is authorized for the existing target. Current public version/evidence is in PROJECT_STATE. Use the configured CLI credentials or connected Cloudflare API; do not infer current credential readiness from older runs. Command:
 
 ```bash
 CLOUDFLARE_ACCOUNT_ID=966c7ceee358485648b935a07877ec45 npx wrangler deploy --config wrangler.jsonc
@@ -101,6 +101,10 @@ Select eye or free orbit from the view menu. Free orbit combines the previous ov
 Host approval opens immediately in the center, even before the first video; new requests reopen a deferred dialog. When chat is closed, incoming messages appear bottom-right (up to 3, 6 seconds); click to open chat. Poke sounds only on the recipient. Flowers, applause, sad and playful reactions show the sender centrally for 3 seconds to all approved members. The room accepts one effect at a time and each sender waits 5 seconds; the event is deleted on expiry. The action panel toggles interaction sounds independently of chat speech; short WebAudio cues require a user gesture, never queue blocked audio and do not replay on rejoin. Reduced-motion preferences suppress animation.
 
 The optional temporary-storage core in `worker/temp-media.ts` has fake-object unit coverage only. R2 activation, binding, authenticated routes, client upload/prefetch, alarm reconciliation and real-service tests remain required before use. Absolute TTL is 6h; long-playback/renewal policy and resumable upload are not implemented.
+
+### Scene resource controls
+
+The view panel offers Auto / Economy / Detail for the 3D scene. Auto selects an economical drawing buffer for compact touch viewports (including landscape) or Save-Data; explicit choices override it and persist locally when storage is available. This changes only WebGL pixel density, not native video resolution. A lost WebGL context switches to flat/light mode and offers a deliberate 3D retry; the media element remains mounted. `node tests/scene-quality.cjs` verifies drawing-buffer changes, preference/reload, idle rendering and actual context loss in software WebGL; it does not measure physical FPS, battery or hardware recovery.
 
 ## Limits of evidence
 

@@ -1,5 +1,6 @@
 import Seating from "./Seating";
 import Walkways from "./Walkways";
+import SceneRecovery from "./SceneRecovery";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import React, {
   Suspense,
@@ -480,7 +481,11 @@ export default function Cinema({
   zoom,
   reducedMotion,
   surface,
+  dpr,
+  onUnavailable,
 }: {
+  dpr: number;
+  onUnavailable: () => void;
   yaw: number;
   pitch: number;
   bodyYaw: number;
@@ -500,7 +505,7 @@ export default function Cinema({
   return (
     <Canvas
       frameloop="demand"
-      dpr={[1, 1.3]}
+      dpr={dpr}
       camera={{ position: [0, 3.3, 7], fov: 60, near: 0.15, far: 80 }}
       gl={{ antialias: true, alpha: true }}
       style={{
@@ -510,6 +515,7 @@ export default function Cinema({
         pointerEvents: "none",
       }}
     >
+      <SceneRecovery onUnavailable={onUnavailable} />
       <TheatreInterior capacity={room.capacity} />
       <color attach="background" args={["#101b19"]} />
       <fog attach="fog" args={["#101b19", 18, 38]} />

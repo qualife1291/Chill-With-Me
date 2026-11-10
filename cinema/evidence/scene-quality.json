@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "date": "2026-11-10T06:49:12.718Z",
+  "checks": [
+    "economy reduces actual drawing-buffer pixels without replacing native player or iframe",
+    "quality preference survives a real reload/rejoin",
+    "auto follows Save-Data changes; explicit detail overrides device hint",
+    "settled scene remains demand-rendered after quality changes",
+    "real WebGL context loss switches to flat mode while same player keeps advancing",
+    "explicit retry recreates only the renderer and retains the chosen quality",
+    "portrait and landscape touch viewports default to economy; manual choice works with blocked storage"
+  ],
+  "measurements": {
+    "detailDpr": 1.3,
+    "economyDpr": 0.75
+  },
+  "errors": [],
+  "limitations": "Local Chromium SwiftShader, real drawing buffers/context loss; YouTube mocked. No hardware FPS, battery, physical device or real media certification."
+}

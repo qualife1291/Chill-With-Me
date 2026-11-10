@@ -9,6 +9,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { reactions } from "./RoomActivity";
+import type { SceneQuality } from "./useSceneQuality";
 import type { Room, Member, Command, ReactionKind } from "../shared/model";
 export default function RoomControls({
   room,
@@ -22,7 +23,11 @@ export default function RoomControls({
   command,
   soundsEnabled,
   onToggleSounds,
+  quality,
+  onQuality,
 }: {
+  quality: SceneQuality;
+  onQuality: (quality: SceneQuality) => void;
   room: Room;
   me: Member;
   camera: string;
@@ -83,6 +88,21 @@ export default function RoomControls({
         </button>
       </div>
       <p className="control-hint">Kéo để nhìn · Cuộn để thu/phóng</p>
+      <label className="scene-quality">
+        Độ nét cảnh 3D
+        <select
+          aria-label="Độ nét cảnh 3D"
+          value={quality}
+          onChange={(e) => onQuality(e.target.value as SceneQuality)}
+        >
+          <option value="auto">Tự động theo thiết bị</option>
+          <option value="economy">Tiết kiệm · máy nhẹ hơn</option>
+          <option value="detail">Chi tiết</option>
+        </select>
+      </label>
+      <p className="control-hint">
+        Chỉ chỉnh cảnh 3D; độ nét video giữ nguyên.
+      </p>
       <details open className="control-section">
         <summary>Hành động</summary>
         <div className="action-row">

@@ -3,6 +3,7 @@ import RoomControls from "./RoomControls";
 import InvitationControls from "./InvitationControls";
 import PlaylistImport from "./PlaylistImport";
 import { useRoomClock } from "./useRoomClock";
+import { useSceneQuality } from "./useSceneQuality";
 import { useModalFocus } from "./useModalFocus";
 import { FileShare } from "./FileShare";
 import { mediaLabel, FILE_ACCEPT } from "../shared/media";
@@ -180,6 +181,17 @@ function App() {
     [tts, setTts] = useState(false);
   const clock = useRoomClock(room?.session),
     offset = clock.offset;
+  const sceneQuality = useSceneQuality();
+  const [sceneNotice, setSceneNotice] = useState("");
+  const sceneUnavailable = React.useCallback(() => {
+    setLight(true);
+    setSceneNotice("Thiết bị vừa dừng cảnh 3D. Đã chuyển sang chế độ nhẹ.");
+  }, []);
+  const retryScene = () => {
+    setSceneNotice("");
+    setLight(false);
+  };
+  useEffect(() => setSceneNotice(""), [room?.session]);
   const [queueBusy, setQueueBusy] = useState(false);
   const [queueNotice, setQueueNotice] = useState("");
   const [entry, setEntry] = useState<{ slot: number; create: boolean } | null>(
@@ -1750,7 +1762,7 @@ function App() {
                           </div>
                         }
                       >
-                        <SceneBoundary onError={() => setLight(true)}>
+                        <SceneBoundary onError={sceneUnavailable}>
                           <Cinema
                             room={room}
                             id={id}
@@ -1763,11 +1775,19 @@ function App() {
                             controlsOpen={showControls}
                             zoom={zoom}
                             surface={surface}
+                            dpr={sceneQuality.dpr}
+                            onUnavailable={sceneUnavailable}
                           />
                         </SceneBoundary>
                       </Suspense>
                     )}
                   </div>
+                  {sceneNotice && (
+                    <div className="scene-recovery" role="status">
+                      <span>{sceneNotice}</span>
+                      <button onClick={retryScene}>Thử lại 3D</button>
+                    </div>
+                  )}
                   {!light && !headDrag.used && !showControls && (
                     <div className="view-hint" aria-hidden="true">
                       <MousePointer2 size={14} />
@@ -1799,7 +1819,12 @@ function App() {
                         }}
                         onReset={resetView}
                         light={light}
-                        onLight={() => setLight((v) => !v)}
+                        quality={sceneQuality.quality}
+                        onQuality={sceneQuality.change}
+                        onLight={() => {
+                          setSceneNotice("");
+                          setLight((v) => !v);
+                        }}
                         onClose={() => {
                           setShowControls(false);
                           viewOpener.current?.focus({ preventScroll: true });
