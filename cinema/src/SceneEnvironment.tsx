@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { SCREEN } from "../shared/projection";
 import { aisleHeight } from "../shared/avatar";
 import type { Space } from "../shared/spaces";
+import type { Lighting } from "../shared/ambience";
 
 type Box = {
   at: [number, number, number];
@@ -249,12 +250,15 @@ const Stars = memo(function Stars() {
 export default memo(function SceneEnvironment({
   space,
   capacity,
+  lighting = "normal",
 }: {
   space: Space;
   capacity: number;
+  lighting?: Lighting;
 }) {
   const boxes = useMemo(() => decoration(space, capacity), [space, capacity]);
   const roof = space === "rooftop";
+  const brightness = lighting === "dim" ? 0.45 : 1;
   return (
     <>
       <color
@@ -270,18 +274,22 @@ export default memo(function SceneEnvironment({
         ]}
       />
       <group name={"space-" + space}>
-        <ambientLight intensity={roof ? 0.6 : 0.8} />
+        <ambientLight intensity={(roof ? 0.6 : 0.8) * brightness} />
         <hemisphereLight
-          args={[roof ? "#bac9f1" : "#c3d1ea", "#18121d", 1.1]}
+          args={[
+            lighting === "warm" ? "#ffe0ad" : roof ? "#bac9f1" : "#c3d1ea",
+            "#18121d",
+            1.1 * brightness,
+          ]}
         />
         <directionalLight
           position={[0, 5, 6]}
-          intensity={1.5}
-          color={roof ? "#bdcff7" : "#ede5d6"}
+          intensity={1.5 * brightness}
+          color={lighting === "warm" ? "#ffce95" : roof ? "#bdcff7" : "#ede5d6"}
         />
         <pointLight
           position={[0, 3, -4]}
-          intensity={12}
+          intensity={12 * brightness}
           color="#a8bce6"
           distance={14}
         />
@@ -290,7 +298,7 @@ export default memo(function SceneEnvironment({
             <pointLight
               key={side}
               position={[side * 4.4, 3.1, 1.5]}
-              intensity={12}
+              intensity={12 * brightness}
               distance={12}
               color="#ffcb8a"
             />

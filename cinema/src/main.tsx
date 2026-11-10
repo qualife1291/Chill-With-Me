@@ -53,6 +53,8 @@ import {
 import Player from "./Player";
 import RoomActivity from "./RoomActivity";
 import { useRoomSounds } from "./useRoomSounds";
+import { useAmbience } from "./useAmbience";
+import type { Lighting } from "../shared/ambience";
 import { useChatSpeech } from "./useChatSpeech";
 import { useHeadDrag } from "./useHeadDrag";
 import "./style.css";
@@ -301,6 +303,11 @@ function App() {
   );
   const speech = useChatSpeech(room, tts);
   const sounds = useRoomSounds();
+  const ambience = useAmbience(
+    status === "joined" ? room?.session || "" : "",
+    speech.speaking,
+  );
+  const [lighting, setLighting] = useState<Lighting>("normal");
   const [busy, setBusy] = useState(false);
   const report = (e: unknown) =>
     setError(
@@ -900,6 +907,21 @@ function App() {
     speech.announce,
   ]);
   const viewOpener = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!showControls) return;
+    const escape = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Escape" ||
+        (event.target as HTMLElement)?.closest('[role="dialog"]')
+      )
+        return;
+      event.preventDefault();
+      setShowControls(false);
+      viewOpener.current?.focus({ preventScroll: true });
+    };
+    window.addEventListener("keydown", escape);
+    return () => window.removeEventListener("keydown", escape);
+  }, [showControls]);
   const head = useRef({ yaw, pitch, bodyYaw });
   head.current = {
     yaw: Math.max(-75, Math.min(75, yaw)),
@@ -1520,6 +1542,8 @@ function App() {
                     document.querySelector<HTMLButtonElement>(
                       '.cinema-toolbar button[aria-label="Chat"]',
                     );
+                  if (matchMedia("(max-width:800px)").matches)
+                    setShowControls(false);
                   setPanel("chat");
                   setTab("chat");
                 }}
@@ -1567,6 +1591,11 @@ function App() {
                     aria-expanded={panel === k}
                     aria-controls={k === "info" ? "room-info" : "room-panel"}
                     onClick={(e) => {
+                      if (
+                        k !== "chat" ||
+                        matchMedia("(max-width:800px)").matches
+                      )
+                        setShowControls(false);
                       panelOpener.current = e.currentTarget;
                       setPanel((v) => (v === k ? "" : k));
                       if (k !== "info") setTab(k);
@@ -1590,7 +1619,16 @@ function App() {
                 title="Góc nhìn và điều khiển"
                 aria-pressed={showControls}
                 aria-expanded={showControls}
-                onClick={() => setShowControls((v) => !v)}
+                aria-controls="scene-control-sheet"
+                onClick={() => {
+                  if (
+                    panel &&
+                    (panel !== "chat" ||
+                      matchMedia("(max-width:800px)").matches)
+                  )
+                    setPanel("");
+                  setShowControls((v) => !v);
+                }}
               >
                 <Gamepad2 size={18} aria-hidden="true" />
                 <span className="toolbar-label">Góc nhìn</span>
@@ -1738,6 +1776,7 @@ function App() {
                     }
                     tabIndex={0}
                     data-space={spaceInfo(room.space).id}
+                    data-lighting={lighting}
                     aria-label="Rạp phim, giữ chuột và kéo hoặc dùng WASD, phím mũi tên để nhìn"
                     {...headDrag.handlers}
                     onWheel={(e) => {
@@ -1827,6 +1866,7 @@ function App() {
                             zoom={zoom}
                             surface={surface}
                             dpr={sceneQuality.dpr}
+                            lighting={lighting}
                             onUnavailable={sceneUnavailable}
                           />
                         </SceneBoundary>
@@ -1863,6 +1903,10 @@ function App() {
                       <RoomControls
                         room={room}
                         me={me}
+                        ambience={ambience}
+                        voiceWarning={speech.warning}
+                        lighting={lighting}
+                        onLighting={setLighting}
                         camera={camera}
                         onCamera={(mode) => {
                           setCamera(mode);
@@ -2129,43 +2173,47 @@ function App() {
                       <Volume2 size={16} />
                       {tts ? "Tắt đọc tin" : "Đọc tin bằng giọng thiết bị"}
                     </button>
-                    <div className="voice-settings">
-                      <label>
-                        Giọng tiếng Việt
-                        <select
-                          aria-label="Giọng tiếng Việt"
-                          value={speech.voiceURI}
-                          onChange={(e) => speech.selectVoice(e.target.value)}
+                    <details className="voice-options">
+                      <summary>Giọng và tốc độ đọc</summary>
+                      <div className="voice-settings">
+                        <label>
+                          Giọng tiếng Việt
+                          <select
+                            aria-label="Giọng tiếng Việt"
+                            value={speech.voiceURI}
+                            onChange={(e) => speech.selectVoice(e.target.value)}
+                          >
+                            <option value="">Tự chọn giọng tiếng Việt</option>
+                            {speech.voices.map((v, i) => (
+                              <option key={v.voiceURI || i} value={v.voiceURI}>
+                                {v.name || "Tiếng Việt"}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          Tốc độ đọc · {speech.rate.toFixed(2)}×
+                          <input
+                            type="range"
+                            aria-label="Tốc độ đọc tin"
+                            min="0.75"
+                            max="1.25"
+                            step="0.05"
+                            value={speech.rate}
+                            onChange={(e) =>
+                              speech.setRate(Number(e.target.value))
+                            }
+                          />
+                        </label>
+                        <button
+                          onClick={() => {
+                            setTts(speech.enable());
+                          }}
                         >
-                          <option value="">Tự chọn giọng tiếng Việt</option>
-                          {speech.voices.map((v, i) => (
-                            <option key={v.voiceURI || i} value={v.voiceURI}>
-                              {v.name || "Tiếng Việt"}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        Tốc độ đọc · {speech.rate.toFixed(2)}×
-                        <input
-                          type="range"
-                          min="0.75"
-                          max="1.25"
-                          step="0.05"
-                          value={speech.rate}
-                          onChange={(e) =>
-                            speech.setRate(Number(e.target.value))
-                          }
-                        />
-                      </label>
-                      <button
-                        onClick={() => {
-                          setTts(speech.enable());
-                        }}
-                      >
-                        Nghe thử giọng
-                      </button>
-                    </div>
+                          Nghe thử giọng
+                        </button>
+                      </div>
+                    </details>
                     {speech.warning && (
                       <p className="voice-warning" role="status">
                         {speech.warning}

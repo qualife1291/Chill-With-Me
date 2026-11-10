@@ -21,6 +21,10 @@ test("providers normalize and legacy YouTube stays compatible", () => {
     "https://youtu.be/jfKfPfyJRdk",
     "https://www.youtube.com/watch?v=jfKfPfyJRdk",
     "https://youtube.com/shorts/jfKfPfyJRdk",
+    "https://music.youtube.com/watch?v=jfKfPfyJRdk&list=RD123",
+    "https://www.youtube.com/live/jfKfPfyJRdk?si=test",
+    "https://m.youtube.com/shorts/jfKfPfyJRdk/",
+    "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk",
   ])
     assert.equal(parseMediaURL(u).videoId, "jfKfPfyJRdk");
   const drive = parseMediaURL(

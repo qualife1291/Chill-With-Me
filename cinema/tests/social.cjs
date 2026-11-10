@@ -270,6 +270,24 @@ const base = "http://localhost:8787",
     );
     await g.emulateMedia({ reducedMotion: "reduce" });
     await g.setViewportSize({ width: 390, height: 844 });
+    const closeSheet = g.getByRole("button", {
+      name: "Đóng điều khiển",
+      exact: true,
+    });
+    await closeSheet.scrollIntoViewIfNeeded();
+    assert(
+      await closeSheet.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(
+          document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+        );
+      }),
+      "Voice notice must never obscure the mobile close button",
+    );
+    checks.push(
+      "mobile close button remains hit-testable with a device voice warning; notices stay inside the sheet",
+    );
+
     hn = await sounds(h);
     await h.bringToFront();
     await h.getByRole("button", { name: "Mếu mào", exact: true }).click();

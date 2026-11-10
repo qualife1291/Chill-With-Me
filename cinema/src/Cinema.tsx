@@ -4,6 +4,7 @@ import SceneRecovery from "./SceneRecovery";
 import SceneEnvironment from "./SceneEnvironment";
 import { spaceInfo } from "../shared/spaces";
 import { sceneDiagnostics } from "./diagnostics";
+import type { Lighting } from "../shared/ambience";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import React, {
   Suspense,
@@ -446,7 +447,9 @@ export default function Cinema({
   surface,
   dpr,
   onUnavailable,
+  lighting = "normal",
 }: {
+  lighting?: Lighting;
   dpr: number;
   onUnavailable: () => void;
   yaw: number;
@@ -482,6 +485,7 @@ export default function Cinema({
       <SceneEnvironment
         space={spaceInfo(room.space).id}
         capacity={room.capacity}
+        lighting={lighting}
       />
       {/* Native media lives below WebGL. This transparent depth-writing plane
           opens the screen only where foreground avatars/chairs do not occlude it. */}

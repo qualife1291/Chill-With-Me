@@ -1802,3 +1802,41 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 .space-card small {font-size:10px; line-height:1.6; color:#c0c8bf;}
 .room-cover.preview-lounge {background:linear-gradient(140deg,#776b4f,#303f32);}
 .room-cover.preview-rooftop {background:linear-gradient(140deg,#405d83,#111c30);}
+
+/* Consistent compact controls: actions first, optional sound/light settings on demand. */
+.cinema-toolbar { gap:6px; }
+.cinema-toolbar > button { box-shadow:none; border-radius:13px; }
+.cinema-toolbar > button[aria-label="Thông tin"] .toolbar-label { display:none; }
+.room-controls { background:#1d2524f5; border-radius:18px; scrollbar-width:thin; overscroll-behavior:contain; }
+.room-controls > header { position:sticky; top:-16px; margin:0 0 10px; padding:0 0 8px; background:#1d2524; z-index:1; }
+.room-controls .action-row button { min-height:48px; flex-direction:row; border-radius:12px; gap:8px; }
+.room-controls .reaction-actions { gap:6px; }
+.room-controls .reaction-actions button { min-height:44px; }
+.room-controls .control-hint { margin:8px 0; line-height:1.5; }
+.room-controls .control-section summary { min-height:44px; }
+.room-controls .ambience-controls label { margin:10px 0; }
+.room-controls input[type=range] { min-height:36px; width:100%; accent-color:var(--accent); }
+.voice-options { border-top:1px solid #ffffff15; margin-top:6px; padding-top:4px; }
+.voice-options > summary { min-height:44px; display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:#d2c4aa; }
+.voice-options > summary::after { content:'＋'; margin-left:auto; }
+.voice-options[open] > summary::after { content:'−'; }
+.voice-options .voice-settings { padding:0 0 10px; margin:0; }
+.voice-options input[type=range] { accent-color:var(--accent); min-height:36px; }
+.voice-options summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:8px; }
+@media(max-width:800px) {
+ .cinema-app.show-controls .room-controls { max-height:calc(100dvh - 150px); }
+ .cinema-app.show-controls .scene-controls { bottom:14px; width:300px; }
+ .cinema-toolbar button { flex-shrink:0; }
+}
+@media(max-height:480px) { .cinema-app.show-controls .room-controls { max-height:calc(100dvh - 82px); } }
+
+/* Mobile generic button flex must not stretch the control-sheet close icon. */
+.room-controls > header > button { flex:0 0 44px; min-width:44px; max-width:44px; width:44px; height:44px; margin-left:8px; }
+.room-controls > header > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Voice notices belong inside an open sheet, never over its close button. */
+.cinema-app .stage-column > p[role=status] { pointer-events:none; }
+.cinema-app.show-controls .stage-column > p[role=status] { display:none; }
+.room-controls .control-notice { padding:10px 12px; margin:0 0 12px; border:1px solid #d9b77933; border-radius:10px; background:#d9b7790c; color:#d8d2c5; font-size:11px; line-height:1.5; overflow-wrap:anywhere; }
+
+.room-controls .view-row > button { flex:0 0 44px; min-width:44px; max-width:44px; width:44px; }

@@ -11,6 +11,8 @@ import {
 import { reactions } from "./RoomActivity";
 import type { SceneQuality } from "./useSceneQuality";
 import type { Room, Member, Command, ReactionKind } from "../shared/model";
+import type { Lighting } from "../shared/ambience";
+import type { useAmbience } from "./useAmbience";
 export default function RoomControls({
   room,
   me,
@@ -25,7 +27,15 @@ export default function RoomControls({
   onToggleSounds,
   quality,
   onQuality,
+  lighting,
+  onLighting,
+  ambience,
+  voiceWarning,
 }: {
+  voiceWarning?: string;
+  lighting: Lighting;
+  onLighting: (value: Lighting) => void;
+  ambience: ReturnType<typeof useAmbience>;
   quality: SceneQuality;
   onQuality: (quality: SceneQuality) => void;
   room: Room;
@@ -58,7 +68,14 @@ export default function RoomControls({
   return (
     <section
       className="room-controls"
+      id="scene-control-sheet"
       aria-label="Điều chỉnh không gian và nhân vật"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
     >
       <header>
         <span>Không gian của bạn</span>
@@ -66,6 +83,11 @@ export default function RoomControls({
           <X size={16} />
         </button>
       </header>
+      {voiceWarning && (
+        <p className="control-notice" role="status">
+          {voiceWarning}
+        </p>
+      )}
       <div className="view-row">
         <label>
           Góc nhìn
@@ -169,6 +191,53 @@ export default function RoomControls({
             ? "Âm thanh tương tác: Bật"
             : "Âm thanh tương tác: Tắt"}
         </button>
+      </details>
+      <details className="control-section ambience-controls">
+        <summary>Âm thanh & ánh sáng</summary>
+        <p className="control-hint">Thiết lập riêng trên máy bạn.</p>
+        <label>
+          Đèn trong rạp
+          <select
+            aria-label="Đèn trong rạp"
+            value={lighting}
+            onChange={(e) => onLighting(e.target.value as Lighting)}
+          >
+            <option value="normal">Tiêu chuẩn</option>
+            <option value="dim">Rạp dịu</option>
+            <option value="warm">Ấm áp</option>
+          </select>
+        </label>
+        <label>
+          Âm thanh nền
+          <select
+            aria-label="Âm thanh nền"
+            value={ambience.mode}
+            onChange={(e) =>
+              ambience.change(e.target.value as "off" | "rain" | "wind")
+            }
+          >
+            <option value="off">Tắt âm nền</option>
+            <option value="rain">Mưa nhẹ</option>
+            <option value="wind">Gió êm</option>
+          </select>
+        </label>
+        <label>
+          Âm lượng nền · {ambience.volume}%
+          <input
+            aria-label="Âm lượng nền"
+            type="range"
+            min="0"
+            max="50"
+            step="5"
+            value={ambience.volume}
+            onChange={(e) => ambience.setVolume(Number(e.target.value))}
+          />
+        </label>
+        <p className="control-hint">
+          Âm tổng hợp nhẹ, tự giảm khi đọc tin; tắt khi rời phòng hoặc chuyển
+          tab.
+        </p>
+        {ambience.warning && <p role="status">{ambience.warning}</p>}
       </details>
       <button className="light-toggle" onClick={onLight} aria-pressed={light}>
         <Leaf size={15} />

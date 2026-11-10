@@ -19,8 +19,32 @@
     "direct HTTPS MP3 link decodes and plays",
     "final ended removes file metadata and clears playback",
     "phone modal layout does not overflow",
-    "controlled Drive failure offers explicit unsynchronized preview; no fake sync claim"
+    "controlled Drive failure offers explicit unsynchronized preview; no fake sync claim",
+    "unsupported, empty, corrupt and 101 MiB files rejected before playlist mutation",
+    "real WAV/PCM, Ogg/Vorbis, M4A/AAC and 720p H.264/AAC MP4 decode on host and recipient, byte-identical relay (no quality conversion)"
   ],
   "fileBytes": 1796803,
+  "additionalFormats": [
+    {
+      "format": "wav",
+      "videoWidth": 0,
+      "identicalBytes": true
+    },
+    {
+      "format": "ogg",
+      "videoWidth": 0,
+      "identicalBytes": true
+    },
+    {
+      "format": "m4a",
+      "videoWidth": 0,
+      "identicalBytes": true
+    },
+    {
+      "format": "mp4",
+      "videoWidth": 1280,
+      "identicalBytes": true
+    }
+  ],
   "pageErrors": []
 }

@@ -141,6 +141,7 @@ try {
     "world-screen.cjs",
     "scene-quality.cjs",
     "spaces.cjs",
+    "experience.cjs",
     "media.cjs",
     "roadmap.cjs",
     "render-capacity.cjs",

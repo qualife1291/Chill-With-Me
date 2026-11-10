@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-10T11:51:43.936Z",
+  "target": "External read-only browser observations",
+  "results": [
+    {
+      "name": "MDN MP4",
+      "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+      "status": "media-error",
+      "error": 4,
+      "message": "MEDIA_ELEMENT_ERROR: Format error",
+      "width": 0,
+      "height": 0,
+      "readyState": 0,
+      "currentTime": 0,
+      "duration": null,
+      "downloadedSample": {
+        "https": "200 video/mp4",
+        "bytes": 1128375,
+        "sha256": "0cd83d944a6ca7822b4a8306cecc60a36e859b041f6702c6a1ad9ead78924451",
+        "localReplay": {
+          "status": "played",
+          "width": 960,
+          "height": 540,
+          "readyState": 4,
+          "currentTime": 0.211536,
+          "duration": 5.055
+        }
+      }
+    },
+    {
+      "name": "MDN WebM",
+      "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm",
+      "status": "media-error",
+      "error": 4,
+      "message": "MEDIA_ELEMENT_ERROR: Format error",
+      "width": 0,
+      "height": 0,
+      "readyState": 0,
+      "currentTime": 0,
+      "duration": null,
+      "downloadedSample": {
+        "https": "200 video/webm",
+        "bytes": 554058,
+        "sha256": "c6f8a348953395598a9a73b9bab1676436410797bce9f398f4be1531d6e76dda",
+        "localReplay": {
+          "status": "played",
+          "width": 960,
+          "height": 540,
+          "readyState": 4,
+          "currentTime": 0.165991,
+          "duration": 5.059
+        }
+      }
+    },
+    {
+      "name": "MDN MP3",
+      "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3",
+      "status": "media-error",
+      "error": 4,
+      "message": "MEDIA_ELEMENT_ERROR: Format error",
+      "width": 0,
+      "height": 0,
+      "readyState": 0,
+      "currentTime": 0,
+      "duration": null,
+      "downloadedSample": {
+        "https": "200 audio/mpeg",
+        "bytes": 39868,
+        "sha256": "41191d0727073bf848bcc8f0bd851d71a0b0058e901abb1c1b236ad327bda52e",
+        "localReplay": {
+          "status": "played",
+          "width": 0,
+          "height": 0,
+          "readyState": 4,
+          "currentTime": 0.237232,
+          "duration": 2.074218
+        }
+      }
+    },
+    {
+      "name": "YouTube official API demo",
+      "url": "https://www.youtube.com/watch?v=M7lc1UVf-VE",
+      "status": "api-blocked"
+    }
+  ],
+  "transport": [
+    {
+      "path": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+      "error": "net::ERR_CERT_AUTHORITY_INVALID"
+    },
+    {
+      "path": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm",
+      "error": "net::ERR_CERT_AUTHORITY_INVALID"
+    },
+    {
+      "path": "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3",
+      "error": "net::ERR_CERT_AUTHORITY_INVALID"
+    },
+    {
+      "path": "https://www.youtube.com/iframe_api",
+      "error": "net::ERR_TUNNEL_CONNECTION_FAILED"
+    }
+  ],
+  "limitations": "Direct browser HTTPS results remain separate from curl downloads replayed through a local route fixture; these do not certify live browser streaming. Explicit autoplay-allowed test browser; user-gesture/autoplay, signed-in Premium, ads, DRM and physical sound/display quality are separate gates. A provider/network failure is recorded, not marked playable."
+}

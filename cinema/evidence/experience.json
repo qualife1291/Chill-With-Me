@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checks": [
+    "normal/dim lighting changes actual scene pixels; warm selectable; player/iframe identity preserved",
+    "speech settings collapsed by default; native speech signal ducks/restores both video and real ambient GainNode",
+    "mode switch closes previous source/context; off/emulated hidden lifecycle stops ambient audio; returning tab never auto-starts",
+    "Escape closes and restores focus; mobile sheets are exclusive; 390px controls fit viewport",
+    "leaving room disposes every ambient context/source"
+  ],
+  "lightingPixels": {
+    "normal": 175.35042857142858,
+    "dim": 85.57857142857142
+  },
+  "pageErrors": [],
+  "limitations": "Real Chromium WebAudio nodes and scene pixels, mocked YouTube/device speech and emulated tab visibility; no acoustic, hearing, physical GPU or voice-quality certification."
+}

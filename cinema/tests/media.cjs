@@ -64,6 +64,45 @@ const base = "http://localhost:8787",
     "-loglevel",
     "error",
   ]);
+  const extras = [
+    {
+      ext: "wav",
+      codec: ["-c:a", "pcm_s16le", "-ar", "48000"],
+      mime: "audio/wav",
+      width: 0,
+    },
+    { ext: "ogg", codec: ["-c:a", "libvorbis"], mime: "audio/ogg", width: 0 },
+    { ext: "m4a", codec: ["-c:a", "aac"], mime: "audio/mp4", width: 0 },
+    { ext: "mp4", codec: ["-c:a", "aac"], mime: "video/mp4", width: 1280 },
+  ].map((spec) => ({
+    ...spec,
+    file: path.join(os.tmpdir(), "chill-extra-test." + spec.ext),
+  }));
+  for (const spec of extras) {
+    const video = spec.width
+      ? ["-f", "lavfi", "-i", "testsrc2=size=1280x720:rate=24"]
+      : [];
+    execFileSync("ffmpeg", [
+      "-y",
+      ...video,
+      "-f",
+      "lavfi",
+      "-i",
+      "sine=frequency=550:sample_rate=48000",
+      "-t",
+      "12",
+      ...(spec.width
+        ? ["-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p"]
+        : []),
+      ...spec.codec,
+      spec.file,
+      "-loglevel",
+      "error",
+    ]);
+  }
+  const large = path.join(os.tmpdir(), "chill-rejected-large.mp4");
+  fs.writeFileSync(large, "");
+  fs.truncateSync(large, 101 * 1024 * 1024);
   const bytes = fs.readFileSync(fixture),
     checks = [],
     errors = [];
@@ -517,11 +556,98 @@ const base = "http://localhost:8787",
     checks.push(
       "controlled Drive failure offers explicit unsynchronized preview; no fake sync claim",
     );
+    await h.setViewportSize({ width: 1280, height: 900 });
+    await h.bringToFront();
+    if ((await openQueue.getAttribute("aria-pressed")) !== "true")
+      await openQueue.click();
+    const upload = h.getByLabel("Thêm file vào playlist");
+    const beforeRejected = (await call(h, `/rooms/${slot}/state`)).room;
+    for (const rejected of [
+      {
+        name: "not-media.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("Not media"),
+      },
+      { name: "empty.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(0) },
+      {
+        name: "corrupt.mp4",
+        mimeType: "video/mp4",
+        buffer: Buffer.from("Not an MP4 bitstream"),
+      },
+      large,
+    ]) {
+      await upload.setInputFiles(rejected);
+      await h.locator(".error-banner").waitFor();
+      const state = (await call(h, `/rooms/${slot}/state`)).room;
+      assert.equal(state.queue.length, beforeRejected.queue.length);
+      assert.equal(state.generation, beforeRejected.generation);
+      await h
+        .getByRole("button", { name: "Đóng thông báo", exact: true })
+        .click();
+    }
+    checks.push(
+      "unsupported, empty, corrupt and 101 MiB files rejected before playlist mutation",
+    );
+    const decoded = [];
+    for (const spec of extras) {
+      await upload.setInputFiles(spec.file);
+      await h.waitForFunction(
+        async (slot) =>
+          (await (await fetch(`/api/rooms/${slot}/state`)).json()).room.queue
+            .length === 1,
+        slot,
+      );
+      const previous = (await call(h, `/rooms/${slot}/state`)).room;
+      await cmd(h, { type: "next", generation: previous.generation });
+      await h.waitForFunction(
+        () => document.querySelector("video.native-video")?.readyState >= 2,
+      );
+      await g.bringToFront();
+      await g
+        .getByRole("button", {
+          name: "Nhận qua phòng · tối đa 25 MB",
+          exact: true,
+        })
+        .click();
+      await g.waitForFunction(
+        () => document.querySelector("video.native-video")?.readyState >= 2,
+      );
+      for (const p of [h, g])
+        assert.equal(await media(p).evaluate((v) => v.videoWidth), spec.width);
+      const src = await media(g).getAttribute("src");
+      const expected = require("node:crypto")
+        .createHash("sha256")
+        .update(fs.readFileSync(spec.file))
+        .digest("hex");
+      const actual = await g.evaluate(async (src) => {
+        const bytes = await (await fetch(src)).arrayBuffer();
+        return [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
+          .map((x) => x.toString(16).padStart(2, "0"))
+          .join("");
+      }, src);
+      assert.equal(
+        actual,
+        expected,
+        spec.ext + " transfer must preserve every byte",
+      );
+      const state = (await call(h, `/rooms/${slot}/state`)).room;
+      assert.equal(state.current.source.mime, spec.mime);
+      decoded.push({
+        format: spec.ext,
+        videoWidth: spec.width,
+        identicalBytes: true,
+      });
+      await h.bringToFront();
+    }
+    checks.push(
+      "real WAV/PCM, Ogg/Vorbis, M4A/AAC and 720p H.264/AAC MP4 decode on host and recipient, byte-identical relay (no quality conversion)",
+    );
     assert.deepEqual(errors, []);
     const report = {
       pass: true,
       checks,
       fileBytes: bytes.length,
+      additionalFormats: decoded,
       pageErrors: errors,
     };
     fs.writeFileSync(
@@ -532,7 +658,8 @@ const base = "http://localhost:8787",
   } finally {
     if (session) await cmd(h, { type: "close" }).catch(() => {});
     await browser.close();
-    for (const f of [fixture, mp3, mov]) fs.rmSync(f, { force: true });
+    for (const f of [fixture, mp3, mov, large, ...extras.map((s) => s.file)])
+      fs.rmSync(f, { force: true });
   }
 })().catch((e) => {
   console.error(e);

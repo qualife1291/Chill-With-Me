@@ -47,6 +47,8 @@ node tests/roadmap.cjs              # private/import/drag/clock/panel UI, slot 2
 node tests/media.cjs                # native codecs/control/cleanup, slot 3
 node tests/relay-security.cjs       # binary ACL/cursor/size/stale item, slot 2
 node tests/render-capacity.cjs      # run alone; ten models, one software renderer
+node tests/experience.cjs           # compact/mobile controls, real lighting pixels, ambient WebAudio lifecycle and voice ducking
+node tests/source-links.cjs         # optional read-only external playback observations; not a deterministic release gate
 node tests/spaces.cjs               # creation/admission, three scenes, idle rig cache, mobile layout, public diagnostics path
 ```
 
@@ -56,7 +58,7 @@ GitHub `Source checks` checks build/logic/types/docs/dry-run on Node 22/24. It d
 
 | Input | Behavior / limit |
 | --- | --- |
-| YouTube | Native interactive iframe; host controls; stable across camera changes |
+| YouTube / Music / live / Shorts | Normalize the selected video only (no external playlist import); native interactive iframe; host controls; stable across camera changes |
 | Direct HTTPS | MP4/WebM/Ogg/MOV/M4V/MP3/M4A/WAV extensions, signed query allowed; browser codec/provider rules apply |
 | Local file | ≤100 MiB each, ≤250 MiB sender-held total; sender keeps tab/file open; playback after full receipt, catches up |
 | Direct file sharing | Ordered reliable WebRTC, public STUN, no TURN; NAT/UDP policy can prevent connection |
@@ -99,7 +101,11 @@ Choose male/female and clothing/hair colors before creating/requesting entry to 
 
 Select eye or free orbit from the view menu. Free orbit combines the previous overview/shoulder/social views: drag around the seats, scroll nearer/farther. Drag/swipe or WASD/arrows to look; scroll the room background to change eye-view FOV or orbit distance. Video stays on the physical 8.8×4.95 screen, with heads/chairs correctly in front of it. The visible screen stays lit even when some corners cross behind the camera; it naturally leaves view when you look fully away. There is no automatic floating player. Reset returns your gaze to the screen. The native iframe stays interactive/mounted; explicit light mode provides a flat player. Character actions include sit, wave and a targeted poke (approved peers only, 3s cooldown). Seats are centered: 2–5 in one row, 6–8 in two, 9–10 in three. Click or keyboard-focus the local-file tile to open the native picker.
 
-Host approval opens immediately in the center, even before the first video; new requests reopen a deferred dialog. When chat is closed, incoming messages appear bottom-right (up to 3, 6 seconds); click to open chat. Poke sounds only on the recipient. Flowers, applause, sad and playful reactions show the sender centrally for 3 seconds to all approved members. The room accepts one effect at a time and each sender waits 5 seconds; the event is deleted on expiry. The action panel toggles interaction sounds independently of chat speech; short WebAudio cues require a user gesture, never queue blocked audio and do not replay on rejoin. Reduced-motion preferences suppress animation.
+Host approval opens immediately in the center, even before the first video; new requests reopen a deferred dialog. When chat is closed, incoming messages appear bottom-right (up to 3, 6 seconds); click to open chat. Poke sounds only on the recipient. Flowers, applause, sad and playful reactions show the sender centrally for 3 seconds to all approved members. The room accepts one effect at a time and each sender waits 5 seconds; the event is deleted on expiry. Chat voice/reading-speed choices live behind “Giọng và tốc độ đọc”. On mobile, chat and the control sheet do not overlap; playlist/people/info dismiss the control sheet on all screens. Escape closes the control sheet and restores its opener, while required dialogs retain their focus/escape rules.
+
+Local ambience controls offer Normal/Dim/Warm scene lighting and optional quiet synthesized rain/wind, with a separate 0–50% slider. These are personal settings, not host playback commands. Lighting preserves native video brightness/resolution and player identity. Ambience starts only from selection, ducks to 25% during speech and disposes its source/context on Off, room exit or hidden-tab lifecycle; it never automatically restarts. The visibility handler is emulated in headless QA; physical background/audio behavior remains a device gate. No microphone, audio assets, API requests or recording.
+
+The action panel toggles interaction sounds independently of chat speech; short WebAudio cues require a user gesture, never queue blocked audio and do not replay on rejoin. Reduced-motion preferences suppress animation.
 
 The optional temporary-storage core in `worker/temp-media.ts` has fake-object unit coverage only. R2 activation, binding, authenticated routes, client upload/prefetch, alarm reconciliation and real-service tests remain required before use. Absolute TTL is 6h; long-playback/renewal policy and resumable upload are not implemented.
 
@@ -113,7 +119,9 @@ The view panel offers Auto / Economy / Detail for the 3D scene. Auto selects an 
 
 ## Limits of evidence
 
-UI tests mock YouTube/device speech. Native tests decode generated WebM, MP3 and H.264 MOV, compare transferred bytes and exercise play/pause/seek/ended, speech-volume duck/restore and DB/Blob cleanup. Managed Chromium blocks non-proxied UDP, so relay delivery is verified separately from WebRTC/WAN connectivity. Ten SwiftShader avatars and 30 backend sockets do not certify device FPS, thermal behavior, WAN drift or sustained media quota. Actual iOS/Android YouTube ads/autoplay, touch, voice quality, production eviction/rollback/privacy operations and full voice-provider gates remain open.
+UI tests mock YouTube/device speech. Native tests decode generated WebM, MP3, H.264 MOV, WAV/PCM, Ogg/Vorbis, M4A/AAC and 720p H.264/AAC MP4, reject empty/corrupt/unsupported/oversize files and compare transferred bytes and exercise play/pause/seek/ended, speech-volume duck/restore and DB/Blob cleanup. Managed Chromium blocks non-proxied UDP, so relay delivery is verified separately from WebRTC/WAN connectivity. Ten SwiftShader avatars and 30 backend sockets do not certify device FPS, thermal behavior, WAN drift or sustained media quota. Actual iOS/Android YouTube ads/autoplay, touch, voice quality, production eviction/rollback/privacy operations and full voice-provider gates remain open.
+
+`evidence/source-links.json` records external observations separately: current managed Chromium rejects MDN TLS (`ERR_CERT_AUTHORITY_INVALID`) and YouTube API tunneling (`ERR_TUNNEL_CONNECTION_FAILED`). Curl downloads preserve certificate verification; MP4/WebM/MP3 downloaded samples decode when replayed locally. This proves sample decoding, not successful direct browser Internet streaming.
 
 YouTube Premium is not shared through the host video URL. See [official-source findings](../docs/YOUTUBE_PREMIUM.md); each iframe/viewer needs its own eligible signed-in account, and ads can cause drift.
 

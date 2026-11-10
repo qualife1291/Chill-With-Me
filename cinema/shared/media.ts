@@ -75,14 +75,24 @@ export function parseMediaURL(input: string): {
     throw Error("INVALID_MEDIA_URL");
   const h = u.hostname.toLowerCase();
   if (
-    ["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"].includes(h)
+    [
+      "youtube.com",
+      "www.youtube.com",
+      "m.youtube.com",
+      "music.youtube.com",
+      "youtube-nocookie.com",
+      "www.youtube-nocookie.com",
+      "youtu.be",
+    ].includes(h)
   ) {
     const id =
       h === "youtu.be"
         ? u.pathname.slice(1)
         : u.pathname === "/watch"
           ? u.searchParams.get("v") || ""
-          : u.pathname.match(/^\/(?:shorts|embed)\/([\w-]{11})$/)?.[1] || "";
+          : u.pathname.match(
+              /^\/(?:shorts|embed|live)\/([\w-]{11})\/?$/,
+            )?.[1] || "";
     if (!/^[\w-]{11}$/.test(id)) throw Error("INVALID_MEDIA_URL");
     return { videoId: id, source: { kind: "youtube", videoId: id } };
   }

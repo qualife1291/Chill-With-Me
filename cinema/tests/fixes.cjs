@@ -276,6 +276,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .click();
   if (await host.evaluate(() => window.__yt.getPlayerState() !== 1))
     throw Error("Autoplay recovery did not play");
+  await host.locator(".voice-options > summary").click();
   // Events from a cancelled utterance must never duck audio or show a stale error.
   await host
     .getByRole("button", { name: "Nghe thử giọng", exact: true })
@@ -473,6 +474,12 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   if ((await host.evaluate(() => window.__yt.video)) !== "jfKfPfyJRdk")
     throw Error("YouTube recommendations escaped room queue");
   await openPanel(host, "Playlist");
+  if (
+    (await host
+      .getByRole("button", { name: "Góc nhìn 🎮", exact: true })
+      .getAttribute("aria-pressed")) === "true"
+  )
+    throw Error("Playlist should dismiss camera controls");
   await host
     .getByLabel("Link video / nhạc")
     .fill("https://youtu.be/5qap5aO4i9A");
@@ -511,6 +518,8 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   }
   if (!ownLook || ownLook.pitch < 0.5)
     throw Error("Neck pose not shared: " + JSON.stringify(ownLook));
+  // Playlist now dismisses the tool sheet; open the intended control explicitly.
+  await openPanel(host, "Góc nhìn 🎮");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -1036,6 +1045,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
       }
     } catch {}
   });
+  await openPanel(host, "Góc nhìn 🎮");
   await host.getByRole("button", { name: "Vẫy tay", exact: true }).click();
   try {
     await host.waitForFunction(() => window.__waveSeen);
