@@ -27,6 +27,9 @@ export default function Fireworks({
               left: burst.x + "%",
               top: burst.y + "%",
               color: burst.color,
+              "--launch-x": [-18, 22, 6][index] + "vmin",
+              "--launch-y": [32, 28, 38][index] + "vmin",
+              "--launch-angle": [30, -35, -10][index] + "deg",
               "--launch-delay": burst.launch - age + "ms",
               "--burst-delay": burst.launch + FIREWORK_FUSE_MS - age + "ms",
             } as CSSProperties

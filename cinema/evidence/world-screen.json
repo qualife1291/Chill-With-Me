@@ -13,7 +13,8 @@
     "foreground hair remains visible over the red video plane (pixel check)",
     "drag stays attached, no floating fallback",
     "orbit exceeds neck angles without invalid server pose commands",
-    "portrait overview frames the wide screen by moving the camera"
+    "portrait overview frames the wide screen by moving the camera",
+    "real CDP touch rotates over video and pinches to zoom without remount; explicit exit and action popup Escape work"
   ],
   "pageErrors": [],
   "limitations": "Local SwiftShader; YouTube red iframe fixture; actual native iframe geometry and compositor/occlusion pixels; no hardware/actual YouTube certification."

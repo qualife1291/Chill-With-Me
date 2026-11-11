@@ -1853,10 +1853,6 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 .stream-retry {position:absolute;left:10px;top:10px;z-index:3;min-height:44px;}
 
 .room-controls .camera-presets button {min-width:0;min-height:44px;padding:6px 4px;font-size:11px;flex:none;}
-.troll-bubbles {position:fixed;inset:0;z-index:24;pointer-events:none;overflow:hidden;}
-.troll-bubbles span {position:absolute;left:calc(25% + var(--i) * 23%);top:48%;padding:9px 13px;border:1px solid #e6c58744;border-radius:18px;background:#202c2ce8;color:#f6db9c;font-size:14px;animation:troll-float 2200ms ease-out both;animation-delay:calc(var(--i) * 120ms);}
-@keyframes troll-float {0% {opacity:0;transform:translate(-50%,30px) rotate(-8deg);} 15% {opacity:1;} 80% {opacity:1;} 100% {opacity:0;transform:translate(-50%,-110px) rotate(8deg);}}
-@media(prefers-reduced-motion:reduce) {.troll-bubbles {display:none;} .troll-bubbles span {animation:none;}}
 
 .quiet-reaction,.quiet-reaction .reaction-symbol {animation:none;}
 

@@ -10,8 +10,8 @@
     "leaving room disposes every ambient context/source"
   ],
   "lightingPixels": {
-    "normal": 175.37214285714285,
-    "dim": 85.57842857142857
+    "normal": 175.36357142857142,
+    "dim": 85.57857142857142
   },
   "pageErrors": [],
   "limitations": "Real Chromium WebAudio nodes and scene pixels, mocked YouTube/device speech and emulated tab visibility; no acoustic, hearing, physical GPU or voice-quality certification."

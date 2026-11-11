@@ -58,6 +58,7 @@ import { useRoomSounds } from "./useRoomSounds";
 import { useAmbience } from "./useAmbience";
 import type { Lighting } from "../shared/ambience";
 import { useChatSpeech } from "./useChatSpeech";
+import QuickActions from "./QuickActions";
 import { useHeadDrag } from "./useHeadDrag";
 import "./style.css";
 import "./room-layout.css";
@@ -954,7 +955,15 @@ function App() {
     },
     [camera],
   );
-  const headDrag = useHeadDrag(turn, status === "joined" && !light);
+  const [gestureMode, setGestureMode] = useState(false);
+  const zoomBy = React.useCallback(
+    (delta: number) => setZoom((v) => Math.max(-24, Math.min(24, v + delta))),
+    [],
+  );
+  const headDrag = useHeadDrag(turn, status === "joined" && !light, zoomBy);
+  useEffect(() => {
+    setGestureMode(false);
+  }, [room?.session, light]);
   const resetView = () => {
     setYaw(0);
     setPitch(0);
@@ -1548,6 +1557,56 @@ function App() {
               </div>
             )}
             {me && (
+              <QuickActions
+                room={room}
+                me={me}
+                command={command}
+                soundsEnabled={sounds.enabled}
+                onToggleSounds={sounds.toggle}
+                onOpen={() => {
+                  if (compact) {
+                    setShowControls(false);
+                    setPanel("");
+                  }
+                }}
+              />
+            )}
+            {!light && (
+              <div className="touch-navigation" aria-label="Di chuyển góc nhìn">
+                <button
+                  type="button"
+                  aria-label={
+                    gestureMode ? "Trở lại bấm video" : "Chạm để nhìn quanh"
+                  }
+                  aria-pressed={gestureMode}
+                  onClick={() => setGestureMode((v) => !v)}
+                >
+                  {gestureMode ? "Xem video" : "Nhìn quanh"}
+                </button>
+                <button
+                  type="button"
+                  aria-label="Thu nhỏ góc nhìn"
+                  onClick={() => zoomBy(3)}
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  aria-label="Phóng gần góc nhìn"
+                  onClick={() => zoomBy(-3)}
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  aria-label="Đặt lại góc nhìn"
+                  onClick={resetView}
+                >
+                  <RotateCcw size={18} />
+                </button>
+              </div>
+            )}
+            {me && (
               <RoomActivity
                 key={room.session}
                 room={room}
@@ -1828,8 +1887,19 @@ function App() {
                         e.currentTarget.focus({ preventScroll: true });
                     }}
                   >
+                    {gestureMode && !light && (
+                      <div
+                        className="scene-gesture-layer"
+                        aria-label="Kéo một ngón để nhìn, hai ngón để thu phóng"
+                      >
+                        <span>
+                          Kéo để nhìn · Chụm/tách hai ngón để thu/phóng
+                        </span>
+                      </div>
+                    )}
                     <div
                       ref={surface}
+                      data-zoom={zoom}
                       className={
                         light ? "screen-surface flat" : "screen-surface"
                       }
@@ -1911,7 +1981,8 @@ function App() {
                   {(Math.abs(yaw) > 0.5 ||
                     Math.abs(pitch) > 0.5 ||
                     bodyYaw !== 0) &&
-                    !showControls && (
+                    !showControls &&
+                    !gestureMode && (
                       <button
                         className="recenter-view"
                         onClick={resetView}
@@ -1924,8 +1995,6 @@ function App() {
                   <div className="scene-controls">
                     {me && (
                       <RoomControls
-                        room={room}
-                        me={me}
                         ambience={ambience}
                         voiceWarning={speech.warning}
                         lighting={lighting}
@@ -1956,9 +2025,6 @@ function App() {
                           setShowControls(false);
                           viewOpener.current?.focus({ preventScroll: true });
                         }}
-                        command={command}
-                        soundsEnabled={sounds.enabled}
-                        onToggleSounds={sounds.toggle}
                       />
                     )}
                   </div>

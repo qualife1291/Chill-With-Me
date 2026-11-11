@@ -24,3 +24,12 @@ const executablePath =
   process.env.CHROMIUM_EXECUTABLE_PATH ||
   (fs.existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined);
 module.exports = { chromium: playwright.chromium, executablePath };
+
+module.exports.openActions = async (page) => {
+  const trigger = page.getByRole("button", {
+    name: "Hành động và cảm xúc",
+    exact: true,
+  });
+  if ((await trigger.getAttribute("aria-expanded")) !== "true")
+    await trigger.click();
+};

@@ -66,3 +66,36 @@
 .room-controls > header > button,.room-controls .view-row > button {flex:0 0 44px;width:44px;}
 
 .room-reaction {background:transparent;border:0;box-shadow:none;padding:0;}
+.quick-actions {position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;}
+.actions-trigger {display:flex;gap:8px;align-items:center;min-height:48px;padding:10px 16px;border-radius:28px;background:#d4b180;color:#18221e;border:1px solid #ffe0a3;box-shadow:0 4px 16px #0005;}
+.action-choices {position:absolute;bottom:calc(100% + 10px);right:0;width:min(300px,calc(100vw - 24px));max-height:min(65svh,calc(var(--panel-viewport,100svh) - 130px));overflow:auto;overscroll-behavior:contain;padding:14px;border:1px solid #c5ad7c66;border-radius:20px;background:#282b25fa;color:#f6eedf;}
+.action-choices[hidden]{display:none;}
+.action-choices header {display:flex;align-items:center;justify-content:space-between;position:sticky;top:-14px;background:#282b25;padding-block:6px;z-index:1;}
+.action-choices header button {width:44px;height:44px;padding:8px;}
+.action-choices header strong {font-size:13px;}
+.action-choices .action-row {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.action-choices button,.action-choices select {min-height:44px;font-size:14px;}
+.action-choices .friend-picker {display:grid;gap:7px;margin-top:10px;font-size:12px;}
+.action-choices select {width:100%;min-width:0;padding:8px;color:inherit;background:#394238;border:1px solid #ffffff25;border-radius:10px;}
+.action-choices .control-hint {font-size:11px;line-height:1.4;min-height:30px;}
+.touch-navigation {position:fixed;left:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;gap:4px;}
+.touch-navigation button {min-width:44px;min-height:44px;padding:8px 10px;border-radius:14px;background:#26312cf5;border-color:#c5ad7c66;font-size:12px;}
+.touch-navigation button[aria-pressed=true] {background:#d4b180;color:#18221e;}
+.scene-gesture-layer {position:absolute;inset:0;z-index:2;touch-action:none;cursor:grab;}
+.scene-gesture-layer span {position:absolute;top:calc(115px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:12px;background:#17251ee6;padding:8px 12px;border-radius:12px;width:max-content;max-width:90%;pointer-events:none;color:#eee2c7;}
+.scene.is-looking .scene-gesture-layer {cursor:grabbing;}
+.room-reaction {background:transparent;border:0;box-shadow:none;padding:0;}
+.room-reaction > span {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+.reaction-floats {position:fixed;inset:0;z-index:25;pointer-events:none;overflow:hidden;}
+.reaction-floats i {position:absolute;left:var(--x);top:var(--y);font-style:normal;font-size:clamp(26px,7vw,48px);opacity:0;animation:reaction-flight 2400ms ease-out var(--delay) both;}
+@keyframes reaction-flight {10%{opacity:1;} 75%{opacity:1;} to{opacity:0;transform:translate3d(var(--fly-x),var(--fly-y),0) rotate(var(--tilt)) scale(.65);}}
+@media(prefers-reduced-motion:reduce){.reaction-floats{display:none;}.reaction-floats i{animation:none;}}
+@media(max-width:900px),(max-height:500px){.quick-actions{right:8px;bottom:calc(10px + env(safe-area-inset-bottom,0px));}.actions-trigger span{display:none;}.actions-trigger{width:48px;padding:11px;}.touch-navigation{left:8px;bottom:calc(10px + env(safe-area-inset-bottom,0px));}.action-choices select{font-size:16px;}.cinema-app .room-controls{max-height:min(60svh,calc(var(--panel-viewport,100svh) - 136px));}.cinema-app .chat-toasts {bottom:76px;}.scene-gesture-layer span{top:104px;}}
+.firework-rocket {animation-name:firework-launch-direction;}
+@keyframes firework-launch-direction {0%{transform:translate3d(var(--launch-x,0vmin),var(--launch-y,30vmin),0) rotate(var(--launch-angle,0deg)) scaleY(1.7);opacity:0;}20%{opacity:.8;}90%{opacity:1;}100%{transform:translate3d(0,0,0) scaleY(.4);opacity:0;}}
+.cinema-app .scene {touch-action:none;}
+.quick-actions:focus-within {outline-offset:3px;}
+@media(max-width:900px),(max-height:500px){.cinema-app .chat-toasts{right:8px;max-width:calc(100% - 16px);}}
+.cinema-app.with-panel .touch-navigation,.cinema-app.show-controls .touch-navigation,.cinema-app.show-info .touch-navigation {display:none;}
+@media(max-width:900px),(max-height:500px){.cinema-app.with-panel .quick-actions,.cinema-app.show-controls .quick-actions {bottom:calc(76px + env(safe-area-inset-bottom,0px));}.touch-navigation button:not(:first-child){display:none;}.touch-navigation:has(button[aria-pressed=true]) button{display:inline-flex;align-items:center;justify-content:center;}}
+.cinema-app .recenter-view {right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:19;}

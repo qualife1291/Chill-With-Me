@@ -1,3 +1,4 @@
+const { openActions } = require("./browser-runtime.cjs");
 const assert = require("node:assert/strict"),
   fs = require("node:fs"),
   path = require("node:path");
@@ -210,6 +211,7 @@ const base = "http://localhost:8787",
     );
     let hn = await sounds(h),
       gn = await sounds(g);
+    await openActions(h);
     await h.getByLabel("Chọc bạn", { exact: true }).selectOption(guestId);
     await g.getByText("Social host vừa chọc bạn 👋", { exact: true }).waitFor();
     await g.waitForFunction((n) => window.__sounds.length === n + 2, gn);
@@ -226,10 +228,12 @@ const base = "http://localhost:8787",
         r.postDataJSON()?.command?.type === "reaction",
     );
     await g.emulateMedia({ reducedMotion: "reduce" });
+    await openActions(h);
     await h.getByRole("button", { name: "Pháo bông", exact: true }).click();
     const envelope = (await sentReaction).postDataJSON();
     await h.getByRole("status", { name: "Pháo bông", exact: true }).waitFor();
     await g.getByRole("status", { name: "Pháo bông", exact: true }).waitFor();
+    await openActions(g);
     assert(
       await g
         .getByRole("button", { name: "Pháo bông", exact: true })
@@ -241,6 +245,15 @@ const base = "http://localhost:8787",
       guestFireworks = await sounds(g);
     assert(hostFireworks - hn <= 27 && guestFireworks - gn <= 27);
     assert.equal(await h.locator(".firework-burst").count(), 3);
+    assert(
+      await h
+        .locator(".room-reaction")
+        .evaluate(
+          (el) =>
+            getComputedStyle(el).backgroundColor === "rgba(0, 0, 0, 0)" &&
+            getComputedStyle(el).borderWidth === "0px",
+        ),
+    );
     assert.equal(await h.locator(".firework-spark").count(), 54);
     assert(await h.locator(".fireworks-show").isVisible());
     assert(
@@ -261,10 +274,12 @@ const base = "http://localhost:8787",
         "social-fireworks.png",
       ),
     });
+    await openActions(h);
     await h
       .getByRole("button", { name: "Âm thanh tương tác: Bật", exact: true })
       .click();
     await h.waitForFunction(() => window.__audioNodes.every((n) => n.ended));
+    await openActions(h);
     await h
       .getByRole("button", { name: "Âm thanh tương tác: Tắt", exact: true })
       .click();
@@ -284,11 +299,13 @@ const base = "http://localhost:8787",
       "three-burst fireworks and layered sound reach both members; 54 sparks bounded; reduced motion honored; mute cancels pending blasts; unmute and duplicate commands do not replay; room-wide cooldown, disabled controls, 3-second removal and DB cleanup",
     );
     await g.bringToFront();
+    await openActions(g);
     await g
       .getByRole("button", { name: "Âm thanh tương tác: Bật", exact: true })
       .click();
     gn = await sounds(g);
     hn = await sounds(h);
+    await openActions(g);
     await g.getByRole("button", { name: "Vỗ tay", exact: true }).click();
     await h.getByRole("status", { name: "Vỗ tay", exact: true }).waitFor();
     await h.waitForFunction((n) => window.__sounds.length === n + 9, hn);
@@ -326,6 +343,7 @@ const base = "http://localhost:8787",
     );
     await g.emulateMedia({ reducedMotion: "reduce" });
     await g.setViewportSize({ width: 390, height: 844 });
+    await controls(g);
     const closeSheet = g.getByRole("button", {
       name: "Đóng điều khiển",
       exact: true,
@@ -346,6 +364,7 @@ const base = "http://localhost:8787",
 
     hn = await sounds(h);
     await h.bringToFront();
+    await openActions(h);
     await h.getByRole("button", { name: "Mếu mào", exact: true }).click();
     await g.getByRole("status", { name: "Mếu mào", exact: true }).waitFor();
     assert.equal(
@@ -366,17 +385,18 @@ const base = "http://localhost:8787",
     await g.locator(".room-reaction").waitFor({ state: "detached" });
     await g.bringToFront();
     hn = await sounds(h);
+    await openActions(g);
     await g.getByRole("button", { name: "Trêu vui", exact: true }).click();
     await h.getByRole("status", { name: "Trêu vui", exact: true }).waitFor();
     await h.waitForFunction((n) => window.__sounds.length === n + 8, hn);
-    assert.equal(await h.locator(".troll-bubbles span").count(), 3);
+    assert.equal(await h.locator(".reaction-floats i").count(), 9);
     assert.equal(
-      await g.locator(".troll-bubbles").count(),
+      await g.locator(".reaction-floats").count(),
       0,
-      "Reduced motion suppresses troll bubbles",
+      "Reduced motion suppresses floating icons",
     );
     checks.push(
-      "sad/troll actions broadcast with staccato/boing audio and bounded meme bubbles; mobile fits; reduced motion suppresses animation",
+      "sad/troll actions broadcast with staccato/boing audio and bounded frameless floating icons; mobile fits; reduced motion suppresses animation",
     );
     await g.bringToFront();
     await g.reload();

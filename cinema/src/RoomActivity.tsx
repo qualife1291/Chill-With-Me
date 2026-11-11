@@ -140,15 +140,33 @@ export default function RoomActivity({
               count={effectsBudget}
             />
           )}
-          {reaction.kind === "troll" && effectsBudget > 0 && (
-            <div className="troll-bubbles" aria-hidden="true">
-              {["Ủa alo? 😂", "Rồi xong 💀", "Hết cứu 🫠"].map((text, i) => (
-                <span
-                  key={text}
-                  style={{ "--i": i } as import("react").CSSProperties}
+          {reaction.kind !== "flowers" && effectsBudget > 0 && (
+            <div className="reaction-floats" aria-hidden="true">
+              {Array.from({ length: Math.min(9, effectsBudget) }, (_, i) => (
+                <i
+                  key={i}
+                  style={
+                    {
+                      "--x": 15 + ((i * 29) % 70) + "%",
+                      "--y": 65 + ((i * 13) % 25) + "%",
+                      "--fly-x": (i % 2 ? -1 : 1) * (15 + i * 4) + "vw",
+                      "--fly-y": -35 - ((i * 7) % 35) + "vh",
+                      "--delay": i * 65 + "ms",
+                      "--tilt": (i % 2 ? 25 : -25) + "deg",
+                    } as import("react").CSSProperties
+                  }
                 >
-                  {text}
-                </span>
+                  {
+                    [
+                      reactions[reaction.kind].icon,
+                      reaction.kind === "applause"
+                        ? "✨"
+                        : reaction.kind === "troll"
+                          ? "😂"
+                          : "💧",
+                    ][i % 2]
+                  }
+                </i>
               ))}
             </div>
           )}

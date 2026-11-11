@@ -78,3 +78,10 @@ Chưa mở khóa: R2/account activation và upload resumable; TURN/WAN file rela
 - [x] Cấu hình GPU ban đầu nhẹ cho thiết bị hạn chế, cùng chính sách cho sảnh và preview; không tạo lại renderer khi xoay máy/chọn chất lượng.
 - [x] Dừng dựng 3D khi hidden và khôi phục khi visible, giữ nguyên native player/transport; dừng polling sảnh khi hidden.
 - [x] Test giả lập CPU/RAM/touch, desktop/tablet/phone, đổi chất lượng, hidden/visible, renderer/media identity và hồi quy tổng hợp; không suy ra FPS/thermal thiết bị thật.
+
+## Hành động nhanh và touch — 11/11/2026
+
+- [x] Nút hành động/cảm xúc nổi, bảng chọn nhỏ; tách khỏi thiết lập góc nhìn, Escape/tap ngoài để đóng.
+- [x] Hiệu ứng không khung/nhãn/tên; nhiều icon bay đa hướng, pháo bông xuất phát đa hướng, cùng âm hiện có và giới hạn hạt/reduced motion.
+- [x] Chế độ nhìn quanh trên video cho mobile, kéo 1 ngón/pinch 2 ngón, zoom +/- và reset dễ chạm; không remount hoặc tự đổi native video.
+- [x] Test popup, chạm thật qua CDP, pinch, cancel/blur, đồng bộ cảm xúc/âm thanh và hồi quy trước deploy.

@@ -372,6 +372,89 @@ fs.mkdirSync(shots, { recursive: true });
     checks.push(
       "portrait overview frames the wide screen by moving the camera",
     );
+    const touch = await p.context().newCDPSession(p);
+    await touch.send("Emulation.setTouchEmulationEnabled", {
+      enabled: true,
+      maxTouchPoints: 2,
+    });
+    await p
+      .getByRole("button", { name: "Chạm để nhìn quanh", exact: true })
+      .click();
+    const startYaw = Number(
+      await p.locator(".screen-surface").getAttribute("data-yaw"),
+    );
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: 130, y: 330, id: 1 }],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x: 200, y: 350, id: 1 }],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await p.waitForFunction(
+      (y) =>
+        Math.abs(
+          Number(document.querySelector(".screen-surface").dataset.yaw) - y,
+        ) > 3,
+      startYaw,
+    );
+    const startZoom = Number(
+      await p.locator(".screen-surface").getAttribute("data-zoom"),
+    );
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [
+        { x: 140, y: 340, id: 1 },
+        { x: 240, y: 340, id: 2 },
+      ],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [
+        { x: 90, y: 340, id: 1 },
+        { x: 290, y: 340, id: 2 },
+      ],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await p.waitForFunction(
+      (z) =>
+        Number(document.querySelector(".screen-surface").dataset.zoom) < z - 2,
+      startZoom,
+    );
+    assert(await p.evaluate((ref) => window.__yt === ref, original));
+    assert.equal(await p.evaluate(() => visualViewport.scale), 1);
+    await p
+      .getByRole("button", { name: "Trở lại bấm video", exact: true })
+      .click();
+    assert.equal(await p.locator(".scene-gesture-layer").count(), 0);
+    await p
+      .getByRole("button", { name: "Hành động và cảm xúc", exact: true })
+      .click();
+    await p.getByRole("region", { name: "Hành động nhanh" }).waitFor();
+    assert(
+      await p
+        .getByRole("button", { name: "Pháo bông", exact: true })
+        .isVisible(),
+    );
+    await p
+      .getByRole("button", { name: "Pháo bông", exact: true })
+      .press("Escape");
+    assert.equal(
+      await p
+        .getByRole("button", { name: "Hành động và cảm xúc", exact: true })
+        .getAttribute("aria-expanded"),
+      "false",
+    );
+    checks.push(
+      "real CDP touch rotates over video and pinches to zoom without remount; explicit exit and action popup Escape work",
+    );
     await original.dispose();
     fs.writeFileSync(
       path.join(__dirname, "../evidence/world-screen.json"),

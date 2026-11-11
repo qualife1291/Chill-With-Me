@@ -11,13 +11,13 @@
     "rooftop"
   ],
   "broadcast_all_members_ms": [
-    191,
-    110,
-    161
+    155,
+    106,
+    151
   ],
   "http_requests_measured": 92,
-  "http_p50_ms": 27.3,
-  "http_p95_ms": 48.5,
+  "http_p50_ms": 27.4,
+  "http_p95_ms": 45.6,
   "overflow_rejected": true,
   "limitations": "Short backend smoke; no media/GPU/WAN/sustained throughput. Own test rooms closed."
 }

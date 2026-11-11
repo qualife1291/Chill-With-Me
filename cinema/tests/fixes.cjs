@@ -1,3 +1,4 @@
+const { openActions } = require("./browser-runtime.cjs");
 const { chromium, executablePath } = require("./browser-runtime.cjs");
 let activeBrowser;
 let activePages = [];
@@ -217,6 +218,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   if ((await host.evaluate(() => window.__yt.time)) < 119)
     throw Error("host seek snapped back");
   await openPanel(host, "Góc nhìn 🎮");
+  await openActions(host);
   await host.getByRole("button", { name: "Ngồi ngay", exact: true }).click();
   await host.waitForTimeout(1500);
   const videoFit = await host.locator(".screen-surface").evaluate((el) => {
@@ -457,6 +459,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   if (!(await host.evaluate((p) => p === window.__yt, zoomPlayer)))
     throw Error("Zoom remounted video");
   await zoomPlayer.dispose();
+  await openActions(host);
   await host
     .getByLabel("Chọc bạn", { exact: true })
     .selectOption({ label: "Guest fixes" });
@@ -1046,6 +1049,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     } catch {}
   });
   await openPanel(host, "Góc nhìn 🎮");
+  await openActions(host);
   await host.getByRole("button", { name: "Vẫy tay", exact: true }).click();
   try {
     await host.waitForFunction(() => window.__waveSeen);
