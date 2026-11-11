@@ -27,7 +27,7 @@ Current facts: [state](../PROJECT_STATE.md). Commands/limits: [runtime](../cinem
 
 Three rooms, 2–10 members, native YouTube, private capabilities, host-only shared timeline and no microphone remain fixed. Personal quality, camera and effects do not mutate room playback. Downloads remain direct browser-to-provider; room storage holds metadata only. No billing/R2/provider provisioning or recovered NVIDIA keys.
 
-All mutations stay local. Verify helpers, actual generated codec bytes, real MSE/native media lifecycle, two-client sync/ACL, slow network/error recovery, WebAudio cleanup and bounded CSS/3D work separately. Headless fixtures do not certify iOS/Android decoder quirks, speakers, thermal behavior, provider ads or WAN synchronization. Existing browser TLS/tunnel and Cloudflare upload-auth blocks remain separate environment/deployment gates.
+All mutations stay local. Verify helpers, actual generated codec bytes, real MSE/native media lifecycle, two-client sync/ACL, slow network/error recovery, WebAudio cleanup and bounded CSS/3D work separately. Headless fixtures do not certify iOS/Android decoder quirks, speakers, thermal behavior, provider ads or WAN synchronization. Browser TLS/tunnel limitations remain separate from codec QA; current deployment status is recorded in PROJECT_STATE.
 
 ## Next acceptance sequence
 
