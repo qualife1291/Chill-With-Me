@@ -1,3 +1,5 @@
+import SceneVisibility from "./SceneVisibility";
+import { useInitialGPUOptions, useSceneQuality } from "./useSceneQuality";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo } from "react";
 import ModelAvatar from "./ModelAvatar";
@@ -18,6 +20,8 @@ export default function AvatarPreview({
   avatar: AvatarStyle;
   appearance: Appearance;
 }) {
+  const gpuOptions = useInitialGPUOptions();
+  const { dpr } = useSceneQuality();
   const member = useMemo(
     () =>
       ({
@@ -34,10 +38,11 @@ export default function AvatarPreview({
   return (
     <Canvas
       frameloop="demand"
-      dpr={[1, 1.3]}
+      dpr={dpr}
       camera={{ position: [0, 1.05, 4], fov: 32 }}
-      gl={{ alpha: false, antialias: true }}
+      gl={{ ...gpuOptions, alpha: false }}
     >
+      <SceneVisibility />
       <color attach="background" args={["#21332d"]} />
       <ambientLight intensity={1.1} />
       <directionalLight position={[2, 4, 3]} intensity={2} color="#fff1db" />

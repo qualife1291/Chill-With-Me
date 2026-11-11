@@ -1,3 +1,5 @@
+import SceneVisibility from "./SceneVisibility";
+import { useInitialGPUOptions } from "./useSceneQuality";
 import Seating from "./Seating";
 import Walkways from "./Walkways";
 import SceneRecovery from "./SceneRecovery";
@@ -464,6 +466,7 @@ export default function Cinema({
   mode: string;
   offset: number;
 }) {
+  const gpuOptions = useInitialGPUOptions();
   const occupied = room.members
     .map((m) => m.seat)
     .sort((a, b) => a - b)
@@ -473,7 +476,7 @@ export default function Cinema({
       frameloop="demand"
       dpr={dpr}
       camera={{ position: [0, 3.3, 7], fov: 60, near: 0.15, far: 80 }}
-      gl={{ antialias: true, alpha: true }}
+      gl={{ ...gpuOptions, alpha: true }}
       style={{
         position: "absolute",
         inset: 0,
@@ -481,6 +484,7 @@ export default function Cinema({
         pointerEvents: "none",
       }}
     >
+      <SceneVisibility />
       <SceneRecovery onUnavailable={onUnavailable} />
       <SceneEnvironment
         space={spaceInfo(room.space).id}

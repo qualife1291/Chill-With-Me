@@ -1,14 +1,17 @@
 {
   "passed": true,
-  "date": "2026-11-11T11:57:58.400Z",
+  "date": "2026-11-11T15:44:21.987Z",
   "checks": [
+    "hidden lobby skips periodic room requests and refreshes when visible",
     "economy reduces actual drawing-buffer pixels without replacing native player or iframe",
     "quality preference survives a real reload/rejoin",
     "auto follows Save-Data changes; explicit detail overrides device hint",
     "settled scene remains demand-rendered after quality changes",
+    "hidden scenes do not draw for incoming actions; visible resumes with the same player",
     "real WebGL context loss switches to flat mode while same player keeps advancing",
     "explicit retry recreates only the renderer and retains the chosen quality",
-    "portrait and landscape touch viewports default to economy; manual choice works with blocked storage"
+    "portrait and landscape touch viewports default to economy; manual choice works with blocked storage",
+    "low-resource desktop defaults to economy/no MSAA but explicit detail retains player"
   ],
   "measurements": {
     "detailDpr": 1.3,

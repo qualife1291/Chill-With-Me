@@ -71,3 +71,10 @@ Nguồn dưới đây đã đọc từ tài liệu chính thức; đây là kế
 | P3 | [WebGPU](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API) cho cảnh nâng cao | Chưa chuyển renderer: khả năng hỗ trợ, chi phí migrate và depth-mask DOM/native iframe cần thử riêng. Giữ WebGL tối ưu làm baseline; không đưa thêm shader nặng vào bản mobile hiện tại. |
 
 Chưa mở khóa: R2/account activation và upload resumable; TURN/WAN file relay cần thử và dự trù quota; full voice provider/consent; pilot iOS/Android thực, soak/quota/rollback. Không coi các gate này đã xong vì test giả lập đạt.
+
+## Nâng cấp hiệu suất đa thiết bị — 11/11/2026
+
+- [x] Chính sách tài nguyên dùng chung: Auto tiết kiệm trên tablet/touch, Save-Data hoặc CPU/RAM thấp; thiếu API vẫn có fallback; lựa chọn thủ công giữ ưu tiên.
+- [x] Cấu hình GPU ban đầu nhẹ cho thiết bị hạn chế, cùng chính sách cho sảnh và preview; không tạo lại renderer khi xoay máy/chọn chất lượng.
+- [x] Dừng dựng 3D khi hidden và khôi phục khi visible, giữ nguyên native player/transport; dừng polling sảnh khi hidden.
+- [x] Test giả lập CPU/RAM/touch, desktop/tablet/phone, đổi chất lượng, hidden/visible, renderer/media identity và hồi quy tổng hợp; không suy ra FPS/thermal thiết bị thật.

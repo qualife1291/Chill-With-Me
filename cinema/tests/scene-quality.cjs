@@ -43,7 +43,7 @@ const measurements = {};
       .getByRole("button", { name: "Xin vào phòng", exact: true })
       .click();
   };
-  const makeRoom = async (slot, mobile = false) => {
+  const makeRoom = async (slot, mobile = false, low = false) => {
     const context = await browser.newContext({
       viewport: mobile
         ? { width: 390, height: 844 }
@@ -54,7 +54,17 @@ const measurements = {};
     });
     contexts.push(context);
     await context.addInitScript(
-      ({ blocked }) => {
+      ({ blocked, low }) => {
+        if (low) {
+          Object.defineProperty(navigator, "deviceMemory", {
+            value: 1,
+            configurable: true,
+          });
+          Object.defineProperty(navigator, "hardwareConcurrency", {
+            value: 2,
+            configurable: true,
+          });
+        }
         const connection = new EventTarget();
         connection.saveData = false;
         Object.defineProperty(navigator, "connection", {
@@ -71,7 +81,7 @@ const measurements = {};
           };
         }
       },
-      { blocked: mobile },
+      { blocked: mobile, low },
     );
     const p = await context.newPage();
     p.setDefaultTimeout(30000);
@@ -135,6 +145,37 @@ const measurements = {};
       "Quality/recovery must keep player AND iframe identity",
     );
   try {
+    const lobby = await browser.newPage();
+    await lobby.addInitScript(() => {
+      window.__qaHidden = true;
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        get: () => window.__qaHidden,
+      });
+    });
+    let lobbyPolls = 0;
+    lobby.on("request", (r) => {
+      if (r.url().endsWith("/api/rooms")) lobbyPolls++;
+    });
+    await lobby.goto(base);
+    await lobby.waitForFunction(
+      () => document.querySelectorAll(".room-card").length === 3,
+    );
+    const initialPolls = lobbyPolls;
+    await lobby.waitForTimeout(5500);
+    assert.equal(lobbyPolls, initialPolls);
+    const refresh = lobby.waitForResponse((r) =>
+      r.url().endsWith("/api/rooms"),
+    );
+    await lobby.evaluate(() => {
+      window.__qaHidden = false;
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await refresh;
+    await lobby.close();
+    checks.push(
+      "hidden lobby skips periodic room requests and refreshes when visible",
+    );
     const { p, title } = await makeRoom(1);
     const select = p.getByRole("combobox", {
       name: "Độ nét cảnh 3D",
@@ -188,6 +229,36 @@ const measurements = {};
     );
     checks.push("settled scene remains demand-rendered after quality changes");
     const time = await p.evaluate(() => window.__yt.getCurrentTime());
+    await p.evaluate(() => {
+      window.__hiddenForQA = true;
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        get: () => window.__hiddenForQA,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await p.waitForTimeout(300);
+    const hiddenFrame = await p
+      .locator(".scene canvas")
+      .getAttribute("data-render-frame");
+    await command(p.request, 1, owned[0].session, { type: "wave" });
+    await p.waitForTimeout(400);
+    assert.equal(
+      await p.locator(".scene canvas").getAttribute("data-render-frame"),
+      hiddenFrame,
+    );
+    await p.evaluate(() => {
+      window.__hiddenForQA = false;
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await p.waitForFunction(
+      (f) => document.querySelector(".scene canvas")?.dataset.renderFrame !== f,
+      hiddenFrame,
+    );
+    await samePlayer(p);
+    checks.push(
+      "hidden scenes do not draw for incoming actions; visible resumes with the same player",
+    );
     const lost = await p.locator(".scene canvas").evaluate((c) => {
       const gl = c.getContext("webgl2") || c.getContext("webgl");
       const extension = gl.getExtension("WEBGL_lose_context");
@@ -219,6 +290,8 @@ const measurements = {};
     );
     const { p: mobile } = await makeRoom(2, true);
     await expectRatio(mobile, 0.75);
+    await mobile.setViewportSize({ width: 1024, height: 1366 });
+    await expectRatio(mobile, 0.75);
     await mobile.setViewportSize({ width: 844, height: 390 });
     await expectRatio(mobile, 0.75);
     await mobile
@@ -228,6 +301,24 @@ const measurements = {};
     await samePlayer(mobile);
     checks.push(
       "portrait and landscape touch viewports default to economy; manual choice works with blocked storage",
+    );
+    const { p: weak } = await makeRoom(3, false, true);
+    await expectRatio(weak, 0.75);
+    assert.equal(
+      await weak
+        .locator(".scene canvas")
+        .evaluate(
+          (c) => c.getContext("webgl2").getContextAttributes().antialias,
+        ),
+      false,
+    );
+    await weak
+      .getByRole("combobox", { name: "Độ nét cảnh 3D", exact: true })
+      .selectOption("detail");
+    await expectRatio(weak, 1.3);
+    await samePlayer(weak);
+    checks.push(
+      "low-resource desktop defaults to economy/no MSAA but explicit detail retains player",
     );
     assert.deepEqual(errors, []);
     const report = {

@@ -1,3 +1,5 @@
+import SceneVisibility from "./SceneVisibility";
+import { useInitialGPUOptions, useSceneQuality } from "./useSceneQuality";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo } from "react";
 import ModelAvatar from "./ModelAvatar";
@@ -51,6 +53,8 @@ export default function Lobby({
   onSelect: (slot: number) => void;
   reduced: boolean;
 }) {
+  const gpuOptions = useInitialGPUOptions();
+  const { dpr } = useSceneQuality();
   const member = useMemo(
     () =>
       ({
@@ -67,10 +71,11 @@ export default function Lobby({
   return (
     <Canvas
       frameloop="demand"
-      dpr={[1, 1.3]}
+      dpr={dpr}
       camera={{ position: [0, 3.2, 12], fov: 46 }}
-      gl={{ antialias: true, alpha: false }}
+      gl={{ ...gpuOptions, alpha: false }}
     >
+      <SceneVisibility />
       <color attach="background" args={["#182326"]} />
       <fog attach="fog" args={["#182326", 18, 35]} />
       <ambientLight intensity={0.85} />

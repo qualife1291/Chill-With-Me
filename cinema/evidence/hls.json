@@ -13,7 +13,7 @@
     "available native HLS path also plays the generated VOD (Chromium capability; not Safari certification)",
     "all HLS workers terminate on room exit"
   ],
-  "requests": 114,
+  "requests": 108,
   "decodedRenditions": [
     320,
     1280

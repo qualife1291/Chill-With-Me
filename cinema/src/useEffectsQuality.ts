@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
+import { readDeviceBudget } from "./deviceHints";
 import { particleBudget, type EffectsMode } from "../shared/experience";
 const key = "cinema-effects-v1";
-const compactQuery =
-  "(pointer: coarse) and (max-width: 800px), (pointer: coarse) and (max-height: 500px)";
+const compactQuery = "(pointer: coarse)";
 type Connection = EventTarget & { saveData?: boolean };
 function hints() {
   return {
-    compact: matchMedia(compactQuery).matches,
+    compact: readDeviceBudget().economy,
     reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
     saveData: !!(navigator as Navigator & { connection?: Connection })
       .connection?.saveData,

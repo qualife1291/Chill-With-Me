@@ -407,8 +407,15 @@ function App() {
     if (slot || demo) return;
     const refresh = () => void api("/rooms").then(setSummaries).catch(report);
     refresh();
-    const t = setInterval(refresh, 5000);
-    return () => clearInterval(t);
+    const visible = () => {
+      if (!document.hidden) refresh();
+    };
+    const t = setInterval(visible, 5000);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", visible);
+    };
   }, [slot]);
   useEffect(() => {
     if (!slot || demo) return;

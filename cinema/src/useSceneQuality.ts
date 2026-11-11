@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
+import { readDeviceBudget, type DeviceConnection } from "./deviceHints";
 
 export type SceneQuality = "auto" | "economy" | "detail";
 const key = "cinema-scene-quality-v1";
-const compactTouch =
-  "(pointer: coarse) and (max-width: 800px), (pointer: coarse) and (max-height: 500px)";
+const compactTouch = "(pointer: coarse)";
 function preference(): SceneQuality {
   try {
     const value = localStorage.getItem(key);
@@ -13,14 +13,18 @@ function preference(): SceneQuality {
   }
   return "auto";
 }
-type Connection = EventTarget & { saveData?: boolean };
-function hints() {
-  const connection = (navigator as Navigator & { connection?: Connection })
-    .connection;
-  return {
-    economy: !!connection?.saveData || matchMedia(compactTouch).matches,
-    ratio: Math.min(1.3, Math.max(0.5, window.devicePixelRatio || 1)),
-  };
+type Connection = DeviceConnection;
+const hints = readDeviceBudget;
+export function useInitialGPUOptions() {
+  return useState(() => {
+    const budget = readDeviceBudget();
+    return {
+      antialias: !budget.economy,
+      powerPreference: budget.economy
+        ? ("low-power" as const)
+        : ("default" as const),
+    };
+  })[0];
 }
 export function useSceneQuality() {
   const [quality, setQuality] = useState<SceneQuality>(preference);
