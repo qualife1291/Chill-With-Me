@@ -356,6 +356,19 @@ const fixture = `window.YT={Player:class{constructor(el,c){this.config=c;this.st
           spec.id +
             ": creation UI, metadata/admission, shared space, camera-only rig freeze, idle render and native world screen",
         );
+      } catch (error) {
+        try {
+          console.error("Space diagnostic", spec.id, await p.evaluate(async () => ({
+            surface: {...document.querySelector(".screen-surface")?.dataset},
+            canvas: {...document.querySelector(".scene canvas")?.dataset},
+            selected: document.querySelector('[aria-label="Chọn góc nhìn"]')?.value,
+            visibility: document.visibilityState,
+            notices: [...document.querySelectorAll('[role="alert"],[role="status"]')].map(n => n.textContent),
+            room: await fetch("/api/rooms/1/state").then(r => r.json()).then(v => ({status:v.status,error:v.error,members:v.room?.members.map(m => ({name:m.name,connected:m.connected,seated:m.seated}))})),
+          })));
+          await p.screenshot({path:path.join(shots, "space-failure-" + spec.id + ".png")});
+        } catch {}
+        throw error;
       } finally {
         if (session) await cmd({ type: "close" }).catch(() => {});
         await host.close();

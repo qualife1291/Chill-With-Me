@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-10",
+  "date": "2026-11-11",
   "target": "local Wrangler only",
   "passed": true,
   "rooms": 3,
@@ -11,13 +11,13 @@
     "rooftop"
   ],
   "broadcast_all_members_ms": [
-    224,
-    180,
-    152
+    396,
+    276,
+    178
   ],
   "http_requests_measured": 92,
-  "http_p50_ms": 41.6,
-  "http_p95_ms": 107.1,
+  "http_p50_ms": 46,
+  "http_p95_ms": 80.8,
   "overflow_rejected": true,
   "limitations": "Short backend smoke; no media/GPU/WAN/sustained throughput. Own test rooms closed."
 }

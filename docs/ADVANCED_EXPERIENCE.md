@@ -5,10 +5,10 @@ Current facts: [state](../PROJECT_STATE.md). Commands/limits: [runtime](../cinem
 | Priority | Feature | Implementation / acceptance |
 | --- | --- | --- |
 | Done | Fireworks | Three timed launches, 54 capped sparks; whoosh/boom/chime/crackle; mute cancels pending sources; no replay on duplicate/rejoin; reduced motion; offline waveform + two-client checks |
-| Next | HLS VOD | Native HLS where available; lazy hls.js/MSE fallback; HTTPS/CORS only; adaptive/manual rendition selection local to each viewer; host playback ACL/timeline retained; engine/worker/buffers destroyed on source change; real generated multi-rendition and failing-manifest tests |
-| Next | Camera presets | Close screen / balanced cinema / whole room, preserving eye/free-orbit; bounded transforms, smooth transitions, no iframe remount; portrait/landscape and touch/key tests |
-| Next | Device-aware effects | Personal Auto/Full/Quiet; fewer particles on compact touch/Save-Data; quiet/reduced-motion retain status; no continuous 3D loop; verify actual DOM/animation budgets |
-| Next | Playful reactions | Bounded floating meme captions + staccato cue for existing troll reaction; no new wire enum or directed abuse; cooldown, mute, expiry and reduced motion unchanged |
+| Verified locally | HLS VOD | Native HLS where available; lazy hls.js/MSE fallback; HTTPS/CORS only; adaptive/manual rendition selection local to each viewer; host playback ACL/timeline retained; engine/worker/buffers destroyed on source change; real generated multi-rendition and failing-manifest tests |
+| Verified locally | Camera presets | Chính diện / Toàn rạp / Từ ghế, preserving eye/free-orbit; bounded transforms, smooth transitions, no iframe remount; portrait/landscape and touch/key tests |
+| Verified locally | Device-aware effects | Personal Auto/Full/Quiet; fewer particles on compact touch/Save-Data; quiet/reduced-motion retain status; no continuous 3D loop; verify actual DOM/animation budgets |
+| Verified locally | Playful reactions | Bounded floating meme captions + staccato cue for existing troll reaction; no new wire enum or directed abuse; cooldown, mute, expiry and reduced motion unchanged |
 | Later | Live HLS/DVR | Requires stable shared time origin/PDT, seekable-window reconciliation, discontinuity/rollover handling and late-join semantics. Do not advertise normal VOD position sync as live sync |
 | Later | DASH/other providers | Assess Shaka/provider SDK per service; DRM/auth/ads/embedding permissions remain provider-specific; no universal extraction proxy |
 | Later | Adaptive 3D pressure | Sample active rendering only; exclude demand-idle gaps, context recovery and background frames; degrade Auto only with hysteresis, respect explicit quality; actual-device FPS/thermal pilot remains required |
@@ -28,3 +28,10 @@ Current facts: [state](../PROJECT_STATE.md). Commands/limits: [runtime](../cinem
 Three rooms, 2–10 members, native YouTube, private capabilities, host-only shared timeline and no microphone remain fixed. Personal quality, camera and effects do not mutate room playback. Downloads remain direct browser-to-provider; room storage holds metadata only. No billing/R2/provider provisioning or recovered NVIDIA keys.
 
 All mutations stay local. Verify helpers, actual generated codec bytes, real MSE/native media lifecycle, two-client sync/ACL, slow network/error recovery, WebAudio cleanup and bounded CSS/3D work separately. Headless fixtures do not certify iOS/Android decoder quirks, speakers, thermal behavior, provider ads or WAN synchronization. Existing browser TLS/tunnel and Cloudflare upload-auth blocks remain separate environment/deployment gates.
+
+## Next acceptance sequence
+
+1. Physical-device matrix: Safari/iPhone native HLS, Android/Chrome on a low-memory device, desktop Chrome/Firefox; portrait/landscape, 44px touch targets, keyboard, reduced motion, Save-Data, autoplay/unlock, headphones and background/foreground recovery. Capture actual dropped frames, buffer and thermal behavior; do not infer them from SwiftShader or capability hints.
+2. On-demand local diagnostics: source/codec, buffered range, decoded/dropped frames and clock/RTT; exclude paused/hidden/demand-idle intervals. No recordings or continuous telemetry upload. First retain camera failure-state captures and investigate any recurring settlement timeout.
+3. Auto 3D pressure control only after active-frame measurements: hysteresis, respect explicit Economy/Detail, and recover gradually. Keep one renderer, shared rigs and native player identity. Require repeatable low-device and 3×10 media/reconnect/quota soak results before performance claims.
+4. Live HLS/DVR separately: agree on PDT/time origin, late-join/window clamping, discontinuity and rollover behavior before implementing. Test drift and source recovery under delay/loss; missing time origin must not silently use finite-VOD sync. Provider DRM/auth and other services remain separate decisions.

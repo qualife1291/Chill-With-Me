@@ -14,14 +14,22 @@ export function useRoomSounds(session = "") {
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
   const fireworkStop = useRef<(() => void) | null>(null);
-  const stopFireworks = useCallback(() => {
+  const scheduledCues = useRef(new Set<AudioScheduledSourceNode>());
+  const stopCues = useCallback(() => {
     fireworkStop.current?.();
     fireworkStop.current = null;
+    for (const node of scheduledCues.current) {
+      try {
+        node.stop();
+      } catch {}
+      node.disconnect();
+    }
+    scheduledCues.current.clear();
   }, []);
   useEffect(() => {
-    stopFireworks();
-    return stopFireworks;
-  }, [session, stopFireworks]);
+    stopCues();
+    return stopCues;
+  }, [session, stopCues]);
   const context = useRef<AudioContext | null>(null);
   const output = useRef<GainNode | null>(null);
   const unlock = useCallback(() => {
@@ -47,13 +55,13 @@ export function useRoomSounds(session = "") {
     return () => {
       document.removeEventListener("pointerdown", unlock, true);
       document.removeEventListener("keydown", key, true);
-      stopFireworks();
+      stopCues();
       const ctx = context.current;
       context.current = null;
       output.current = null;
       if (ctx && ctx.state !== "closed") void ctx.close().catch(() => {});
     };
-  }, [unlock, stopFireworks]);
+  }, [unlock, stopCues]);
   const toggle = useCallback(() => {
     const next = !enabledRef.current;
     enabledRef.current = next;
@@ -63,10 +71,10 @@ export function useRoomSounds(session = "") {
     } catch {}
     if (next) unlock();
     else {
-      stopFireworks();
+      stopCues();
       if (output.current) output.current.gain.value = 0;
     }
-  }, [unlock, stopFireworks]);
+  }, [unlock, stopCues]);
   const play = useCallback(
     (kind: RoomSound, ageMs = 0) => {
       const ctx = context.current,
@@ -74,7 +82,7 @@ export function useRoomSounds(session = "") {
       if (!enabledRef.current || !ctx || !bus || ctx.state !== "running")
         return;
       if (kind === "flowers") {
-        stopFireworks();
+        stopCues();
         fireworkStop.current = playFireworkSound(ctx, bus, ageMs);
         return;
       }
@@ -96,7 +104,9 @@ export function useRoomSounds(session = "") {
         gain.gain.exponentialRampToValueAtTime(0.001, at + length);
         osc.connect(gain);
         gain.connect(bus);
+        scheduledCues.current.add(osc);
         osc.onended = () => {
+          scheduledCues.current.delete(osc);
           osc.disconnect();
           gain.disconnect();
         };
@@ -125,7 +135,9 @@ export function useRoomSounds(session = "") {
           source.connect(filter);
           filter.connect(gain);
           gain.connect(bus);
+          scheduledCues.current.add(source);
           source.onended = () => {
+            scheduledCues.current.delete(source);
             source.disconnect();
             filter.disconnect();
             gain.disconnect();
@@ -136,14 +148,18 @@ export function useRoomSounds(session = "") {
         tone(430, 0, 0.32, 280);
         tone(330, 0.3, 0.4, 185);
       } else if (kind === "troll") {
-        tone(170, 0, 0.22, 620, "triangle");
-        tone(620, 0.22, 0.35, 110, "triangle");
+        for (let i = 0; i < 3; i++) {
+          tone(220 + i * 25, i * 0.14, 0.065, 340, "triangle");
+          tone(340, i * 0.14 + 0.065, 0.065, 180, "triangle");
+        }
+        tone(170, 0.45, 0.22, 620, "triangle");
+        tone(620, 0.67, 0.35, 110, "triangle");
       } else {
         tone(740, 0, 0.12);
         tone(980, 0.13, 0.18);
       }
     },
-    [stopFireworks],
+    [stopCues],
   );
   return { enabled, toggle, play };
 }

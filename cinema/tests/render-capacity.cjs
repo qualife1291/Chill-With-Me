@@ -27,6 +27,8 @@ const assert = require("node:assert/strict");
       command: c,
     });
   try {
+    // Establish identity before loading the app: goto() does not await its session effect.
+    assert.equal((await api(h.request, "/session", {})).httpStatus, 200);
     await h.goto(base);
     assert(
       !(await api(h.request, "/rooms")).data.find((r) => r.slot === slot).open,

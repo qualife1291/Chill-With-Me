@@ -4,6 +4,8 @@
     "normal/dim lighting changes actual scene pixels; warm selectable; player/iframe identity preserved",
     "speech settings collapsed by default; native speech signal ducks/restores both video and real ambient GainNode",
     "mode switch closes previous source/context; off/emulated hidden lifecycle stops ambient audio; returning tab never auto-starts",
+    "three camera presets settle in supported modes without remounting video or changing room playback",
+    "Save-Data Auto caps fireworks at 24 sparks; Quiet retains status without particles; explicit Full overrides hint and preferences persist",
     "Escape closes and restores focus; mobile sheets are exclusive; 390px controls fit viewport",
     "leaving room disposes every ambient context/source"
   ],

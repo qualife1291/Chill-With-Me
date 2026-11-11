@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@react-three/fiber": "^9.0.0",
+    "hls.js": "1.7.4",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

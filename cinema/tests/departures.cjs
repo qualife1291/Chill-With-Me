@@ -133,6 +133,13 @@ const base = "http://localhost:8787";
       .fill("https://youtu.be/jfKfPfyJRdk");
     await quick.getByLabel("Link video / nhạc để bắt đầu").press("Enter");
     await h.waitForFunction(() => !!window.__yt?.video);
+    // This suite measures transport lifecycle; avoid two competing software-GPU scenes.
+    const useFlat = async (p) => {
+      await p.bringToFront();
+      await p.getByRole("button", { name: "Góc nhìn 🎮", exact: true }).click();
+      await p.getByRole("button", { name: "Chế độ nhẹ", exact: true }).click();
+    };
+    await useFlat(h);
     await g.reload();
     await g
       .locator(".room-card")
@@ -153,10 +160,7 @@ const base = "http://localhost:8787";
         document.querySelector(".cinema-app")?.dataset.clockCalibrated ===
         "true",
     );
-    for (const p of [h, g]) {
-      await p.getByRole("button", { name: "Góc nhìn 🎮", exact: true }).click();
-      await p.getByRole("button", { name: "Chế độ nhẹ", exact: true }).click();
-    }
+    await useFlat(g);
     // Keep the player identity while a real network outage initially makes HTTP recovery fail.
     await g.evaluate(() => {
       window.__playerBeforeOutage = window.__yt;
@@ -326,6 +330,21 @@ const base = "http://localhost:8787";
       JSON.stringify(report, null, 2) + "\n",
     );
     console.log(JSON.stringify(report, null, 2));
+  } catch (error) {
+    for (const context of browser.contexts())
+      for (const p of context.pages()) {
+        if (p.url() !== base + "/") continue;
+        try {
+          console.error("Departure UI diagnostic", await p.evaluate(async () => ({
+            visibility: document.visibilityState,
+            joined: !!document.querySelector(".cinema-app"),
+            buttons: [...document.querySelectorAll("button")].slice(0, 20).map(b => b.getAttribute("aria-label") || b.textContent),
+            notices: [...document.querySelectorAll('[role="status"],[role="alert"]')].map(n => n.textContent),
+            state: await fetch("/api/rooms/1/state").then(r => r.json()).then(v => ({status:v.status, error:v.error, members:v.room?.members.map(m => ({name:m.name,connected:m.connected}))})),
+          })));
+        } catch {}
+      }
+    throw error;
   } finally {
     for (const r of owned)
       for (const c of [r.h, r.g])

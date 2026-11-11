@@ -346,12 +346,20 @@ const base = "http://localhost:8787",
     });
     await g.locator(".room-reaction").waitFor({ state: "detached" });
     await g.bringToFront();
+    hn = await sounds(h);
     await g.getByRole("button", { name: "Trêu vui", exact: true }).click();
     await h
       .getByRole("status", { name: "Social guest: Trêu vui", exact: true })
       .waitFor();
+    await h.waitForFunction((n) => window.__sounds.length === n + 8, hn);
+    assert.equal(await h.locator(".troll-bubbles span").count(), 3);
+    assert.equal(
+      await g.locator(".troll-bubbles").count(),
+      0,
+      "Reduced motion suppresses troll bubbles",
+    );
     checks.push(
-      "sad/troll actions broadcast; mobile fits; reduced motion suppresses animation",
+      "sad/troll actions broadcast with staccato/boing audio and bounded meme bubbles; mobile fits; reduced motion suppresses animation",
     );
     await g.bringToFront();
     await g.reload();

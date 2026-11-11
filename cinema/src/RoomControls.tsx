@@ -11,6 +11,11 @@ import {
 import { reactions } from "./RoomActivity";
 import type { SceneQuality } from "./useSceneQuality";
 import type { Room, Member, Command, ReactionKind } from "../shared/model";
+import {
+  CAMERA_PRESETS,
+  type CameraPreset,
+  type EffectsMode,
+} from "../shared/experience";
 import type { Lighting } from "../shared/ambience";
 import type { useAmbience } from "./useAmbience";
 export default function RoomControls({
@@ -31,8 +36,12 @@ export default function RoomControls({
   onLighting,
   ambience,
   voiceWarning,
+  effects,
+  onPreset,
 }: {
   voiceWarning?: string;
+  effects: { mode: EffectsMode; change: (mode: EffectsMode) => void };
+  onPreset: (preset: CameraPreset) => void;
   lighting: Lighting;
   onLighting: (value: Lighting) => void;
   ambience: ReturnType<typeof useAmbience>;
@@ -108,6 +117,18 @@ export default function RoomControls({
         >
           <RotateCcw size={17} />
         </button>
+      </div>
+      <div className="camera-presets" role="group" aria-label="Góc xem nhanh">
+        {(
+          Object.entries(CAMERA_PRESETS) as [
+            CameraPreset,
+            (typeof CAMERA_PRESETS)[CameraPreset],
+          ][]
+        ).map(([id, preset]) => (
+          <button key={id} onClick={() => onPreset(id)}>
+            {preset.label}
+          </button>
+        ))}
       </div>
       <p className="control-hint">Kéo để nhìn · Cuộn để thu/phóng</p>
       <label className="scene-quality">
@@ -195,6 +216,18 @@ export default function RoomControls({
       <details className="control-section ambience-controls">
         <summary>Âm thanh & ánh sáng</summary>
         <p className="control-hint">Thiết lập riêng trên máy bạn.</p>
+        <label>
+          Hiệu ứng vui
+          <select
+            aria-label="Mức hiệu ứng"
+            value={effects.mode}
+            onChange={(e) => effects.change(e.target.value as EffectsMode)}
+          >
+            <option value="auto">Tự động theo thiết bị</option>
+            <option value="full">Đầy đủ</option>
+            <option value="quiet">Yên tĩnh · chỉ thẻ cảm xúc</option>
+          </select>
+        </label>
         <label>
           Đèn trong rạp
           <select

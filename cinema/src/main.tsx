@@ -3,6 +3,8 @@ import RoomControls from "./RoomControls";
 import InvitationControls from "./InvitationControls";
 import PlaylistImport from "./PlaylistImport";
 import { useRoomClock } from "./useRoomClock";
+import { useEffectsQuality } from "./useEffectsQuality";
+import { CAMERA_PRESETS } from "../shared/experience";
 import { useSceneQuality } from "./useSceneQuality";
 import { useModalFocus } from "./useModalFocus";
 import { FileShare } from "./FileShare";
@@ -110,7 +112,7 @@ const errors: Record<string, string> = {
   BANNED: "Bạn không thể vào lại phiên chiếu này.",
   SLOT_BUSY: "Phòng vừa được tạo. Hãy chọn phòng khác.",
   INVALID_MEDIA_URL:
-    "Hãy nhập link YouTube, Google Drive công khai hoặc video MP4/WebM/MOV/MP3/M4A/Ogg/WAV qua HTTPS.",
+    "Hãy nhập link YouTube, Google Drive công khai hoặc video MP4/WebM/MOV/MP3/M4A/Ogg/WAV hoặc HLS VOD (.m3u8) qua HTTPS.",
   INVALID_YOUTUBE_URL: "Hãy nhập link video YouTube hợp lệ.",
   RATE_LIMITED: "Thao tác hơi nhanh. Hãy chờ một chút.",
   STALE_GENERATION: "Video đã thay đổi. Hãy thử lại.",
@@ -187,6 +189,7 @@ function App() {
   const clock = useRoomClock(room?.session),
     offset = clock.offset;
   const sceneQuality = useSceneQuality();
+  const effects = useEffectsQuality();
   const [sceneNotice, setSceneNotice] = useState("");
   const sceneUnavailable = React.useCallback(() => {
     setLight(true);
@@ -1537,6 +1540,7 @@ function App() {
                 offset={offset}
                 chatOpen={panel === "chat"}
                 playSound={sounds.play}
+                effectsBudget={effects.budget}
                 onOpenChat={() => {
                   panelOpener.current =
                     document.querySelector<HTMLButtonElement>(
@@ -1916,6 +1920,15 @@ function App() {
                         light={light}
                         quality={sceneQuality.quality}
                         onQuality={sceneQuality.change}
+                        effects={effects}
+                        onPreset={(preset) => {
+                          const selected = CAMERA_PRESETS[preset];
+                          setCamera(selected.mode);
+                          setYaw(0);
+                          setPitch(0);
+                          setBodyYaw(0);
+                          setZoom(selected.zoom);
+                        }}
                         onLight={() => {
                           setSceneNotice("");
                           setLight((v) => !v);
@@ -1950,7 +1963,7 @@ function App() {
                     <p>
                       {room.queueEndedAt
                         ? "Thêm link mới để mọi người xem tiếp."
-                        : "Dán link YouTube, Drive hoặc video / nhạc trực tiếp để phát ngay."}
+                        : "Dán link YouTube, Drive, HLS VOD (.m3u8) hoặc video / nhạc HTTPS để phát ngay."}
                     </p>
                     <form
                       onSubmit={async (e) => {

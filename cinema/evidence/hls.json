@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "checks": [
+    "generated two-rendition HLS VOD decodes in real MSE on host and admitted viewer",
+    "native host pause/seek synchronizes; viewer commands rejected; manual viewer quality is local and keeps video mounted",
+    "host resumes both HLS players",
+    "manual 720p then 180p renditions actually decode without remounting video or changing shared generation",
+    "real HLS ended advances once to MP4 and releases previous MSE resources",
+    "source change revokes previous MSE URL; live HLS is explicitly rejected instead of falsely synchronized",
+    "missing manifest stops locally and exposes retry with bounded loader retries",
+    "retry recovers a restored manifest on the same room source",
+    "HLS segment URLs are checked before requests; private addresses are not contacted",
+    "available native HLS path also plays the generated VOD (Chromium capability; not Safari certification)",
+    "all HLS workers terminate on room exit"
+  ],
+  "requests": 101,
+  "decodedRenditions": [
+    320,
+    1280
+  ],
+  "pageErrors": [],
+  "limitations": "Generated H.264/AAC VOD with intercepted HTTPS fixtures and real Chromium MSE/Worker decoding. Native Safari, provider CORS, DRM/live sync and real WAN/device behavior remain separate gates."
+}

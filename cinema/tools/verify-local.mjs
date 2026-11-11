@@ -144,6 +144,7 @@ try {
     "spaces.cjs",
     "experience.cjs",
     "media.cjs",
+    "hls.cjs",
     "roadmap.cjs",
     "render-capacity.cjs",
   ])

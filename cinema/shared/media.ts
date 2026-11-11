@@ -56,13 +56,39 @@ export type LocalMedia = {
 };
 export type MediaSource = RemoteMedia | LocalMedia;
 export const MAX_LOCAL_BYTES = 100 * 1024 * 1024;
+/** Browser resource guard: streaming manifests must not introduce literal IP/localhost or HTTP loads. */
+export function publicHTTPSURL(input: string): URL {
+  const u = new URL(input),
+    h = u.hostname.toLowerCase().replace(/\.$/, "");
+  if (
+    u.protocol !== "https:" ||
+    u.username ||
+    u.password ||
+    (u.port && u.port !== "443") ||
+    !h.includes(".") ||
+    h.endsWith(".local") ||
+    h.endsWith(".localhost") ||
+    h === "localhost" ||
+    h.startsWith("[") ||
+    /^\d+(?:\.\d+){3}$/.test(h)
+  )
+    throw Error("INVALID_MEDIA_URL");
+  return u;
+}
+export function isHlsURL(input: string) {
+  try {
+    return /\.m3u8$/i.test(new URL(input).pathname);
+  } catch {
+    return false;
+  }
+}
 export function parseMediaURL(input: string): {
   videoId: string;
   source: RemoteMedia;
 } {
   let u: URL;
   try {
-    u = new URL(input);
+    u = publicHTTPSURL(input);
   } catch {
     throw Error("INVALID_MEDIA_URL");
   }
@@ -126,7 +152,7 @@ export function parseMediaURL(input: string): {
     /^\d+(?:\.\d+){3}$/.test(h)
   )
     throw Error("INVALID_MEDIA_URL");
-  if (!/\.(mp4|webm|ogg|ogv|m4v|mov|mp3|m4a|wav)$/i.test(u.pathname))
+  if (!/\.(mp4|webm|ogg|ogv|m4v|mov|mp3|m4a|wav|m3u8)$/i.test(u.pathname))
     throw Error("INVALID_MEDIA_URL");
   u.hash = "";
   return { videoId: "", source: { kind: "url", url: u.href } };

@@ -33,6 +33,7 @@ export default function RoomActivity({
   chatOpen,
   onOpenChat,
   playSound,
+  effectsBudget = 18,
 }: {
   room: Room;
   me: Member;
@@ -40,6 +41,7 @@ export default function RoomActivity({
   chatOpen: boolean;
   onOpenChat: () => void;
   playSound: (kind: RoomSound, ageMs?: number) => void;
+  effectsBudget?: number;
 }) {
   const seen = useRef(new Set(room.messages.map((m) => m.id)));
   const poked = useRef(me.pokedAt);
@@ -130,11 +132,28 @@ export default function RoomActivity({
       )}
       {reactionActive && reaction && (
         <div key={reaction.id}>
-          {reaction.kind === "flowers" && (
-            <Fireworks at={reaction.at} offset={offset} />
+          {reaction.kind === "flowers" && effectsBudget > 0 && (
+            <Fireworks
+              key={effectsBudget}
+              at={reaction.at}
+              offset={offset}
+              count={effectsBudget}
+            />
+          )}
+          {reaction.kind === "troll" && effectsBudget > 0 && (
+            <div className="troll-bubbles" aria-hidden="true">
+              {["Ủa alo? 😂", "Rồi xong 💀", "Hết cứu 🫠"].map((text, i) => (
+                <span
+                  key={text}
+                  style={{ "--i": i } as import("react").CSSProperties}
+                >
+                  {text}
+                </span>
+              ))}
+            </div>
           )}
           <div
-            className={`room-reaction reaction-${reaction.kind}`}
+            className={`room-reaction reaction-${reaction.kind}${effectsBudget === 0 ? " quiet-reaction" : ""}`}
             role="status"
             aria-label={`${reaction.name}: ${reactions[reaction.kind].label}`}
           >

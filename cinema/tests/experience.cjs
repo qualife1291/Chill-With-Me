@@ -47,6 +47,12 @@ fs.mkdirSync(shots, { recursive: true });
     });
   try {
     await h.addInitScript(() => {
+      const connection = new EventTarget();
+      connection.saveData = false;
+      Object.defineProperty(navigator, "connection", {
+        configurable: true,
+        value: connection,
+      });
       window.__contexts = [];
       window.__gains = [];
       window.__loops = [];
@@ -92,7 +98,7 @@ fs.mkdirSync(shots, { recursive: true });
     await h.route("https://www.youtube.com/iframe_api", (r) =>
       r.fulfill({
         contentType: "application/javascript",
-        body: `window.YT={Player:class{constructor(el,c){this.state=2;this.time=0;this.volume=80;this.video='';window.__yt=this;const f=document.createElement('iframe');f.srcdoc='<body style="background:#111;color:white">EXPERIENCE SCREEN</body>';el.replaceWith(f);setTimeout(()=>c.events.onReady(),0)}loadVideoById(v){this.video=v.videoId;this.state=1;this.time=v.startSeconds}cueVideoById(v){this.video=v.videoId;this.state=2;this.time=v.startSeconds}getCurrentTime(){return this.time}getPlayerState(){return this.state}getDuration(){return 600}getVideoData(){return{video_id:this.video}}getVolume(){return this.volume}setVolume(v){this.volume=v}seekTo(t){this.time=t}playVideo(){this.state=1}pauseVideo(){this.state=2}destroy(){}}};window.onYouTubeIframeAPIReady();`,
+        body: `window.YT={Player:class{constructor(el,c){this.state=2;this.time=0;this.volume=80;this.video='';window.__yt=this;const f=document.createElement('iframe');f.srcdoc='<body style="background:#111;color:white">EXPERIENCE SCREEN</body>';el.replaceWith(f);setTimeout(()=>c.events.onReady(),0)}loadVideoById(v){this.video=v.videoId;this.state=1;this.time=v.startSeconds}cueVideoById(v){this.video=v.videoId;this.state=2;this.time=v.startSeconds}get time(){return this._time+(this.state===1?(Date.now()-this._clock)/1000:0)}set time(t){this._time=t;this._clock=Date.now()}getCurrentTime(){return this.time}getPlayerState(){return this.state}getDuration(){return 600}getVideoData(){return{video_id:this.video}}getVolume(){return this.volume}setVolume(v){this.volume=v}seekTo(t){this.time=t}playVideo(){const t=this.time;this.state=1;this.time=t}pauseVideo(){const t=this.time;this.state=2;this.time=t}destroy(){}}};window.onYouTubeIframeAPIReady();`,
       }),
     );
     h.on("pageerror", (e) => errors.push(e.message));
@@ -236,6 +242,80 @@ fs.mkdirSync(shots, { recursive: true });
     assert.equal(await sound.inputValue(), "off");
     checks.push(
       "mode switch closes previous source/context; off/emulated hidden lifecycle stops ambient audio; returning tab never auto-starts",
+    );
+    const presetBefore = (await api("/rooms/1/state")).room;
+    for (const [label, mode] of [
+      ["Toàn rạp", "orbit"],
+      ["Từ ghế", "first"],
+      ["Chính diện", "orbit"],
+    ]) {
+      await h.getByRole("button", { name: label, exact: true }).click();
+      await h.waitForFunction(
+        (mode) =>
+          document.querySelector(".screen-surface")?.dataset.camera === mode &&
+          document.querySelector(".screen-surface")?.dataset.transitioning ===
+            "false",
+        mode,
+      );
+    }
+    const presetAfter = (await api("/rooms/1/state")).room;
+    assert.equal(presetAfter.generation, presetBefore.generation);
+    assert.equal(presetAfter.anchor, presetBefore.anchor);
+    assert(
+      await h.evaluate(
+        () =>
+          window.__yt === window.__originalPlayer &&
+          document.querySelector(".screen-surface iframe") ===
+            window.__originalFrame,
+      ),
+    );
+    checks.push(
+      "three camera presets settle in supported modes without remounting video or changing room playback",
+    );
+    if (!(await h.getByLabel("Mức hiệu ứng", { exact: true }).isVisible()))
+      await h.locator(".ambience-controls > summary").click();
+    await h.getByLabel("Mức hiệu ứng", { exact: true }).selectOption("auto");
+    await cmd({ type: "reaction", kind: "flowers" });
+    await h.waitForFunction(
+      () => document.querySelectorAll(".firework-spark").length === 54,
+    );
+    await h.evaluate(() => {
+      navigator.connection.saveData = true;
+      navigator.connection.dispatchEvent(new Event("change"));
+    });
+    await h.waitForFunction(
+      () => document.querySelectorAll(".firework-spark").length === 24,
+    );
+    await h.getByLabel("Mức hiệu ứng", { exact: true }).selectOption("quiet");
+    assert.equal(await h.locator(".fireworks-show").count(), 0);
+    assert.equal(
+      await h
+        .locator(".reaction-symbol")
+        .evaluate((el) => getComputedStyle(el).animationName),
+      "none",
+    );
+    assert(
+      await h
+        .getByRole("status", {
+          name: "Experience host: Pháo bông",
+          exact: true,
+        })
+        .isVisible(),
+    );
+    assert.equal(
+      await h.evaluate(() => localStorage.getItem("cinema-effects-v1")),
+      "quiet",
+    );
+    await h.getByLabel("Mức hiệu ứng", { exact: true }).selectOption("full");
+    await h.waitForFunction(
+      () => document.querySelectorAll(".firework-spark").length === 54,
+    );
+    await h.evaluate(() => {
+      navigator.connection.saveData = false;
+      navigator.connection.dispatchEvent(new Event("change"));
+    });
+    checks.push(
+      "Save-Data Auto caps fireworks at 24 sparks; Quiet retains status without particles; explicit Full overrides hint and preferences persist",
     );
     await h.keyboard.press("Escape");
     assert.equal(await controls().getAttribute("aria-pressed"), "false");

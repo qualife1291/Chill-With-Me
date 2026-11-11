@@ -837,7 +837,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .getByRole("alert")
     .filter({
       hasText:
-        "Hãy nhập link YouTube, Google Drive công khai hoặc video MP4/WebM/MOV/MP3/M4A/Ogg/WAV qua HTTPS.",
+        "Hãy nhập link YouTube, Google Drive công khai hoặc video MP4/WebM/MOV/MP3/M4A/Ogg/WAV hoặc HLS VOD (.m3u8) qua HTTPS.",
     })
     .waitFor();
   if (

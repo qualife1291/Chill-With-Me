@@ -8,9 +8,11 @@ import {
 export default function Fireworks({
   at,
   offset,
+  count = SPARKS_PER_BURST,
 }: {
   at: number;
   offset: number;
+  count?: number;
 }) {
   // Freeze the start offset: chat/pose updates must not restart an active show.
   const [age] = useState(() => Math.max(0, Date.now() + offset - at));
@@ -32,8 +34,8 @@ export default function Fireworks({
         >
           <span className="firework-rocket" />
           <span className="firework-core" />
-          {Array.from({ length: SPARKS_PER_BURST }, (_, i) => {
-            const angle = (i / SPARKS_PER_BURST) * Math.PI * 2;
+          {Array.from({ length: count }, (_, i) => {
+            const angle = (i / count) * Math.PI * 2;
             const radius = 15 + (i % 3) * 3;
             return (
               <i

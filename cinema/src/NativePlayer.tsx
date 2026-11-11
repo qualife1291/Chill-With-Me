@@ -4,9 +4,11 @@ import {
   mediaSource,
   playableURL,
   isAudio,
+  isHlsURL,
   mediaLabel,
   FILE_ACCEPT,
 } from "../shared/media";
+import { useHls } from "./useHls";
 import type { FileShare } from "./FileShare";
 export type PlayerProps = {
   room: Room;
@@ -23,6 +25,7 @@ export default function NativePlayer(props: PlayerProps) {
     source = mediaSource(room.current!);
   const transfer = useSyncExternalStore(files.subscribe, files.snapshot);
   const url = source.kind === "local" ? transfer.url : playableURL(source);
+  const streaming = source.kind === "url" && isHlsURL(url || "");
   const ref = useRef<HTMLVideoElement>(null),
     latest = useRef(props);
   latest.current = props;
@@ -93,6 +96,16 @@ export default function NativePlayer(props: PlayerProps) {
       }
     };
   }, [url]);
+  const stream = useHls(ref, streaming ? url || "" : "", {
+    ready: () => {
+      ready.current = true;
+      sync(true);
+    },
+    unavailable: () => {
+      ready.current = false;
+      buffering.current = false;
+    },
+  });
   useEffect(() => {
     sync(true);
     const timer = setInterval(() => sync(), 1000);
@@ -147,12 +160,14 @@ export default function NativePlayer(props: PlayerProps) {
       if (!nativePending.current) setTimeout(() => sync(true), 0);
     });
   }
-  const failure = error || (source.kind === "local" ? transfer.error : "");
+  const failure =
+    stream.error || error || (source.kind === "local" ? transfer.error : "");
   return (
     <section
       className={isAudio(source) ? "player-panel audio-player" : "player-panel"}
       data-control={isHost ? "host" : "viewer"}
       data-provider={source.kind}
+      data-stream-engine={streaming ? stream.engine : undefined}
     >
       {isAudio(source) && url && (
         <div className="audio-cover" aria-hidden="true">
@@ -173,7 +188,7 @@ export default function NativePlayer(props: PlayerProps) {
           ref={ref}
           key={url}
           className="native-video"
-          src={url}
+          src={streaming ? undefined : url}
           crossOrigin={source.kind === "drive" ? "anonymous" : undefined}
           playsInline
           preload="auto"
@@ -188,6 +203,7 @@ export default function NativePlayer(props: PlayerProps) {
             buffering.current = false;
           }}
           onLoadedMetadata={() => {
+            if (streaming) return;
             ready.current = true;
             sync(true);
           }}
@@ -221,13 +237,14 @@ export default function NativePlayer(props: PlayerProps) {
             ended.current = true;
             if (latest.current.isHost) latest.current.onEnded();
           }}
-          onError={() =>
-            setError(
-              source.kind === "drive"
-                ? "Không tải được video Drive. File cần chia sẻ công khai; Google có thể giới hạn tải hoặc yêu cầu xác nhận."
-                : "Không tải được video. Hãy kiểm tra link, codec và quyền truy cập.",
-            )
-          }
+          onError={() => {
+            if (!streaming)
+              setError(
+                source.kind === "drive"
+                  ? "Không tải được video Drive. File cần chia sẻ công khai; Google có thể giới hạn tải hoặc yêu cầu xác nhận."
+                  : "Không tải được video. Hãy kiểm tra link, codec và quyền truy cập.",
+              );
+          }}
           aria-label="Video của phòng"
         />
       ) : (
@@ -238,6 +255,33 @@ export default function NativePlayer(props: PlayerProps) {
               : "Đang chuẩn bị video"}
           </p>
         </div>
+      )}
+      {streaming && stream.loading && !stream.error && (
+        <div className="stream-status" role="status">
+          Đang tải HLS…
+        </div>
+      )}
+      {streaming && stream.engine === "mse" && stream.levels.length > 1 && (
+        <label className="stream-quality">
+          Chất lượng trên máy bạn
+          <select
+            aria-label="Chất lượng luồng"
+            value={stream.level}
+            onChange={(e) => stream.choose(Number(e.target.value))}
+          >
+            <option value={-1}>Tự động theo mạng</option>
+            {stream.levels.map((l) => (
+              <option key={l.index} value={l.index}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {streaming && stream.error && (
+        <button className="stream-retry" onClick={stream.retry}>
+          Thử lại HLS
+        </button>
       )}
       {failure && (
         <p className="player-error" role="alert">
