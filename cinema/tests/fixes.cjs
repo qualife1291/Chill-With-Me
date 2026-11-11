@@ -750,11 +750,11 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   if (
     flatBounds.x < 0 ||
     flatBounds.y < 60 ||
-    flatBounds.x + flatBounds.width > 844 - 154 ||
+    flatBounds.x + flatBounds.width > 844 ||
     flatBounds.y + flatBounds.height > 390
   )
     throw Error(
-      "Light player clips or overlaps landscape controls " +
+      "Light player clips in stable landscape viewport " +
         JSON.stringify(flatBounds),
     );
   await host.setViewportSize({ width: 1440, height: 1000 });

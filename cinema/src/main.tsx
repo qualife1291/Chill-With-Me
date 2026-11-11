@@ -60,6 +60,8 @@ import type { Lighting } from "../shared/ambience";
 import { useChatSpeech } from "./useChatSpeech";
 import { useHeadDrag } from "./useHeadDrag";
 import "./style.css";
+import "./room-layout.css";
+import { useRoomViewport } from "./useRoomViewport";
 import { useReducedMotion } from "./useReducedMotion";
 const AvatarPreview = lazy(() => import("./AvatarPreview"));
 const Lobby = lazy(() => import("./Lobby"));
@@ -219,6 +221,11 @@ function App() {
   );
   const [lobbyLight, setLobbyLight] = useState(false);
   const reducedMotion = useReducedMotion();
+  const viewportRoot = useRef<HTMLElement>(null);
+  const compact = useRoomViewport(viewportRoot);
+  useEffect(() => {
+    if (compact && panel && showControls) setPanel("");
+  }, [compact, panel, showControls]);
   const [pendingMessages, setPendingMessages] = useState<
     { id: string; text: string; failed: boolean }[]
   >([]);
@@ -1000,7 +1007,7 @@ function App() {
       const el = e.target as HTMLElement;
       if (
         el.closest(
-          "input,textarea,select,[contenteditable=true],[role=dialog]",
+          "input,textarea,select,button,summary,.scene-controls,.sidebar,[contenteditable=true],[role=dialog]",
         ) ||
         e.ctrlKey ||
         e.metaKey ||
@@ -1036,7 +1043,7 @@ function App() {
     const focusChanged = (e: FocusEvent) => {
       if (
         (e.target as HTMLElement)?.closest(
-          "input,textarea,select,[contenteditable=true],[role=dialog]",
+          "input,textarea,select,button,summary,.scene-controls,.sidebar,[contenteditable=true],[role=dialog]",
         )
       )
         release();
@@ -1080,6 +1087,7 @@ function App() {
         </div>
       </header>
       <main
+        ref={viewportRoot}
         data-members={room?.members.length}
         data-clock-rtt={clock.rtt ?? ""}
         data-clock-calibrated={clock.calibrated}
@@ -1546,7 +1554,9 @@ function App() {
                     document.querySelector<HTMLButtonElement>(
                       '.cinema-toolbar button[aria-label="Chat"]',
                     );
-                  if (matchMedia("(max-width:800px)").matches)
+                  if (
+                    matchMedia("(max-width:900px), (max-height:500px)").matches
+                  )
                     setShowControls(false);
                   setPanel("chat");
                   setTab("chat");
@@ -1597,7 +1607,8 @@ function App() {
                     onClick={(e) => {
                       if (
                         k !== "chat" ||
-                        matchMedia("(max-width:800px)").matches
+                        matchMedia("(max-width:900px), (max-height:500px)")
+                          .matches
                       )
                         setShowControls(false);
                       panelOpener.current = e.currentTarget;
@@ -1628,7 +1639,8 @@ function App() {
                   if (
                     panel &&
                     (panel !== "chat" ||
-                      matchMedia("(max-width:800px)").matches)
+                      matchMedia("(max-width:900px), (max-height:500px)")
+                        .matches)
                   )
                     setPanel("");
                   setShowControls((v) => !v);
@@ -1788,7 +1800,7 @@ function App() {
                         light ||
                         e.ctrlKey ||
                         (e.target as HTMLElement).closest(
-                          ".screen-surface,button,input,select",
+                          ".screen-surface,.scene-controls,.sidebar,summary,button,input,textarea,select",
                         )
                       )
                         return;
@@ -1803,7 +1815,7 @@ function App() {
                       const target = e.target as HTMLElement;
                       if (
                         !target.closest(
-                          "button,input,textarea,select,.screen-surface",
+                          "button,input,textarea,select,summary,.scene-controls,.sidebar,.screen-surface",
                         )
                       )
                         e.currentTarget.focus({ preventScroll: true });

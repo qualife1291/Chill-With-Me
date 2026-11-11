@@ -297,7 +297,7 @@ fs.mkdirSync(shots, { recursive: true });
     assert(
       await h
         .getByRole("status", {
-          name: "Experience host: Pháo bông",
+          name: "Pháo bông",
           exact: true,
         })
         .isVisible(),

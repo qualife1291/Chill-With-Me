@@ -57,3 +57,17 @@ Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKi
 ## Lịch sử và tài liệu nền
 
 [V3](THIET_KE_RAP_3D_V3.md) là thiết kế sản phẩm gốc; [timeline v2](archive/TIMELINE_BACKLOG_V2.md) giữ các mốc 50/150 người và ước lượng cũ để tham chiếu lịch sử. Chúng không ghi trạng thái source hiện tại. Cấu hình/test/runbook thực thi nằm trong README và PROJECT_STATE.
+
+## Nâng cấp tiếp theo — nghiên cứu ngày 11/11/2026
+
+Nguồn dưới đây đã đọc từ tài liệu chính thức; đây là kế hoạch, chưa phải tính năng đã triển khai. Giữ một roadmap tại đây, trạng thái chạy/test chỉ ở PROJECT_STATE và evidence.
+
+| Ưu tiên | Công nghệ / tính năng | Phạm vi và điều kiện nghiệm thu |
+| --- | --- | --- |
+| P1 | [Media Session API](https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API): nút media hệ thống, tên bài/video | Chỉ đăng ký play/pause/seek cho host; viewer không có đường điều khiển vượt ACL. Thử MP3/native, dọn handler khi rời phòng; YouTube tùy iframe, có fallback nút hiện tại. |
+| P1 | [Screen Wake Lock](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API): giữ sáng khi xem | Người dùng bật tùy chọn; chỉ giữ khi đang phát và trang visible; nhả khi pause/leave/hidden, xin lại khi visible nếu vẫn bật; feature detection, không ngăn khóa máy ngoài ý muốn. |
+| P2 | [WebVTT](https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API): phụ đề cho file/video trực tiếp | Giới hạn dung lượng/encoding, kiểm CORS, đồng bộ theo media clock và cleanup Blob; không hứa chèn phụ đề tùy ý vào YouTube/Drive iframe. |
+| P2 | Chất lượng tự thích ứng + HUD chẩn đoán tùy chọn | Đo frame time lúc có hoạt động, hạ DPR trước, hysteresis chống nhấp nháy; không chạy benchmark nền liên tục; nghiệm thu điện thoại thật trước bật mặc định. |
+| P3 | [WebGPU](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API) cho cảnh nâng cao | Chưa chuyển renderer: khả năng hỗ trợ, chi phí migrate và depth-mask DOM/native iframe cần thử riêng. Giữ WebGL tối ưu làm baseline; không đưa thêm shader nặng vào bản mobile hiện tại. |
+
+Chưa mở khóa: R2/account activation và upload resumable; TURN/WAN file relay cần thử và dự trù quota; full voice provider/consent; pilot iOS/Android thực, soak/quota/rollback. Không coi các gate này đã xong vì test giả lập đạt.

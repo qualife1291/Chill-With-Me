@@ -228,12 +228,8 @@ const base = "http://localhost:8787",
     await g.emulateMedia({ reducedMotion: "reduce" });
     await h.getByRole("button", { name: "Pháo bông", exact: true }).click();
     const envelope = (await sentReaction).postDataJSON();
-    await h
-      .getByRole("status", { name: "Social host: Pháo bông", exact: true })
-      .waitFor();
-    await g
-      .getByRole("status", { name: "Social host: Pháo bông", exact: true })
-      .waitFor();
+    await h.getByRole("status", { name: "Pháo bông", exact: true }).waitFor();
+    await g.getByRole("status", { name: "Pháo bông", exact: true }).waitFor();
     assert(
       await g
         .getByRole("button", { name: "Pháo bông", exact: true })
@@ -294,14 +290,39 @@ const base = "http://localhost:8787",
     gn = await sounds(g);
     hn = await sounds(h);
     await g.getByRole("button", { name: "Vỗ tay", exact: true }).click();
-    await h
-      .getByRole("status", { name: "Social guest: Vỗ tay", exact: true })
-      .waitFor();
+    await h.getByRole("status", { name: "Vỗ tay", exact: true }).waitFor();
     await h.waitForFunction((n) => window.__sounds.length === n + 9, hn);
     assert.equal(await sounds(g), gn);
     await h.locator(".room-reaction").waitFor({ state: "detached" });
     checks.push(
       "viewer can applaud; real noise-burst audio plays for host while muted recipient sees visual only",
+    );
+    for (const viewport of [
+      { width: 320, height: 640 },
+      { width: 360, height: 740 },
+      { width: 390, height: 844 },
+      { width: 430, height: 932 },
+      { width: 844, height: 390 },
+    ]) {
+      await g.setViewportSize(viewport);
+      const before = await g.locator(".scene").boundingBox();
+      await toolbar(g, "Chat").click();
+      assert.deepEqual(await g.locator(".scene").boundingBox(), before);
+      await controls(g);
+      const box = await g.locator(".room-controls").boundingBox();
+      assert(
+        box.x >= 0 &&
+          box.x + box.width <= viewport.width &&
+          box.y + box.height <= viewport.height,
+      );
+      assert(
+        await g.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      );
+    }
+    checks.push(
+      "320–430px and landscape keep stable stage and bounded exclusive sheets",
     );
     await g.emulateMedia({ reducedMotion: "reduce" });
     await g.setViewportSize({ width: 390, height: 844 });
@@ -326,9 +347,7 @@ const base = "http://localhost:8787",
     hn = await sounds(h);
     await h.bringToFront();
     await h.getByRole("button", { name: "Mếu mào", exact: true }).click();
-    await g
-      .getByRole("status", { name: "Social host: Mếu mào", exact: true })
-      .waitFor();
+    await g.getByRole("status", { name: "Mếu mào", exact: true }).waitFor();
     assert.equal(
       await g
         .locator(".reaction-symbol")
@@ -348,9 +367,7 @@ const base = "http://localhost:8787",
     await g.bringToFront();
     hn = await sounds(h);
     await g.getByRole("button", { name: "Trêu vui", exact: true }).click();
-    await h
-      .getByRole("status", { name: "Social guest: Trêu vui", exact: true })
-      .waitFor();
+    await h.getByRole("status", { name: "Trêu vui", exact: true }).waitFor();
     await h.waitForFunction((n) => window.__sounds.length === n + 8, hn);
     assert.equal(await h.locator(".troll-bubbles span").count(), 3);
     assert.equal(

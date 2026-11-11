@@ -51,9 +51,18 @@ export function useRoomSounds(session = "") {
       if (!e.repeat) unlock();
     };
     document.addEventListener("pointerdown", unlock, true);
+    document.addEventListener("pointerup", unlock, true);
+    document.addEventListener("click", unlock, true);
+    document.addEventListener("touchend", unlock, {
+      capture: true,
+      passive: true,
+    });
     document.addEventListener("keydown", key, true);
     return () => {
       document.removeEventListener("pointerdown", unlock, true);
+      document.removeEventListener("pointerup", unlock, true);
+      document.removeEventListener("click", unlock, true);
+      document.removeEventListener("touchend", unlock, true);
       document.removeEventListener("keydown", key, true);
       stopCues();
       const ctx = context.current;

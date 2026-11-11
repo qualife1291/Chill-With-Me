@@ -1,238 +1,238 @@
 {
   "passed": true,
-  "date": "2026-11-11T03:39:11.780Z",
+  "date": "2026-11-11T11:50:56.135Z",
   "target": "local Wrangler only",
   "stages": [
     {
       "name": "frontend build",
       "passed": true,
-      "milliseconds": 20562,
-      "log": "/tmp/cinema-verify-I0YnOG/0-frontend_build.log"
+      "milliseconds": 13486,
+      "log": "/tmp/cinema-verify-kB8tzo/0-frontend_build.log"
     },
     {
       "name": "unit advanced.test.ts",
       "passed": true,
-      "milliseconds": 141,
-      "log": "/tmp/cinema-verify-I0YnOG/1-unit_advanced_test_ts.log"
+      "milliseconds": 314,
+      "log": "/tmp/cinema-verify-kB8tzo/1-unit_advanced_test_ts.log"
     },
     {
       "name": "unit ambience.test.ts",
       "passed": true,
-      "milliseconds": 145,
-      "log": "/tmp/cinema-verify-I0YnOG/2-unit_ambience_test_ts.log"
+      "milliseconds": 284,
+      "log": "/tmp/cinema-verify-kB8tzo/2-unit_ambience_test_ts.log"
     },
     {
       "name": "unit assets.test.ts",
       "passed": true,
-      "milliseconds": 133,
-      "log": "/tmp/cinema-verify-I0YnOG/3-unit_assets_test_ts.log"
+      "milliseconds": 129,
+      "log": "/tmp/cinema-verify-kB8tzo/3-unit_assets_test_ts.log"
     },
     {
       "name": "unit avatar.test.ts",
       "passed": true,
-      "milliseconds": 391,
-      "log": "/tmp/cinema-verify-I0YnOG/4-unit_avatar_test_ts.log"
+      "milliseconds": 466,
+      "log": "/tmp/cinema-verify-kB8tzo/4-unit_avatar_test_ts.log"
     },
     {
       "name": "unit camera.test.ts",
       "passed": true,
-      "milliseconds": 181,
-      "log": "/tmp/cinema-verify-I0YnOG/5-unit_camera_test_ts.log"
+      "milliseconds": 416,
+      "log": "/tmp/cinema-verify-kB8tzo/5-unit_camera_test_ts.log"
     },
     {
       "name": "unit lifecycle.test.ts",
       "passed": true,
-      "milliseconds": 186,
-      "log": "/tmp/cinema-verify-I0YnOG/6-unit_lifecycle_test_ts.log"
+      "milliseconds": 197,
+      "log": "/tmp/cinema-verify-kB8tzo/6-unit_lifecycle_test_ts.log"
     },
     {
       "name": "unit media.test.ts",
       "passed": true,
-      "milliseconds": 180,
-      "log": "/tmp/cinema-verify-I0YnOG/7-unit_media_test_ts.log"
+      "milliseconds": 339,
+      "log": "/tmp/cinema-verify-kB8tzo/7-unit_media_test_ts.log"
     },
     {
       "name": "unit model.test.ts",
       "passed": true,
-      "milliseconds": 191,
-      "log": "/tmp/cinema-verify-I0YnOG/8-unit_model_test_ts.log"
+      "milliseconds": 214,
+      "log": "/tmp/cinema-verify-kB8tzo/8-unit_model_test_ts.log"
     },
     {
       "name": "unit playlist.test.ts",
       "passed": true,
-      "milliseconds": 204,
-      "log": "/tmp/cinema-verify-I0YnOG/9-unit_playlist_test_ts.log"
+      "milliseconds": 171,
+      "log": "/tmp/cinema-verify-kB8tzo/9-unit_playlist_test_ts.log"
     },
     {
       "name": "unit projection.test.ts",
       "passed": true,
-      "milliseconds": 156,
-      "log": "/tmp/cinema-verify-I0YnOG/10-unit_projection_test_ts.log"
+      "milliseconds": 126,
+      "log": "/tmp/cinema-verify-kB8tzo/10-unit_projection_test_ts.log"
     },
     {
       "name": "unit reactions.test.ts",
       "passed": true,
-      "milliseconds": 233,
-      "log": "/tmp/cinema-verify-I0YnOG/11-unit_reactions_test_ts.log"
+      "milliseconds": 257,
+      "log": "/tmp/cinema-verify-kB8tzo/11-unit_reactions_test_ts.log"
     },
     {
       "name": "unit roadmap.test.ts",
       "passed": true,
-      "milliseconds": 232,
-      "log": "/tmp/cinema-verify-I0YnOG/12-unit_roadmap_test_ts.log"
+      "milliseconds": 187,
+      "log": "/tmp/cinema-verify-kB8tzo/12-unit_roadmap_test_ts.log"
     },
     {
       "name": "unit spaces.test.ts",
       "passed": true,
-      "milliseconds": 215,
-      "log": "/tmp/cinema-verify-I0YnOG/13-unit_spaces_test_ts.log"
+      "milliseconds": 291,
+      "log": "/tmp/cinema-verify-kB8tzo/13-unit_spaces_test_ts.log"
     },
     {
       "name": "unit temp-media.test.ts",
       "passed": true,
-      "milliseconds": 401,
-      "log": "/tmp/cinema-verify-I0YnOG/14-unit_temp-media_test_ts.log"
+      "milliseconds": 220,
+      "log": "/tmp/cinema-verify-kB8tzo/14-unit_temp-media_test_ts.log"
     },
     {
       "name": "Worker types",
       "passed": true,
-      "milliseconds": 3298,
-      "log": "/tmp/cinema-verify-I0YnOG/15-Worker_types.log"
+      "milliseconds": 3166,
+      "log": "/tmp/cinema-verify-kB8tzo/15-Worker_types.log"
     },
     {
       "name": "document links",
       "passed": true,
-      "milliseconds": 205,
-      "log": "/tmp/cinema-verify-I0YnOG/16-document_links.log"
+      "milliseconds": 210,
+      "log": "/tmp/cinema-verify-kB8tzo/16-document_links.log"
     },
     {
       "name": "Worker dry run",
       "passed": true,
-      "milliseconds": 1915,
-      "log": "/tmp/cinema-verify-I0YnOG/17-Worker_dry_run.log"
+      "milliseconds": 1514,
+      "log": "/tmp/cinema-verify-kB8tzo/17-Worker_dry_run.log"
     },
     {
       "name": "api.integration.mjs",
       "passed": true,
-      "milliseconds": 478,
-      "log": "/tmp/cinema-verify-I0YnOG/18-api_integration_mjs.log"
+      "milliseconds": 492,
+      "log": "/tmp/cinema-verify-kB8tzo/18-api_integration_mjs.log"
     },
     {
       "name": "playlist.integration.mjs",
       "passed": true,
-      "milliseconds": 500,
-      "log": "/tmp/cinema-verify-I0YnOG/19-playlist_integration_mjs.log"
+      "milliseconds": 376,
+      "log": "/tmp/cinema-verify-kB8tzo/19-playlist_integration_mjs.log"
     },
     {
       "name": "roadmap.integration.mjs",
       "passed": true,
-      "milliseconds": 443,
-      "log": "/tmp/cinema-verify-I0YnOG/20-roadmap_integration_mjs.log"
+      "milliseconds": 1173,
+      "log": "/tmp/cinema-verify-kB8tzo/20-roadmap_integration_mjs.log"
     },
     {
       "name": "relay-security.cjs",
       "passed": true,
-      "milliseconds": 3169,
-      "log": "/tmp/cinema-verify-I0YnOG/21-relay-security_cjs.log"
+      "milliseconds": 2599,
+      "log": "/tmp/cinema-verify-kB8tzo/21-relay-security_cjs.log"
     },
     {
       "name": "UI views avatars chat voice",
       "passed": true,
-      "milliseconds": 155909,
-      "log": "/tmp/cinema-verify-I0YnOG/22-UI_views_avatars_chat_voice.log"
+      "milliseconds": 113364,
+      "log": "/tmp/cinema-verify-kB8tzo/22-UI_views_avatars_chat_voice.log"
     },
     {
       "name": "departures.cjs",
       "passed": true,
-      "milliseconds": 156131,
-      "log": "/tmp/cinema-verify-I0YnOG/23-departures_cjs.log"
+      "milliseconds": 154051,
+      "log": "/tmp/cinema-verify-kB8tzo/23-departures_cjs.log"
     },
     {
       "name": "social.cjs",
       "passed": true,
-      "milliseconds": 52355,
-      "log": "/tmp/cinema-verify-I0YnOG/24-social_cjs.log"
+      "milliseconds": 41346,
+      "log": "/tmp/cinema-verify-kB8tzo/24-social_cjs.log"
     },
     {
       "name": "fireworks-audio.cjs",
       "passed": true,
-      "milliseconds": 2724,
-      "log": "/tmp/cinema-verify-I0YnOG/25-fireworks-audio_cjs.log"
+      "milliseconds": 1804,
+      "log": "/tmp/cinema-verify-kB8tzo/25-fireworks-audio_cjs.log"
     },
     {
       "name": "world-screen.cjs",
       "passed": true,
-      "milliseconds": 74457,
-      "log": "/tmp/cinema-verify-I0YnOG/26-world-screen_cjs.log"
+      "milliseconds": 54652,
+      "log": "/tmp/cinema-verify-kB8tzo/26-world-screen_cjs.log"
     },
     {
       "name": "scene-quality.cjs",
       "passed": true,
-      "milliseconds": 38961,
-      "log": "/tmp/cinema-verify-I0YnOG/27-scene-quality_cjs.log"
+      "milliseconds": 29386,
+      "log": "/tmp/cinema-verify-kB8tzo/27-scene-quality_cjs.log"
     },
     {
       "name": "spaces.cjs",
       "passed": true,
-      "milliseconds": 93448,
-      "log": "/tmp/cinema-verify-I0YnOG/28-spaces_cjs.log"
+      "milliseconds": 71440,
+      "log": "/tmp/cinema-verify-kB8tzo/28-spaces_cjs.log"
     },
     {
       "name": "experience.cjs",
       "passed": true,
-      "milliseconds": 31000,
-      "log": "/tmp/cinema-verify-I0YnOG/29-experience_cjs.log"
+      "milliseconds": 24085,
+      "log": "/tmp/cinema-verify-kB8tzo/29-experience_cjs.log"
     },
     {
       "name": "media.cjs",
       "passed": true,
-      "milliseconds": 78380,
-      "log": "/tmp/cinema-verify-I0YnOG/30-media_cjs.log"
+      "milliseconds": 61014,
+      "log": "/tmp/cinema-verify-kB8tzo/30-media_cjs.log"
     },
     {
       "name": "hls.cjs",
       "passed": true,
-      "milliseconds": 42796,
-      "log": "/tmp/cinema-verify-I0YnOG/31-hls_cjs.log"
+      "milliseconds": 27774,
+      "log": "/tmp/cinema-verify-kB8tzo/31-hls_cjs.log"
     },
     {
       "name": "roadmap.cjs",
       "passed": true,
-      "milliseconds": 50524,
-      "log": "/tmp/cinema-verify-I0YnOG/32-roadmap_cjs.log"
+      "milliseconds": 33804,
+      "log": "/tmp/cinema-verify-kB8tzo/32-roadmap_cjs.log"
     },
     {
       "name": "render-capacity.cjs",
       "passed": true,
-      "milliseconds": 22060,
-      "log": "/tmp/cinema-verify-I0YnOG/33-render-capacity_cjs.log"
+      "milliseconds": 17041,
+      "log": "/tmp/cinema-verify-kB8tzo/33-render-capacity_cjs.log"
     },
     {
       "name": "capacity 3 rooms 30 sockets",
       "passed": true,
-      "milliseconds": 30669,
-      "log": "/tmp/cinema-verify-I0YnOG/34-capacity_3_rooms_30_sockets.log"
+      "milliseconds": 15356,
+      "log": "/tmp/cinema-verify-kB8tzo/34-capacity_3_rooms_30_sockets.log"
     },
     {
       "name": "embedded bundle",
       "passed": true,
-      "milliseconds": 267,
-      "log": "/tmp/cinema-verify-I0YnOG/35-embedded_bundle.log"
+      "milliseconds": 240,
+      "log": "/tmp/cinema-verify-kB8tzo/35-embedded_bundle.log"
     },
     {
       "name": "embedded local config",
       "passed": true,
-      "milliseconds": 50,
-      "log": "/tmp/cinema-verify-I0YnOG/36-embedded_local_config.log"
+      "milliseconds": 47,
+      "log": "/tmp/cinema-verify-kB8tzo/36-embedded_local_config.log"
     },
     {
       "name": "embedded asset bytes",
       "passed": true,
-      "milliseconds": 784,
-      "log": "/tmp/cinema-verify-I0YnOG/37-embedded_asset_bytes.log"
+      "milliseconds": 359,
+      "log": "/tmp/cinema-verify-kB8tzo/37-embedded_asset_bytes.log"
     }
   ],
-  "artifacts": "/tmp/cinema-verify-I0YnOG",
+  "artifacts": "/tmp/cinema-verify-kB8tzo",
   "limitations": "UI mocks YouTube/device speech; native media uses real generated codecs; single software renderer; no physical-device, production/WAN/quota or full-voice certification.",
-  "individualLogicCases": 89
+  "individualLogicCases": 90
 }

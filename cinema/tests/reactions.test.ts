@@ -78,3 +78,13 @@ test("new chat carries authenticated sender identity and server time, even for e
     /FORBIDDEN/,
   );
 });
+
+test("reaction snapshots never expose actor metadata", () => {
+  const r = setup();
+  apply(r, "g", { type: "reaction", kind: "flowers" }, 100);
+  assert.deepEqual(Object.keys(view(r, "h").room!.reaction!).sort(), [
+    "at",
+    "id",
+    "kind",
+  ]);
+});

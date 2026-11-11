@@ -23,7 +23,7 @@
     "unsupported, empty, corrupt and 101 MiB files rejected before playlist mutation",
     "real WAV/PCM, Ogg/Vorbis, M4A/AAC and 720p H.264/AAC MP4 decode on host and recipient, byte-identical relay (no quality conversion)"
   ],
-  "fileBytes": 1796803,
+  "fileBytes": 1788258,
   "additionalFormats": [
     {
       "format": "wav",

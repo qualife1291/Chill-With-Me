@@ -65,7 +65,7 @@ export function useHeadDrag(
         const target = e.target as HTMLElement;
         if (
           target.closest(
-            "button,a,input,textarea,select,[contenteditable=true],.screen-surface,[role=dialog]",
+            "button,a,input,textarea,select,summary,.scene-controls,.sidebar,[contenteditable=true],.screen-surface,[role=dialog]",
           )
         )
           return;

@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "date": "2026-11-11T03:47:47.003Z",
+  "date": "2026-11-11T11:57:58.400Z",
   "checks": [
     "economy reduces actual drawing-buffer pixels without replacing native player or iframe",
     "quality preference survives a real reload/rejoin",

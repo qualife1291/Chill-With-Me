@@ -3,8 +3,8 @@
   "performance": {
     "foreground": true,
     "idleFrames": 0,
-    "windowMs": 1259,
-    "videoTimeAdvanced": 1.272000000000002,
+    "windowMs": 1285,
+    "videoTimeAdvanced": 1.2889999999999997,
     "mediaMocked": true,
     "hardwareFpsBenchmark": false
   },

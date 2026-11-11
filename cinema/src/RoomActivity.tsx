@@ -155,12 +155,11 @@ export default function RoomActivity({
           <div
             className={`room-reaction reaction-${reaction.kind}${effectsBudget === 0 ? " quiet-reaction" : ""}`}
             role="status"
-            aria-label={`${reaction.name}: ${reactions[reaction.kind].label}`}
+            aria-label={reactions[reaction.kind].label}
           >
             <div className="reaction-symbol" aria-hidden="true">
               {reactions[reaction.kind].icon}
             </div>
-            <strong>{reaction.name}</strong>
             <span>{reactions[reaction.kind].label}</span>
           </div>
         </div>

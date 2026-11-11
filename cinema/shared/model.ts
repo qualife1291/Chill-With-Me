@@ -185,8 +185,8 @@ export type Room = {
   reaction?: {
     id: string;
     kind: ReactionKind;
-    memberId: string;
-    name: string;
+    memberId?: string;
+    name?: string;
     at: number;
   };
   messages: {
@@ -682,6 +682,15 @@ export function view(r: Room, id: string) {
     status: "joined",
     room: {
       ...publicRoom,
+      ...(r.reaction
+        ? {
+            reaction: {
+              id: r.reaction.id,
+              kind: r.reaction.kind,
+              at: r.reaction.at,
+            },
+          }
+        : {}),
       ...(id === r.host && inviteKey ? { inviteKey } : {}),
       members: r.members.map(
         ({
