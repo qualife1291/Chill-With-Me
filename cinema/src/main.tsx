@@ -302,7 +302,7 @@ function App() {
     entry ? dismissEntry : approvalActive ? dismissApproval : undefined,
   );
   const speech = useChatSpeech(room, tts);
-  const sounds = useRoomSounds();
+  const sounds = useRoomSounds(status === "joined" ? room?.session || "" : "");
   const ambience = useAmbience(
     status === "joined" ? room?.session || "" : "",
     speech.speaking,

@@ -241,5 +241,22 @@
     ],
     "artifacts": "/tmp/cinema-notice-review",
     "boundary": "Full 35-stage run preceded the final layout corrections; scoped rebuild, interaction, experience and exact artifact checks cover those corrections."
+  },
+  "latestScopedVerification": {
+    "date": "2026-11-11T02:24:17.773154+00:00",
+    "passed": true,
+    "baselineSource": "2cbbb50b3f2c99a83aa03249bc042832aac52f60",
+    "scope": "Fireworks frontend/audio replacement; wire kind, backend ACL, room state and media unchanged. Complete suite above is baseline, not a fresh full release pass.",
+    "checks": [
+      "frontend build",
+      "Worker types",
+      "documentation paths",
+      "4 reaction logic cases",
+      "fireworks-audio.cjs real offline synthesis",
+      "social.cjs two-browser reaction/mute/reduced-motion/cooldown",
+      "experience.cjs native identity/lighting/audio/mobile",
+      "artifact.integration.mjs final 12 gzip assets"
+    ],
+    "artifacts": "/tmp/cinema-fireworks-review"
   }
 }

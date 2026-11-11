@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Member, ReactionKind, Room } from "../shared/model";
 import { REACTION_MS } from "../shared/model";
+import Fireworks from "./Fireworks";
 import type { RoomSound } from "./useRoomSounds";
 export const reactions: Record<ReactionKind, { icon: string; label: string }> =
   {
-    flowers: { icon: "🌸", label: "Tung hoa" },
+    flowers: { icon: "🎆", label: "Pháo bông" },
     applause: { icon: "👏", label: "Vỗ tay" },
     sad: { icon: "🥺", label: "Mếu mào" },
     troll: { icon: "😜", label: "Trêu vui" },
@@ -38,7 +39,7 @@ export default function RoomActivity({
   offset: number;
   chatOpen: boolean;
   onOpenChat: () => void;
-  playSound: (kind: RoomSound) => void;
+  playSound: (kind: RoomSound, ageMs?: number) => void;
 }) {
   const seen = useRef(new Set(room.messages.map((m) => m.id)));
   const poked = useRef(me.pokedAt);
@@ -83,7 +84,8 @@ export default function RoomActivity({
     if (!event || reacted.current === event.id) return;
     reacted.current = event.id;
     const age = Date.now() + offset - event.at;
-    if (age > -1000 && age < REACTION_MS) playSound(event.kind);
+    if (age > -1000 && age < REACTION_MS)
+      playSound(event.kind, Math.max(0, age));
   }, [room.reaction, offset, playSound]);
   const reaction = room.reaction;
   return (
@@ -127,26 +129,21 @@ export default function RoomActivity({
         </div>
       )}
       {reactionActive && reaction && (
-        <div
-          key={reaction.id}
-          className={`room-reaction reaction-${reaction.kind}`}
-          role="status"
-          aria-label={`${reaction.name}: ${reactions[reaction.kind].label}`}
-        >
-          <div className="reaction-symbol" aria-hidden="true">
-            {reactions[reaction.kind].icon}
-          </div>
-          <strong>{reaction.name}</strong>
-          <span>{reactions[reaction.kind].label}</span>
+        <div key={reaction.id}>
           {reaction.kind === "flowers" && (
-            <div className="flower-shower" aria-hidden="true">
-              {Array.from({ length: 16 }, (_, i) => (
-                <i key={i} style={{ "--i": i } as CSSProperties}>
-                  {i % 2 ? "🌸" : "🌼"}
-                </i>
-              ))}
-            </div>
+            <Fireworks at={reaction.at} offset={offset} />
           )}
+          <div
+            className={`room-reaction reaction-${reaction.kind}`}
+            role="status"
+            aria-label={`${reaction.name}: ${reactions[reaction.kind].label}`}
+          >
+            <div className="reaction-symbol" aria-hidden="true">
+              {reactions[reaction.kind].icon}
+            </div>
+            <strong>{reaction.name}</strong>
+            <span>{reactions[reaction.kind].label}</span>
+          </div>
         </div>
       )}
     </>

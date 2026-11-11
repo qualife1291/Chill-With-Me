@@ -43,6 +43,7 @@ const base = "http://localhost:8787",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.addInitScript(() => {
         window.__sounds = [];
+        window.__audioNodes = [];
         for (const Klass of [
           window.OscillatorNode,
           window.AudioBufferSourceNode,
@@ -51,6 +52,15 @@ const base = "http://localhost:8787",
           const start = Klass.prototype.start;
           Klass.prototype.start = function (...args) {
             window.__sounds.push({ state: this.context.state, at: Date.now() });
+            const tracked = { ended: false };
+            this.addEventListener(
+              "ended",
+              () => {
+                tracked.ended = true;
+              },
+              { once: true },
+            );
+            window.__audioNodes.push(tracked);
             return start.apply(this, args);
           };
         }
@@ -215,42 +225,67 @@ const base = "http://localhost:8787",
         r.url().endsWith("/command") &&
         r.postDataJSON()?.command?.type === "reaction",
     );
-    await h.getByRole("button", { name: "Tung hoa", exact: true }).click();
+    await g.emulateMedia({ reducedMotion: "reduce" });
+    await h.getByRole("button", { name: "Pháo bông", exact: true }).click();
     const envelope = (await sentReaction).postDataJSON();
     await h
-      .getByRole("status", { name: "Social host: Tung hoa", exact: true })
+      .getByRole("status", { name: "Social host: Pháo bông", exact: true })
       .waitFor();
     await g
-      .getByRole("status", { name: "Social host: Tung hoa", exact: true })
+      .getByRole("status", { name: "Social host: Pháo bông", exact: true })
       .waitFor();
     assert(
       await g
-        .getByRole("button", { name: "Tung hoa", exact: true })
+        .getByRole("button", { name: "Pháo bông", exact: true })
         .isDisabled(),
     );
-    await h.waitForFunction((n) => window.__sounds.length === n + 4, hn);
-    await g.waitForFunction((n) => window.__sounds.length === n + 4, gn);
+    await h.waitForFunction((n) => window.__sounds.length >= n + 24, hn);
+    await g.waitForFunction((n) => window.__sounds.length >= n + 24, gn);
+    const hostFireworks = await sounds(h),
+      guestFireworks = await sounds(g);
+    assert(hostFireworks - hn <= 27 && guestFireworks - gn <= 27);
+    assert.equal(await h.locator(".firework-burst").count(), 3);
+    assert.equal(await h.locator(".firework-spark").count(), 54);
+    assert(await h.locator(".fireworks-show").isVisible());
+    assert(
+      !(await g.locator(".fireworks-show").isVisible()),
+      "Reduced motion hides the particle show, retaining the status card and sound",
+    );
     await cmd(h, envelope.command, envelope.commandId);
-    assert.equal(await sounds(h), hn + 4);
-    assert.equal(await sounds(g), gn + 4);
+    assert.equal(await sounds(h), hostFireworks);
+    assert.equal(await sounds(g), guestFireworks);
     assert.equal(
       (await cmd(g, { type: "reaction", kind: "troll" })).data.error,
       "REACTION_BUSY",
     );
+    await h.waitForTimeout(450);
     await h.screenshot({
       path: path.join(
         process.env.CINEMA_SCREENSHOT_DIR || "/tmp",
-        "social-flowers.png",
+        "social-fireworks.png",
       ),
     });
+    await h
+      .getByRole("button", { name: "Âm thanh tương tác: Bật", exact: true })
+      .click();
+    await h.waitForFunction(() => window.__audioNodes.every((n) => n.ended));
+    await h
+      .getByRole("button", { name: "Âm thanh tương tác: Tắt", exact: true })
+      .click();
+    assert.equal(
+      await sounds(h),
+      hostFireworks,
+      "Unmuting must not replay scheduled blasts",
+    );
     await h.locator(".room-reaction").waitFor({ state: "detached" });
     await g.locator(".room-reaction").waitFor({ state: "detached" });
     assert.equal(
       (await api(h, `/rooms/${slot}/state`)).data.room.reaction,
       undefined,
     );
+    await g.emulateMedia({ reducedMotion: "no-preference" });
     checks.push(
-      "flowers and sound reach both members; duplicate command does not replay audio; room-wide cooldown, disabled controls, 3-second removal and DB cleanup",
+      "three-burst fireworks and layered sound reach both members; 54 sparks bounded; reduced motion honored; mute cancels pending blasts; unmute and duplicate commands do not replay; room-wide cooldown, disabled controls, 3-second removal and DB cleanup",
     );
     await g.bringToFront();
     await g

@@ -138,6 +138,7 @@ try {
   for (const file of [
     "departures.cjs",
     "social.cjs",
+    "fireworks-audio.cjs",
     "world-screen.cjs",
     "scene-quality.cjs",
     "spaces.cjs",

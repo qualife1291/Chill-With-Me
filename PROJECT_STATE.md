@@ -1,4 +1,4 @@
-# Resume state · 2026-11-10
+# Resume state · 2026-11-11
 
 Repo `qualife1291/Chill-With-Me`; source version = Git HEAD. Read this first, then only the relevant row of [architecture](docs/ARCHITECTURE.md). Commands/limits: [runtime README](cinema/README.md). Open acceptance gates: [roadmap](docs/KE_HOACH_TRIEN_KHAI_HIEN_HANH.md). Research/archive documents are not implementation status.
 
@@ -11,6 +11,8 @@ Repo `qualife1291/Chill-With-Me`; source version = Git HEAD. Read this first, th
 - Creation-only allowlisted cinema/lounge/rooftop environments (legacy = cinema); cinema/sofa seating, centered 1–3 rows, pre-entry immutable appearance, licensed KayKit rigs and shared geometry/skeleton resources. Eye/orbit, drag/touch/keys/wheel; bounded network head pose. One fixed 8.8×4.95 world screen, depth occlusion and signed-W partial visibility, no automatic dock. Demand rendering stops at rest. HUD chat/approvals/pokes/reactions remain bounded, authenticated and deduplicated; modal focus/inert and reduced motion stay intact. Device Vietnamese TTS uses persisted 0.75–1.25× speed and safe volume duck/restore; no mic/call/clone/NIM production.
 
 ## Upgrade / verification
+
+“Pháo bông” replaces the flower shower: three timestamp-aligned CSS launches/bursts, 54 capped sparks, synthesized whoosh/boom/chime/crackle with a bounded/compressed output. Reduced motion hides particles; mute/session change cancels future cues; delayed/expired cues are skipped. Wire kind `flowers`, room TTL/cooldown and other reactions remain compatible. Entry: `Fireworks.tsx`, `shared/fireworks.ts`, `fireworkSound.ts`, `useRoomSounds.ts`. Scoped build/types/docs, four reaction logic cases, real offline audio synthesis, two-browser social, experience and final gzip artifact checks pass (`fireworks-audio.json`, `social.json`). Full-suite baseline below belongs to parent `2cbbb50`; it was not rerun for this scoped frontend change. Advanced-source/device research and next implementation priorities: `docs/ADVANCED_EXPERIENCE.md`.
 
 Compact controls: chat voice/rate options collapse by default; mobile chat/control sheets are exclusive; playlist/people/info dismiss controls; Escape closes controls and restores the opener without bypassing required dialogs. Mobile icon targets stay 44px; voice warnings move inside an open sheet, preserving the close button. Entry: `main.tsx`, `RoomControls.tsx`, CSS.
 

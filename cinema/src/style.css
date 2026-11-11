@@ -1780,12 +1780,9 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 .room-reaction strong { max-width:240px; overflow-wrap:anywhere; }
 .room-reaction > span { color:#edc88c; font-size:14px; }
 .reaction-symbol { font-size:68px; line-height:1.2; animation:reaction-bounce .8s ease-in-out 3; }
-.flower-shower { position:fixed; left:50%; top:50%; width:min(700px,90vw); height:min(500px,70dvh); transform:translate(-50%,-50%); }
-.flower-shower i { position:absolute; left:calc(var(--i) * 6.2%); top:-10%; font-size:28px; font-style:normal; opacity:0; animation:flower-fall 2.5s ease-in calc(var(--i) * .025s) both; }
 @keyframes reaction-arrive { from {opacity:0;scale:.85;} to {opacity:1;scale:1;} }
 @keyframes reaction-bounce { 50% {transform:translateY(-8px) rotate(-8deg);} }
-@keyframes flower-fall { 10% {opacity:1;} 90% {opacity:1;} to {top:110%;transform:rotate(160deg);opacity:0;} }
-@media(prefers-reduced-motion:reduce) { .room-reaction,.reaction-symbol,.flower-shower i {animation:none;} .flower-shower {display:none;} }
+@media(prefers-reduced-motion:reduce) { .room-reaction,.reaction-symbol {animation:none;} }
 @media(max-width:800px) { .chat-toasts {bottom:82px;right:12px;} }
 .host-offline-notice { position:fixed; left:50%; top:74px; transform:translateX(-50%); z-index:22; width:max-content; max-width:calc(100% - 28px); padding:10px 16px; border:1px solid #e6bd7566; border-radius:14px; background:#392d1cf2; color:#ffe6b5; font-size:12px; pointer-events:none; text-align:center; }
 @media(max-width:800px) { .host-offline-notice {top:128px;} }
@@ -1840,3 +1837,14 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 .room-controls .control-notice { padding:10px 12px; margin:0 0 12px; border:1px solid #d9b77933; border-radius:10px; background:#d9b7790c; color:#d8d2c5; font-size:11px; line-height:1.5; overflow-wrap:anywhere; }
 
 .room-controls .view-row > button { flex:0 0 44px; min-width:44px; max-width:44px; width:44px; }
+
+/* Three bounded CSS bursts. Transform/opacity only; no WebGL render loop or downloads. */
+.fireworks-show {position:fixed;inset:0;z-index:24;pointer-events:none;overflow:hidden;contain:layout style;}
+.firework-burst {position:absolute;width:0;height:0;}
+.firework-rocket {position:absolute;left:-2px;top:-42px;width:4px;height:44px;border-radius:100%;background:linear-gradient(transparent,currentColor);box-shadow:0 0 8px currentColor;opacity:0;animation:firework-launch 280ms ease-out var(--launch-delay) both;}
+.firework-core {position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:currentColor;opacity:0;box-shadow:0 0 18px currentColor;animation:firework-core 400ms ease-out var(--burst-delay) both;}
+.firework-spark {position:absolute;left:-2px;top:-5px;width:4px;height:10px;border-radius:100%;background:currentColor;box-shadow:0 0 7px currentColor;opacity:0;animation:firework-spark 1100ms cubic-bezier(.12,.6,.22,1) var(--burst-delay) both;}
+@keyframes firework-launch {0% {transform:translate3d(0,30vmin,0) scaleY(1.7);opacity:0;} 20% {opacity:.8;} 90% {opacity:1;} 100% {transform:translate3d(0,0,0) scaleY(.4);opacity:0;}}
+@keyframes firework-core {0% {opacity:0;transform:scale(.2);} 12% {opacity:.85;} 100% {opacity:0;transform:scale(3);}}
+@keyframes firework-spark {0% {opacity:0;transform:translate3d(0,0,0) rotate(var(--angle)) scale(.6);} 15% {opacity:1;transform:translate3d(calc(var(--dx) * .3),calc(var(--dy) * .3),0) rotate(var(--angle)) scale(1.3);} 65% {opacity:.9;transform:translate3d(calc(var(--dx) * .85),calc(var(--dy) * .85 + 1vmin),0) rotate(var(--angle)) scale(.9);} 100% {opacity:0;transform:translate3d(var(--dx),calc(var(--dy) + 4vmin),0) rotate(var(--angle)) scale(.25);}}
+@media(prefers-reduced-motion:reduce) {.fireworks-show {display:none;} .firework-rocket,.firework-core,.firework-spark {animation:none;}}
