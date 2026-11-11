@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-11T15:49:58.578568+00:00",
-  "source": "2ebd167",
+  "date": "2026-11-11T16:23:53.596813+00:00",
+  "source": "4b31ebd",
   "deployed": true,
-  "version": "48b684e8-d362-48ce-8083-2956cd051a23",
+  "version": "97750356-c5b3-44fd-83b2-1c2dbb265ff3",
   "worker": "cung-xem-cinema-alpha",
   "mode": "regular Static Assets + Worker",
   "publicAssetsMatched": 14,

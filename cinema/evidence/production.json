@@ -1,35 +1,35 @@
 {
   "passed": true,
-  "date": "2026-11-11T15:49:41.736722+00:00",
-  "source": "2ebd167",
-  "version": "48b684e8-d362-48ce-8083-2956cd051a23",
+  "date": "2026-11-11T16:23:35.675309+00:00",
+  "source": "4b31ebd",
+  "version": "97750356-c5b3-44fd-83b2-1c2dbb265ff3",
   "base": "https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev",
   "checks": "read-only GET; assets match local dist exactly; three room summaries; no production mutation",
   "assets": [
     {
-      "path": "assets/AvatarPreview-DUiUE26f.js",
+      "path": "assets/AvatarPreview-jwuDej-I.js",
       "bytes": 877,
-      "sha256": "f42b2762da49f2f9cce3cff4c4eecf4fef98adeafce36ab4d77ccdf5df273310"
+      "sha256": "85d2dd33756d1f9c0099d38b179adeb9350b56af1ccfcf219d9cf86f9110483b"
     },
     {
-      "path": "assets/Cinema-qM1M8qP6.js",
+      "path": "assets/Cinema-_wWHtEWk.js",
       "bytes": 17938,
-      "sha256": "b9c55ef619e3394e8b83af21b52d5cffadc0eceb2ca5b0beed89713c96ac7e93"
+      "sha256": "67d70a247d22048409089b6faa33080e9224c95f5137dad77df83e8ce41f198b"
     },
     {
-      "path": "assets/Lobby-CW59YlbM.js",
+      "path": "assets/Lobby-DL1daAPg.js",
       "bytes": 6956,
-      "sha256": "781ad86ea68fe5a7954e7db9cad0b33db696b22eafeb328dd2c114c65f4f9284"
+      "sha256": "056f99391ef32dbc74427af30825d844c88ec706fd4112accb0940645fc8cd4b"
     },
     {
-      "path": "assets/ModelBoundary-aLBuXT_I.js",
+      "path": "assets/ModelBoundary-3XNveWyU.js",
       "bytes": 938302,
-      "sha256": "a5b233d17a914bafca6712f166a315d4e0e10dbb0be897d1716efeba5556c987"
+      "sha256": "d0c960ac617808bb38c5a6cdd544afe0d5691e8319ac58e50601474d92ccc1aa"
     },
     {
-      "path": "assets/RoundedBoxGeometry-C7Ua79Xc.js",
+      "path": "assets/RoundedBoxGeometry-CAl59Lqm.js",
       "bytes": 1722,
-      "sha256": "605a184009e3ce0f78048441bd5ee698df957701ccded17b6207cedf393894c5"
+      "sha256": "a972aea4caa86d68e36b63fcac3dbfb922ebcc698bf0dc375abd39c247a36db3"
     },
     {
       "path": "assets/hls-BtDohxgG.js",
@@ -37,19 +37,19 @@
       "sha256": "b42f5b6c03cb1b323036bfa499035b637e3a2667c1d18047c117d43ded849507"
     },
     {
-      "path": "assets/index-B4Q21yTT.css",
-      "bytes": 52190,
-      "sha256": "aa33e3e9055f5fb97bb7ca2204b1e0831402b7a7d97fea81f47b9faff7051afd"
+      "path": "assets/index--zTMZ9Gj.css",
+      "bytes": 55886,
+      "sha256": "db63758600dd2eda89e80a8447523d58c369216a20d87c1fa65bdb3b61eab494"
     },
     {
-      "path": "assets/index-Oi9OxXbq.js",
-      "bytes": 416726,
-      "sha256": "9b5be61d7a44686bcf54dbf64f1d247cee8c3762eda11988e43ccb149ed80fc2"
+      "path": "assets/index-yjFw5svH.js",
+      "bytes": 419885,
+      "sha256": "b4a904499da2966086733ec26adadbd6a51305960be609abb0bc69375cea5674"
     },
     {
       "path": "index.html",
       "bytes": 444,
-      "sha256": "d1f7f4dae97ed489908f2e5588b9241cab0ddc99a8187544004c0b793e476cfc"
+      "sha256": "1545a47aefffc6de21e253445a0da102e97c4102f5ab72c161ab857c70948f48"
     },
     {
       "path": "licenses/hls.js.LICENSE.txt",
