@@ -4,17 +4,20 @@ export default function PlaybackReadiness({
   room,
   id,
   onCommand,
+  open,
+  onOpenChange,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   room: Room;
   id: string;
   onCommand: (c: Command) => Promise<void>;
 }) {
-  const [busy, setBusy] = useState(false),
-    [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (room.waiting?.length) setOpen(true);
-    else if (room.playing) setOpen(false);
-  }, [room.waiting?.length, room.playing, room.generation]);
+    if (room.waiting?.length) onOpenChange(true);
+    else if (room.playing) onOpenChange(false);
+  }, [room.waiting?.length, room.playing, room.generation, onOpenChange]);
   if (!room.current) return null;
   const waiting = (room.waiting || []).filter((id) =>
       room.members.some((m) => m.id === id),
@@ -32,11 +35,23 @@ export default function PlaybackReadiness({
   return (
     <details
       open={open}
-      onToggle={(e) => setOpen(e.currentTarget.open)}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onOpenChange(false);
+          e.currentTarget.querySelector("summary")?.focus();
+        }
+      }}
       className="playback-readiness"
       aria-label="Chờ mọi người cùng xem"
     >
-      <summary title="Báo quảng cáo hoặc tải chậm để chờ nhau">
+      <summary
+        onClick={(e) => {
+          e.preventDefault();
+          onOpenChange(!open);
+        }}
+        title="Báo quảng cáo hoặc tải chậm để chờ nhau"
+      >
         Chờ{waiting.length ? ` · ${waiting.length}` : ""}
       </summary>
       <div className="readiness-body">

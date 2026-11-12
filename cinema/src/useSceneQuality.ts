@@ -19,7 +19,9 @@ export function useInitialGPUOptions() {
   return useState(() => {
     const budget = readDeviceBudget();
     return {
-      antialias: !budget.economy,
+      // Avoid multisample alpha resolves between WebGL depth masks and DOM video.
+      // Fixed for the lifetime of the context; DPR still controls detail.
+      antialias: false,
       powerPreference: budget.economy
         ? ("low-power" as const)
         : ("default" as const),

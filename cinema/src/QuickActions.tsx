@@ -8,16 +8,17 @@ export default function QuickActions({
   command,
   soundsEnabled,
   onToggleSounds,
-  onOpen,
+  open,
+  onOpenChange: setOpen,
 }: {
   room: Room;
   me: Member;
   command: (c: Command, onSuccess?: () => void) => Promise<unknown>;
   soundsEnabled: boolean;
   onToggleSounds: () => void;
-  onOpen: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function QuickActions({
     };
     document.addEventListener("pointerdown", outside, true);
     return () => document.removeEventListener("pointerdown", outside, true);
-  }, [open]);
+  }, [open, setOpen]);
   const selected = () => {
     setOpen(false);
     opener.current?.focus({ preventScroll: true });
@@ -70,8 +71,7 @@ export default function QuickActions({
         aria-expanded={open}
         aria-controls="quick-action-panel"
         onClick={() => {
-          if (!open) onOpen();
-          setOpen((v) => !v);
+          setOpen(!open);
         }}
       >
         <Smile size={23} />
@@ -96,6 +96,24 @@ export default function QuickActions({
             <X size={18} />
           </button>
         </header>
+
+        <div
+          className="reaction-actions"
+          role="group"
+          aria-label="Cảm xúc cả rạp"
+        >
+          {(Object.keys(reactions) as ReactionKind[]).map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              disabled={sendingReaction || cooling || !!room.reaction}
+              onClick={() => void sendReaction(kind)}
+            >
+              <span aria-hidden="true">{reactions[kind].icon}</span>
+              {reactions[kind].label}
+            </button>
+          ))}
+        </div>
 
         <div className="action-row">
           <button
@@ -132,23 +150,6 @@ export default function QuickActions({
               ))}
           </select>
         </label>
-        <div
-          className="reaction-actions"
-          role="group"
-          aria-label="Cảm xúc cả rạp"
-        >
-          {(Object.keys(reactions) as ReactionKind[]).map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              disabled={sendingReaction || cooling || !!room.reaction}
-              onClick={() => void sendReaction(kind)}
-            >
-              <span aria-hidden="true">{reactions[kind].icon}</span>
-              {reactions[kind].label}
-            </button>
-          ))}
-        </div>
         <p className="control-hint" aria-live="polite">
           {cooling
             ? "Đợi một chút trước cảm xúc tiếp theo…"

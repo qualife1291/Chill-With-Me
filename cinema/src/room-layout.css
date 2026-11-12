@@ -1,101 +1,713 @@
-/* Stable stage geometry: panel changes must never resize the projection viewport. */
-.cinema-app { height:100svh; bottom:auto; }
-.cinema-app .theater-layout,.cinema-app .stage-column,.cinema-app.with-panel .stage-column,.cinema-app.with-chat .stage-column,.cinema-app.with-panel.show-controls .stage-column,
-.cinema-app .scene,.cinema-app.with-panel .scene,.cinema-app.with-chat .scene,.cinema-app.with-panel.show-controls .scene,.cinema-app.with-chat:not(.show-controls) .scene,.cinema-app .scene:has(.flat) { width:100%; height:100svh; min-height:0; }
-.cinema-app .cinema-toolbar,.cinema-app.with-panel .cinema-toolbar { left:auto; right:14px; }
-.cinema-app.with-panel:not(.with-chat) .sidebar { top:72px; bottom:14px; right:14px; width:320px; height:auto; max-height:calc(100svh - 86px); border:1px solid #dbc49d40; border-radius:20px; }
-.room-controls { overscroll-behavior:contain; scrollbar-gutter:stable; }
-.room-controls > header { position:sticky; top:-16px; z-index:2; padding:8px 0; background:#302d24; }
-.room-controls .control-hint[aria-live] { min-height:34px; margin-block:8px; }
-.cinema-app .scene-controls { touch-action:pan-y; }
-.cinema-app .sidebar { display:flex; flex-direction:column; overflow:hidden; }
-.cinema-app .sidebar[hidden] {display:none;}
-.cinema-app .sidebar .chat-history { flex:1; min-height:70px; overflow:auto; overscroll-behavior:contain; }
-.cinema-app .screen-surface.flat,.cinema-app.show-controls .screen-surface.flat { --flat-height:calc(100svh - 148px); }
-/* One scrollable sheet on phones/tablets/short screens; scene and toolbar stay put. */
-@media(max-width:900px),(max-height:500px) {
- .cinema-app { --sheet-bottom:calc(8px + env(safe-area-inset-bottom,0px) + var(--keyboard-inset,0px)); }
- .cinema-app .cinema-toolbar,.cinema-app.with-panel .cinema-toolbar { position:fixed; top:calc(6px + env(safe-area-inset-top,0px)); left:8px; right:8px; width:auto; flex-wrap:nowrap; gap:4px; justify-content:center; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; background:transparent; }
- .cinema-toolbar::-webkit-scrollbar {display:none;}
- .cinema-app .cinema-toolbar > button { width:44px; height:44px; min-width:44px; padding:10px; flex:0 0 44px; }
- .cinema-app .toolbar-label {display:none;}
- .cinema-app .cinema-toolbar .playback-readiness {flex:0 0 44px;}
- .cinema-app .playback-readiness summary {padding:6px;min-width:44px;}
- .cinema-app .cinema-toolbar > button,.cinema-app .room-controls,.cinema-app .sidebar,.cinema-app .session-badge {backdrop-filter:none;}
- .cinema-app .session-badge {top:calc(60px + env(safe-area-inset-top,0px));left:8px;max-width:190px;padding:6px 8px;background:#302d24ed;}
- .cinema-app .session-initials {width:30px;height:30px;font-size:12px;}
- .cinema-app .session-badge div > span {display:none;}
- .cinema-app .session-badge strong {font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
- .cinema-app .stage-column > p[role=status] {top:112px;max-width:calc(100% - 24px);}
- .cinema-app.show-controls .scene-controls,.cinema-app.with-panel.show-controls .scene-controls {position:fixed;left:8px;right:8px;bottom:var(--sheet-bottom);top:auto;width:auto;max-width:none;max-height:none;padding:0;overflow:visible;border:0;z-index:12;}
- .cinema-app .room-controls,.cinema-app.with-chat.show-controls .room-controls {max-height:min(66svh,calc(var(--panel-viewport,100svh) - 78px - env(safe-area-inset-top,0px)));padding:12px;border-radius:20px;background:#302d24fa;box-shadow:0 -4px 20px #0004;}
- .cinema-app .room-controls > header {top:-12px;margin-bottom:8px;}
- .room-controls .action-row button {min-height:48px;flex-direction:row;}
- .room-controls .view-row label {min-width:0;}
- .room-controls select {font-size:16px;}
- .room-controls .control-hint {font-size:11px;line-height:1.4;}
- .cinema-app .sidebar,.cinema-app.with-chat .sidebar,.cinema-app.with-panel:not(.with-chat) .sidebar {position:fixed;left:8px;right:8px;bottom:var(--sheet-bottom);top:auto;width:auto;height:min(62svh,calc(var(--panel-viewport,100svh) - 78px - env(safe-area-inset-top,0px)));max-height:none;border:1px solid #dbc49d40;border-radius:20px;background:#302d24fa;z-index:12;}
- .cinema-app .sidebar > :not(.tabs):not(.close-panel) {min-height:0;}
- .cinema-app .sidebar .tabs {flex:none;margin:0;padding:8px 44px 8px 8px;min-height:52px;}
- .cinema-app .sidebar .tabs button {min-height:44px;}
- .cinema-app .sidebar > section,.cinema-app .sidebar > div:not(.tabs) {overflow:auto;overscroll-behavior:contain;min-height:0;}
- .cinema-app .sidebar .chat-history {min-height:60px;flex:1;}
- .cinema-app .sidebar .composer {flex:none;margin-top:8px;}
- .cinema-app .sidebar input,.cinema-app .sidebar textarea {font-size:16px;}
- .cinema-app.show-controls .transport {position:fixed;top:calc(58px + env(safe-area-inset-top,0px));bottom:auto;left:auto;right:8px;transform:none;padding:4px;z-index:8;}
- .cinema-app .transport button {min-height:44px;}
- .cinema-app.show-info .room-heading {position:fixed;left:8px;right:8px;top:calc(58px + env(safe-area-inset-top,0px));width:auto;max-height:calc(var(--panel-viewport,100svh) - 74px);overflow:auto;z-index:12;}
- .cinema-app .chat-toasts {right:8px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(300px,calc(100vw - 16px));}
- .cinema-app.show-controls .chat-toasts,.cinema-app.with-panel .chat-toasts {bottom:auto;top:calc(108px + env(safe-area-inset-top,0px));}
- .cinema-app .screen-surface.flat,.cinema-app.show-controls .screen-surface.flat {--flat-height:calc(100svh - 148px);width:min(900px,calc(100% - 24px),calc(var(--flat-height) * 1.7777778)) !important;left:50% !important;}
- .approval-modal {max-height:calc(var(--panel-viewport,100svh) - 32px);padding:16px;}
- .approval-modal .person {flex-wrap:wrap;gap:8px;}
- .approval-modal .person > b {min-width:0;overflow-wrap:anywhere;}
- .approval-modal .person > button {flex-shrink:0;min-height:44px;}
- .entry-modal input,.entry-modal select {font-size:16px;}
+/* HUD geometry has one owner. Sheets never resize the world/video viewport. */
+.cinema-app {
+  --hud-edge: 14px;
+  --hud-top: calc(72px + env(safe-area-inset-top, 0px));
+  --dock-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  --sheet-bottom: calc(
+    84px + env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px)
+  );
+  --sheet-height: max(
+    100px,
+    calc(
+      var(--panel-viewport, 100svh) - 164px - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    )
+  );
+  height: 100svh;
+  bottom: auto;
 }
-@media(max-width:360px) { .cinema-app .cinema-toolbar,.cinema-app.with-panel .cinema-toolbar {left:4px;right:4px;gap:0;justify-content:space-between;} }
-@media(max-height:500px) {
- .cinema-app .session-badge {display:none;}
- .cinema-app.show-controls .scene-controls,.cinema-app.with-panel.show-controls .scene-controls {left:auto;right:8px;width:min(310px,46vw);}
- .cinema-app .sidebar,.cinema-app.with-chat .sidebar,.cinema-app.with-panel:not(.with-chat) .sidebar {left:auto;right:8px;width:min(360px,52vw);height:calc(var(--panel-viewport,100svh) - 76px);}
- .cinema-app .room-controls,.cinema-app.with-chat.show-controls .room-controls {max-height:calc(var(--panel-viewport,100svh) - 76px);}
- .cinema-app .screen-surface.flat,.cinema-app.show-controls .screen-surface.flat {--flat-height:calc(100svh - 100px);top:calc(50% + 22px) !important;}
+.cinema-app .theater-layout,
+.cinema-app .stage-column,
+.cinema-app.with-panel .stage-column,
+.cinema-app.with-chat .stage-column,
+.cinema-app .scene,
+.cinema-app.with-panel .scene,
+.cinema-app.with-chat .scene,
+.cinema-app.with-chat:not(.show-controls) .scene,
+.cinema-app .scene:has(.flat) {
+  width: 100%;
+  height: 100svh;
+  min-height: 0;
 }
-.room-controls > header > span {flex:1;min-width:0;}
-.room-controls > header > button,.room-controls .view-row > button {flex:0 0 44px;width:44px;}
+/* Backdrop sampling over alpha WebGL + native video is costly and can shimmer
+   on tiled GPUs. Opaque HUD surfaces need no extra compositing/backdrop pass. */
+.cinema-app
+  :is(
+    .cinema-toolbar button,
+    .playback-readiness,
+    .room-controls,
+    .sidebar,
+    .session-badge,
+    .scene-controls,
+    .room-heading
+  ) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.cinema-app .cinema-toolbar,
+.cinema-app.with-panel .cinema-toolbar {
+  position: fixed;
+  left: auto;
+  right: var(--hud-edge);
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  flex-wrap: nowrap;
+  z-index: 40;
+}
+.cinema-app .cinema-toolbar > button,
+.cinema-app .playback-readiness summary {
+  min-height: 44px;
+  min-width: 44px;
+  background: #302d24;
+}
+.cinema-app .session-badge {
+  background: #302d24;
+}
+.cinema-app.has-sheet .session-badge {
+  pointer-events: none;
+}
+.cinema-app .sidebar,
+.cinema-app.with-chat .sidebar,
+.cinema-app.with-panel:not(.with-chat) .sidebar {
+  position: fixed;
+  top: auto;
+  left: auto;
+  right: var(--hud-edge);
+  bottom: var(--sheet-bottom);
+  width: 340px;
+  min-height: 0;
+  height: min(560px, var(--sheet-height));
+  max-height: var(--sheet-height);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #dbc49d40;
+  border-radius: 20px;
+  background: #302d24;
+  z-index: 35;
+  box-shadow: 0 12px 32px #0004;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+/* Keep real controls usable on touch-enabled desktops as well as phones. */
+.cinema-app
+  :is(.sidebar, .room-heading, .readiness-body, .action-choices, .room-controls)
+  :is(button, input, select, summary) {
+  min-height: 44px;
+}
+.cinema-app .sidebar .composer button {
+  min-width: 44px;
+}
+.cinema-app .sidebar[hidden] {
+  display: none;
+}
+.cinema-app .sidebar .tabs {
+  flex: none;
+  margin: 0;
+  padding: 8px 52px 8px 8px;
+  min-height: 60px;
+}
+.cinema-app .sidebar .tabs button {
+  min-height: 44px;
+}
+.cinema-app .sidebar .close-panel {
+  width: 44px;
+  height: 44px;
+  padding: 8px;
+}
+.cinema-app .sidebar > :not(.tabs):not(.close-panel) {
+  min-height: 0;
+}
+.cinema-app .sidebar > section,
+.cinema-app .sidebar > div:not(.tabs) {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.cinema-app .sidebar .chat-history {
+  flex: 1;
+  min-height: 40px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.cinema-app .sidebar .composer {
+  flex: none;
+  margin-top: 8px;
+}
+/* Voice settings scroll within their own bounded area, leaving the composer
+   and close button accessible even in short landscape/keyboard viewports. */
+.cinema-app .sidebar .chat-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px 10px;
+  flex: 0 1 auto;
+  max-height: 45%;
+  overflow: auto;
+}
+.cinema-app .sidebar .tts-toggle {
+  margin: 0;
+  min-height: 44px;
+  font-size: 11px;
+}
+.cinema-app .sidebar .voice-options {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.cinema-app .sidebar .voice-options[open] {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.cinema-app .sidebar .voice-options[open] .voice-settings {
+  display: block;
+}
+.cinema-app .sidebar .voice-options summary {
+  min-height: 44px;
+}
+.cinema-app .sidebar > .small {
+  display: none;
+}
+.cinema-app.show-controls .scene-controls {
+  display: block;
+  position: fixed;
+  left: auto;
+  right: var(--hud-edge);
+  bottom: var(--sheet-bottom);
+  top: auto;
+  width: 340px;
+  max-width: none;
+  max-height: var(--sheet-height);
+  padding: 0;
+  overflow: visible;
+  background: none;
+  border: 0;
+  z-index: 35;
+  touch-action: pan-y;
+}
+.cinema-app.show-controls .room-controls,
+.cinema-app .room-controls {
+  width: 100%;
+  max-height: min(600px, var(--sheet-height));
+  padding: 14px;
+  border-radius: 20px;
+  background: #302d24;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.room-controls > header {
+  position: sticky;
+  top: -14px;
+  z-index: 2;
+  padding: 6px 0;
+  background: #302d24;
+}
+.room-controls > header > span {
+  flex: 1;
+  min-width: 0;
+}
+.room-controls > header > button,
+.room-controls .view-row > button {
+  flex: 0 0 44px;
+  width: 44px;
+}
+.room-controls .control-hint[aria-live] {
+  min-height: 34px;
+  margin-block: 8px;
+}
+.room-controls .view-row label {
+  min-width: 0;
+}
+.cinema-app.show-info .room-heading {
+  position: fixed;
+  left: auto;
+  right: var(--hud-edge);
+  top: auto;
+  bottom: var(--sheet-bottom);
+  width: 340px;
+  max-height: var(--sheet-height);
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: #302d24;
+  z-index: 35;
+}
+.cinema-app .readiness-body {
+  position: fixed;
+  left: auto;
+  right: var(--hud-edge);
+  top: var(--hud-top);
+  width: 340px;
+  max-height: var(--sheet-height);
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: #302d24;
+}
+.cinema-app .screen-surface.flat,
+.cinema-app.show-controls .screen-surface.flat {
+  --flat-height: calc(100svh - 148px);
+  width: min(
+    900px,
+    calc(100% - 24px),
+    calc(var(--flat-height) * 1.7777778)
+  ) !important;
+  left: 50% !important;
+}
+.cinema-app .scene {
+  touch-action: none;
+}
+.quick-actions {
+  position: fixed;
+  right: var(--hud-edge);
+  bottom: var(--dock-bottom);
+  z-index: 38;
+}
+.actions-trigger:hover {
+  background: #e3c293;
+  color: #18221e;
+}
+.actions-trigger {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 48px;
+  padding: 10px 16px;
+  border-radius: 28px;
+  background: #d4b180;
+  color: #18221e;
+  border: 1px solid #ffe0a3;
+  box-shadow: 0 4px 16px #0004;
+}
+.action-choices {
+  position: fixed;
+  bottom: var(--sheet-bottom);
+  right: var(--hud-edge);
+  width: 340px;
+  max-height: var(--sheet-height);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 14px;
+  border: 1px solid #c5ad7c66;
+  border-radius: 20px;
+  background: #302d24;
+  color: #f6eedf;
+}
+.action-choices[hidden] {
+  display: none;
+}
+.action-choices header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: -14px;
+  background: #302d24;
+  padding-block: 6px;
+  z-index: 1;
+}
+.action-choices header button {
+  width: 44px;
+  height: 44px;
+  padding: 8px;
+}
+.action-choices header strong {
+  font-size: 13px;
+}
+.action-choices .action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.action-choices button,
+.action-choices select {
+  min-height: 44px;
+  font-size: 14px;
+}
+.action-choices .friend-picker {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.action-choices select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  color: inherit;
+  background: #394238;
+  border: 1px solid #ffffff25;
+  border-radius: 10px;
+}
+.action-choices .control-hint {
+  font-size: 11px;
+  line-height: 1.4;
+  min-height: 30px;
+}
+.touch-navigation {
+  position: fixed;
+  left: var(--hud-edge);
+  bottom: var(--dock-bottom);
+  z-index: 30;
+  display: flex;
+  gap: 4px;
+}
+.touch-navigation button {
+  min-width: 44px;
+  height: 48px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #26312c;
+  border-color: #c5ad7c66;
+  font-size: 12px;
+}
+.touch-navigation button[aria-pressed="true"] {
+  background: #d4b180;
+  color: #18221e;
+}
+.cinema-app.has-sheet .view-hint,
+.cinema-app.has-sheet .touch-navigation,
+.cinema-app.has-sheet .recenter-view {
+  display: none;
+}
+.cinema-app .recenter-view {
+  right: auto;
+  left: var(--hud-edge);
+  bottom: calc(var(--dock-bottom) + 60px);
+  z-index: 30;
+}
+.cinema-app.show-controls .transport {
+  position: fixed;
+  top: auto;
+  bottom: var(--dock-bottom);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  padding: 4px;
+  z-index: 30;
+}
+.cinema-app .transport button {
+  min-height: 44px;
+}
+.cinema-app .chat-toasts {
+  right: var(--hud-edge);
+  bottom: var(--sheet-bottom);
+  z-index: 32;
+}
+/* Notifications use the free lane while a sheet is open, never cover its controls. */
+.cinema-app.has-sheet .chat-toasts {
+  right: 370px;
+}
+.cinema-app .view-hint {
+  bottom: calc(var(--dock-bottom) + 64px);
+}
+.scene-gesture-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  touch-action: none;
+  cursor: grab;
+}
+.scene-gesture-layer span {
+  position: absolute;
+  top: 115px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  background: #17251e;
+  padding: 8px 12px;
+  border-radius: 12px;
+  width: max-content;
+  max-width: 90%;
+  pointer-events: none;
+  color: #eee2c7;
+}
+.scene.is-looking .scene-gesture-layer {
+  cursor: grabbing;
+}
+/* TikTok-style stream: small glyphs emerge from one side lane, gently sway and
+   fade upward. Only transform/opacity animate; bounded count and 3s TTL. */
+.reaction-floats {
+  position: fixed;
+  right: 12px;
+  bottom: 84px;
+  width: 116px;
+  height: min(55svh, 420px);
+  z-index: 25;
+  pointer-events: none;
+  overflow: hidden;
+  contain: layout style;
+}
+.reaction-floats i {
+  position: absolute;
+  left: 40px;
+  bottom: -4px;
+  font-style: normal;
+  font-size: var(--size);
+  opacity: 0;
+  animation: reaction-rise 1850ms linear var(--delay) both;
+}
+@keyframes reaction-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.45);
+  }
+  12% {
+    opacity: 1;
+    transform: translate3d(calc(var(--sway) * 0.3), -5svh, 0)
+      rotate(calc(var(--tilt) * -0.4)) scale(1);
+  }
+  40% {
+    opacity: 0.95;
+    transform: translate3d(var(--sway), -16svh, 0) rotate(var(--tilt))
+      scale(1.08);
+  }
+  70% {
+    opacity: 0.7;
+    transform: translate3d(var(--drift), -29svh, 0)
+      rotate(calc(var(--tilt) * -0.5)) scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--sway) * 0.5), -43svh, 0) scale(0.7);
+  }
+}
+.room-reaction {
+  position: fixed;
+  left: auto;
+  top: auto;
+  right: 32px;
+  bottom: 100px;
+  transform: none;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  animation: none;
+  pointer-events: none;
+}
+/* Keep the live status accessible without painting a central card or glyph. */
+.room-reaction:not(.quiet-reaction) {
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.room-reaction:not(.quiet-reaction) .reaction-symbol {
+  display: none;
+}
+.quiet-reaction .reaction-symbol {
+  font-size: 32px;
+  animation: none;
+}
+.room-reaction > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reaction-floats {
+    display: none;
+  }
+  .reaction-floats i {
+    animation: none;
+  }
+}
+.firework-rocket {
+  animation-name: firework-launch-direction;
+}
+@keyframes firework-launch-direction {
+  0% {
+    transform: translate3d(var(--launch-x, 0vmin), var(--launch-y, 30vmin), 0)
+      rotate(var(--launch-angle, 0deg)) scaleY(1.7);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scaleY(0.4);
+    opacity: 0;
+  }
+}
+@media (max-width: 1100px), (max-height: 500px) {
+  .cinema-app {
+    --hud-edge: 8px;
+  }
+  .cinema-app .cinema-toolbar,
+  .cinema-app.with-panel .cinema-toolbar {
+    left: 8px;
+    right: 8px;
+    top: calc(6px + env(safe-area-inset-top, 0px));
+    width: auto;
+    gap: 4px;
+    justify-content: center;
+  }
+  .cinema-app .cinema-toolbar > button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 10px;
+    flex: 0 0 44px;
+  }
+  .cinema-app .toolbar-label {
+    display: none;
+  }
+  .cinema-app .cinema-toolbar .playback-readiness {
+    flex: 0 0 44px;
+  }
+  .cinema-app .playback-readiness summary {
+    padding: 6px;
+    min-width: 44px;
+  }
+  .cinema-app .session-badge {
+    top: 60px;
+    left: 8px;
+    max-width: 190px;
+    padding: 6px 8px;
+  }
+  .cinema-app .session-initials {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+  .cinema-app .session-badge div > span {
+    display: none;
+  }
+  .cinema-app .session-badge strong {
+    font-size: 12px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cinema-app .stage-column > p[role="status"] {
+    top: 112px;
+    max-width: calc(100% - 24px);
+  }
+  .cinema-app.has-sheet .session-badge {
+    display: none;
+  }
+  .actions-trigger span {
+    display: none;
+  }
+  .actions-trigger {
+    width: 48px;
+    padding: 11px;
+  }
+  .touch-navigation button:not(:first-child) {
+    display: none;
+  }
+  .touch-navigation:has(button[aria-pressed="true"]) button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .room-controls select,
+  .action-choices select,
+  .sidebar input,
+  .sidebar textarea {
+    font-size: 16px;
+  }
+  .room-controls .control-hint {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .scene-gesture-layer span {
+    top: 104px;
+  }
+  .approval-modal {
+    max-height: calc(var(--panel-viewport, 100svh) - 32px);
+    padding: 16px;
+  }
+  .approval-modal .person {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .approval-modal .person > b {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .approval-modal .person > button {
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+  .entry-modal input,
+  .entry-modal select {
+    font-size: 16px;
+  }
+}
+@media (max-width: 600px) {
+  .cinema-app {
+    --sheet-height: max(100px, calc(var(--panel-viewport, 100svh) - 228px));
+  }
+  .cinema-app .readiness-body {
+    top: 144px;
+  }
+  .cinema-app .sidebar,
+  .cinema-app.with-chat .sidebar,
+  .cinema-app.with-panel:not(.with-chat) .sidebar,
+  .cinema-app.show-controls .scene-controls,
+  .cinema-app.show-info .room-heading,
+  .cinema-app .readiness-body,
+  .action-choices {
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+  .cinema-app .sidebar,
+  .cinema-app.with-chat .sidebar,
+  .cinema-app.with-panel:not(.with-chat) .sidebar {
+    height: min(62svh, var(--sheet-height));
+  }
+  .cinema-app.has-sheet .chat-toasts {
+    left: 8px;
+    right: 8px;
+    top: 62px;
+    bottom: auto;
+    width: auto;
+    max-height: 72px;
+    overflow: hidden;
+  }
+  .cinema-app.has-sheet .chat-toast:not(:last-child) {
+    display: none;
+  }
+  .cinema-app .chat-toasts {
+    width: min(300px, calc(100vw - 16px));
+  }
+  .cinema-app.show-controls .transport {
+    left: 8px;
+    transform: none;
+  }
+}
+@media (max-width: 360px) {
+  .cinema-app .cinema-toolbar,
+  .cinema-app.with-panel .cinema-toolbar {
+    left: 4px;
+    right: 4px;
+    gap: 0;
+    justify-content: space-between;
+  }
+}
+@media (max-height: 500px) {
+  .cinema-app {
+    --hud-top: 58px;
+    --sheet-height: max(100px, calc(var(--panel-viewport, 100svh) - 142px));
+  }
+  .cinema-app .session-badge {
+    display: none;
+  }
+  .cinema-app .screen-surface.flat,
+  .cinema-app.show-controls .screen-surface.flat {
+    --flat-height: calc(100svh - 100px);
+    top: calc(50% + 22px) !important;
+  }
+}
 
-.room-reaction {background:transparent;border:0;box-shadow:none;padding:0;}
-.quick-actions {position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;}
-.actions-trigger {display:flex;gap:8px;align-items:center;min-height:48px;padding:10px 16px;border-radius:28px;background:#d4b180;color:#18221e;border:1px solid #ffe0a3;box-shadow:0 4px 16px #0005;}
-.action-choices {position:absolute;bottom:calc(100% + 10px);right:0;width:min(300px,calc(100vw - 24px));max-height:min(65svh,calc(var(--panel-viewport,100svh) - 130px));overflow:auto;overscroll-behavior:contain;padding:14px;border:1px solid #c5ad7c66;border-radius:20px;background:#282b25fa;color:#f6eedf;}
-.action-choices[hidden]{display:none;}
-.action-choices header {display:flex;align-items:center;justify-content:space-between;position:sticky;top:-14px;background:#282b25;padding-block:6px;z-index:1;}
-.action-choices header button {width:44px;height:44px;padding:8px;}
-.action-choices header strong {font-size:13px;}
-.action-choices .action-row {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.action-choices button,.action-choices select {min-height:44px;font-size:14px;}
-.action-choices .friend-picker {display:grid;gap:7px;margin-top:10px;font-size:12px;}
-.action-choices select {width:100%;min-width:0;padding:8px;color:inherit;background:#394238;border:1px solid #ffffff25;border-radius:10px;}
-.action-choices .control-hint {font-size:11px;line-height:1.4;min-height:30px;}
-.touch-navigation {position:fixed;left:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;gap:4px;}
-.touch-navigation button {min-width:44px;min-height:44px;padding:8px 10px;border-radius:14px;background:#26312cf5;border-color:#c5ad7c66;font-size:12px;}
-.touch-navigation button[aria-pressed=true] {background:#d4b180;color:#18221e;}
-.scene-gesture-layer {position:absolute;inset:0;z-index:2;touch-action:none;cursor:grab;}
-.scene-gesture-layer span {position:absolute;top:calc(115px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-size:12px;background:#17251ee6;padding:8px 12px;border-radius:12px;width:max-content;max-width:90%;pointer-events:none;color:#eee2c7;}
-.scene.is-looking .scene-gesture-layer {cursor:grabbing;}
-.room-reaction {background:transparent;border:0;box-shadow:none;padding:0;}
-.room-reaction > span {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
-.reaction-floats {position:fixed;inset:0;z-index:25;pointer-events:none;overflow:hidden;}
-.reaction-floats i {position:absolute;left:var(--x);top:var(--y);font-style:normal;font-size:clamp(26px,7vw,48px);opacity:0;animation:reaction-flight 2400ms ease-out var(--delay) both;}
-@keyframes reaction-flight {10%{opacity:1;} 75%{opacity:1;} to{opacity:0;transform:translate3d(var(--fly-x),var(--fly-y),0) rotate(var(--tilt)) scale(.65);}}
-@media(prefers-reduced-motion:reduce){.reaction-floats{display:none;}.reaction-floats i{animation:none;}}
-@media(max-width:900px),(max-height:500px){.quick-actions{right:8px;bottom:calc(10px + env(safe-area-inset-bottom,0px));}.actions-trigger span{display:none;}.actions-trigger{width:48px;padding:11px;}.touch-navigation{left:8px;bottom:calc(10px + env(safe-area-inset-bottom,0px));}.action-choices select{font-size:16px;}.cinema-app .room-controls{max-height:min(60svh,calc(var(--panel-viewport,100svh) - 136px));}.cinema-app .chat-toasts {bottom:76px;}.scene-gesture-layer span{top:104px;}}
-.firework-rocket {animation-name:firework-launch-direction;}
-@keyframes firework-launch-direction {0%{transform:translate3d(var(--launch-x,0vmin),var(--launch-y,30vmin),0) rotate(var(--launch-angle,0deg)) scaleY(1.7);opacity:0;}20%{opacity:.8;}90%{opacity:1;}100%{transform:translate3d(0,0,0) scaleY(.4);opacity:0;}}
-.cinema-app .scene {touch-action:none;}
-.quick-actions:focus-within {outline-offset:3px;}
-@media(max-width:900px),(max-height:500px){.cinema-app .chat-toasts{right:8px;max-width:calc(100% - 16px);}}
-.cinema-app.with-panel .touch-navigation,.cinema-app.show-controls .touch-navigation,.cinema-app.show-info .touch-navigation {display:none;}
-@media(max-width:900px),(max-height:500px){.cinema-app.with-panel .quick-actions,.cinema-app.show-controls .quick-actions {bottom:calc(76px + env(safe-area-inset-bottom,0px));}.touch-navigation button:not(:first-child){display:none;}.touch-navigation:has(button[aria-pressed=true]) button{display:inline-flex;align-items:center;justify-content:center;}}
-.cinema-app .recenter-view {right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:19;}
+@media (max-height: 500px) and (max-width: 600px) {
+  .cinema-app {
+    --sheet-height: max(100px, calc(var(--panel-viewport, 100svh) - 228px));
+  }
+}

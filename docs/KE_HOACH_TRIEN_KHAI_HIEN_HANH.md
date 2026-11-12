@@ -6,14 +6,14 @@ Trạng thái source và evidence chuẩn: [PROJECT_STATE.md](../PROJECT_STATE.m
 
 3 phòng; host chọn 2–10 ghế kể cả host, phát ngay khi một mình. Người vào sau theo timeline. Duyệt trước khi nhận dữ liệu phòng; server giữ quyền host, kick/ban, epoch, commandId và lease. Không mic voice call, không NIM trial hoặc clone production khi chưa qua gate tài nguyên/quyền/budget.
 
-Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKit CC0, hai chế độ mắt người/tự do, gộp các góc nhìn ngoài nhân vật, chuyển camera có giảm chuyển động, một selector góc nhìn, kéo/vuốt/WASD xoay đầu, cuộn chuột thu/phóng và đồng bộ pose. HUD xã hội theo bố cục profile trái, chat thấp bên trái, action dạng ô bên phải. Video bám mặt phẳng màn chiếu rộng 8.8×4.95, không ẩn cả video khi một phần đi sau camera; bỏ tự chuyển khung nổi, dùng depth mask để đầu/ghế nằm trước video. Native YouTube iframe giữ nguyên khi đổi góc. Chọn màu tóc/quần áo và xem trước 3D chỉ ở bước trước khi tạo/xin vào phòng; không sửa trong phòng. Chat và giọng thiết bị độc lập với lựa chọn avatar. Trình phát native hỗ trợ video/audio qua link HTTPS và file local, cleanup metadata/Blob sau khi kết thúc; Drive preview có giới hạn không đồng bộ được ghi rõ trong README. Playlist có host reorder, viewer suggestions và host review; mỗi người tối đa 3 đề xuất chờ duyệt, cách nhau 10 giây, không tự phát video được đề xuất.
+Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKit CC0, hai chế độ mắt người/tự do, gộp các góc nhìn ngoài nhân vật, chuyển camera có giảm chuyển động, một selector góc nhìn, kéo/vuốt/WASD xoay đầu, cuộn chuột thu/phóng và đồng bộ pose. HUD xã hội theo bố cục profile trái, các bảng cùng vị trí bên phải, menu cảm xúc ở hàng nút dưới. Video bám mặt phẳng màn chiếu rộng 8.8×4.95, không ẩn cả video khi một phần đi sau camera; bỏ tự chuyển khung nổi, dùng depth mask để đầu/ghế nằm trước video. Native YouTube iframe giữ nguyên khi đổi góc. Chọn màu tóc/quần áo và xem trước 3D chỉ ở bước trước khi tạo/xin vào phòng; không sửa trong phòng. Chat và giọng thiết bị độc lập với lựa chọn avatar. Trình phát native hỗ trợ video/audio qua link HTTPS và file local, cleanup metadata/Blob sau khi kết thúc; Drive preview có giới hạn không đồng bộ được ghi rõ trong README. Playlist có host reorder, viewer suggestions và host review; mỗi người tối đa 3 đề xuất chờ duyệt, cách nhau 10 giây, không tự phát video được đề xuất.
 
 ## Việc cần làm UI/UX — 06/11/2026
 
 - [x] Chủ phòng nhận dialog duyệt/từ chối ở giữa màn hình ngay khi có yêu cầu mới, kể cả lúc chưa chọn phim; giữ hàng chờ và focus đúng khi nhiều người xin vào.
 - [x] Khi chat đóng, tin nhắn mới từ người khác hiện ở góc dưới bên phải, có tên/nội dung và thao tác mở chat; không phát lại lịch sử khi vào/reconnect.
 - [x] Người bị chọc nhận âm báo ngắn kèm tên người chọc; không phát lại khi snapshot/reconnect, tuân thủ quyền autoplay của trình duyệt.
-- [x] Thêm tung hoa / vỗ tay / mếu / troll dùng chung cả rạp: tên người gửi, hiệu ứng giữa màn hình khoảng 3 giây, âm thanh phù hợp; chỉ thành viên đã duyệt, giới hạn tần suất, không tích lũy lịch sử hiệu ứng.
+- [x] Thêm tung hoa / vỗ tay / mếu / troll dùng chung cả rạp: ẩn tên người gửi, pháo bông và luồng emoji ở cạnh màn hình khoảng 3 giây, âm thanh phù hợp; chỉ thành viên đã duyệt, giới hạn tần suất, không tích lũy lịch sử hiệu ứng.
 - [x] Test quyền, chống gửi lặp/cooldown, hết hạn, nhiều profile, chat đóng/mở, âm thanh, reduced motion, mobile và hồi quy media/camera; cập nhật evidence trước push/deploy.
 
 ## Việc cần làm thoát đột ngột — 06/11/2026
@@ -22,6 +22,13 @@ Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKi
 - [x] Lease heartbeat 90 giây chống socket chết âm thầm; tận dụng clock probe hiện có, gộp ghi trạng thái tối đa mỗi 30 giây/kết nối, không broadcast heartbeat hoặc polling mới.
 - [x] Reconnect có backoff, giới hạn request, phục hồi sau offline/online, bỏ callback của socket cũ; đóng phòng/hết chỗ giữ/tab bị thay thế có thông báo rõ và dừng retry.
 - [x] Test đóng tab/browser, socket câm, refresh, mất mạng, host/guest, kế nhiệm online/offline, takeover và stale epoch; hồi quy toàn bộ rồi push/deploy.
+
+## Sửa HUD và hiệu ứng — 12/11/2026
+
+- [x] Dùng một trạng thái chung cho mọi bảng; cố định hàng nút, giữ khoảng cách với sheet, kiểm tra đóng/mở liên tiếp.
+- [x] Đổi emoji sang luồng nổi ở cạnh màn hình như thả tim; bỏ biểu tượng lớn ở giữa, giữ âm thanh, TTL và reduced motion.
+- [x] Giảm rủi ro nháy lớp WebGL/DOM (MSAA, backdrop blur); kiểm tra pixel/video và context qua các lần bật/tắt. Chrome Mac M1 thật vẫn cần pilot.
+- [x] Chụp và xem ma trận phone/tablet/desktop/landscape; kiểm tra vùng bấm bị che, tràn khung và cân xứng; hồi quy tổng hợp đạt trước release (source/version deploy xem PROJECT_STATE).
 
 ## Bảng đối chiếu plan với implementation
 

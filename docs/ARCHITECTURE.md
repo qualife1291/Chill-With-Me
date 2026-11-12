@@ -19,7 +19,7 @@ Current behavior and open gates: [PROJECT_STATE](../PROJECT_STATE.md). Commands 
 | Local ambience / lights | `useAmbience.ts`, `shared/ambience.ts`, `RoomControls.tsx`, `SceneEnvironment.tsx` | Personal settings only; quiet bounded generated audio; speech duck/restore; explicit start; dispose on hidden/exit/off; no recording/API; native brightness/identity preserved |
 | Chat/device speech | main WS handlers, `useChatSpeech.ts` | Optimistic idempotent fallback; bounded history/seen IDs; cancelled speech cannot duck audio; restore manual volume safely |
 | Presets/effects hints | `shared/experience.ts`, `useEffectsQuality.ts`, `RoomControls.tsx` | Two camera modes; no player remount or room mutation; bounded local Auto/Full/Quiet particles; reduced motion wins; no continuous 3D loop |
-| Panels/dialogs | main panel state, `useModalFocus.ts`, CSS | Nonmodal Escape/focus restoration; modal inert background and full keyboard loop, including details/textarea; required start cannot be deferred |
+| Panels/dialogs | main `sheet` state, controlled `QuickActions.tsx` / `PlaybackReadiness.tsx`, `useModalFocus.ts`, `room-layout.css` | One nonmodal sheet on every viewport, fixed dock/notification lanes; Nonmodal Escape/focus restoration; modal inert background and full keyboard loop, including details/textarea; required start cannot be deferred |
 
 Paths above are relative to `cinema/src` unless prefixed `shared/` or `worker/`.
 
@@ -45,4 +45,4 @@ The screen dimensions/plane/corners live in `shared/projection.ts`. The camera c
 
 Keep `encodeBody: "manual"` in the optional embedded gzip release. Deploy only the existing Worker/account in PROJECT_STATE; never reset production rooms or change billing to run a test. The older proposed stack is [archived](archive/STACK_VA_KIEN_TRUC_V2.md).
 
-Scene action entry: `QuickActions.tsx` owns the floating disclosure and per-sender cooldown UI; `RoomControls.tsx` retains camera/quality/personal ambience. `useHeadDrag.ts` tracks ≤2 captured pointers, batches look/zoom in RAF, and cancels on blur/cancel. Explicit gesture mode overlays video without remounting it; native player interaction returns when disabled. Shared floating icons/fireworks are bounded and frameless, with existing actor-private events and timed sound.
+Scene action entry: main `sheet` controls the floating disclosure; `QuickActions.tsx` owns its content and per-sender cooldown UI; `RoomControls.tsx` retains camera/quality/personal ambience. `useHeadDrag.ts` tracks ≤2 captured pointers, batches look/zoom in RAF, and cancels on blur/cancel. Explicit gesture mode overlays video without remounting it; native player interaction returns when disabled. Shared side-stream emoji/fireworks are bounded and frameless, with existing actor-private events and timed sound.

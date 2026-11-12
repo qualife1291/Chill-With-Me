@@ -64,7 +64,7 @@ export default function RoomActivity({
         [
           ...previous,
           ...fresh.map((m) => ({ ...m, until: Date.now() + 6000 })),
-        ].slice(-3),
+        ].slice(-1),
       );
   }, [room.messages, me.id, chatOpen, offset]);
   useEffect(() => {
@@ -147,12 +147,12 @@ export default function RoomActivity({
                   key={i}
                   style={
                     {
-                      "--x": 15 + ((i * 29) % 70) + "%",
-                      "--y": 65 + ((i * 13) % 25) + "%",
-                      "--fly-x": (i % 2 ? -1 : 1) * (15 + i * 4) + "vw",
-                      "--fly-y": -35 - ((i * 7) % 35) + "vh",
-                      "--delay": i * 65 + "ms",
-                      "--tilt": (i % 2 ? 25 : -25) + "deg",
+                      "--sway": (i % 2 ? -1 : 1) * (12 + ((i * 7) % 28)) + "px",
+                      "--drift":
+                        (i % 2 ? 1 : -1) * (10 + ((i * 11) % 32)) + "px",
+                      "--size": 25 + ((i * 7) % 13) + "px",
+                      "--delay": i * 120 + "ms",
+                      "--tilt": (i % 2 ? 12 : -12) + "deg",
                     } as import("react").CSSProperties
                   }
                 >

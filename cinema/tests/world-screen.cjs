@@ -45,6 +45,7 @@ fs.mkdirSync(shots, { recursive: true });
         body: `window.YT={Player:class{constructor(el,c){this.config=c;this.time=0;this.state=2;this.volume=80;this.video='';window.__yt=this;el.innerHTML='<iframe title="Screen test" style="width:640px;height:360px" srcdoc="&lt;body onpointerdown=document.body.dataset.clicked=1 style=margin:0;height:100vh;background:rgb(229,57,53);color:white&gt;WORLD SCREEN&lt;/body&gt;"></iframe>';setTimeout(()=>c.events.onReady(),10)}loadVideoById(v){this.video=v.videoId;this.state=1;this.time=v.startSeconds}cueVideoById(v){this.video=v.videoId;this.state=2;this.time=v.startSeconds}getCurrentTime(){return this.time}getPlayerState(){return this.state}getDuration(){return 600}getVideoData(){return{video_id:this.video}}getVolume(){return this.volume}setVolume(v){this.volume=v}seekTo(t){this.time=t}playVideo(){this.state=1}pauseVideo(){this.state=2}destroy(){}}};window.onYouTubeIframeAPIReady();`,
       }),
     );
+    await api("/session", {});
     await p.goto(base);
     const rooms = await api("/rooms");
     if (rooms.find((r) => r.slot === slot).open)

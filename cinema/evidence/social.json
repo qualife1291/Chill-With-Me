@@ -5,7 +5,7 @@
     "approval interrupts start-video dialog immediately, centered with isolated focus",
     "multiple requests accept/reject individually; pending member cannot send reactions; start dialog resumes",
     "closed-chat incoming toast includes name, opens chat; no self-toast or toast while chat is open",
-    "chat preview stack is bounded to three messages and expires automatically",
+    "burst chat retains the latest preview only, expires automatically, and clears toolbar/dock/control sheet in portrait and landscape",
     "poke names sender and starts two real WebAudio tones on recipient only, without replay on snapshot",
     "three-burst fireworks and layered sound reach both members; 54 sparks bounded; reduced motion honored; mute cancels pending blasts; unmute and duplicate commands do not replay; room-wide cooldown, disabled controls, 3-second removal and DB cleanup",
     "viewer can applaud; real noise-burst audio plays for host while muted recipient sees visual only",

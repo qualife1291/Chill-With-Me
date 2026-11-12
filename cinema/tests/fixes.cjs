@@ -253,6 +253,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     "projected"
   )
     throw Error("camera drag detached video from world screen");
+  await openPanel(host, "Góc nhìn 🎮");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -398,6 +399,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   );
   if (Math.abs(focusYaw - focusYawAfter) > 0.2)
     throw Error("View did not settle after typing focus");
+  await openPanel(host, "Góc nhìn 🎮");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -445,6 +447,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     ) > 0.3
   )
     throw Error("Held camera key survives blur");
+  await openPanel(host, "Góc nhìn 🎮");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -467,6 +470,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     .getByRole("status")
     .filter({ hasText: "Host fixes vừa chọc bạn" })
     .waitFor();
+  await openPanel(host, "Góc nhìn 🎮");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -545,6 +549,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   } finally {
     await host.keyboard.up("ArrowRight");
   }
+  await openPanel(host, "Góc nhìn 🎮");
   await host
     .getByRole("button", { name: "Nhìn màn chiếu", exact: true })
     .click();
@@ -563,10 +568,8 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   if (centered > 3) throw Error("Screen not centered: " + centered);
   await host.bringToFront();
   // Direct drag on the 3D background must not remount or intercept YouTube.
-  await host
-    .locator(".cinema-toolbar")
-    .getByRole("button", { name: "Chat", exact: true })
-    .click();
+  await openPanel(host, "Góc nhìn 🎮");
+  // Close the sole active sheet before exercising unobstructed background drag.
   await host
     .locator(".cinema-toolbar")
     .getByRole("button", { name: "Góc nhìn 🎮", exact: true })
@@ -699,7 +702,9 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
     const targets = await host
       .locator(".cinema-toolbar button")
       .evaluateAll((buttons) =>
-        buttons.every((b) => b.offsetWidth >= 44 && b.offsetHeight >= 44),
+        buttons
+          .filter((b) => b.checkVisibility())
+          .every((b) => b.offsetWidth >= 44 && b.offsetHeight >= 44),
       );
     if (!targets) throw Error("Toolbar touch targets too small");
     await host.screenshot({

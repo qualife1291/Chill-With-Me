@@ -191,6 +191,11 @@ const base = "http://localhost:8787",
           }
         };
       });
+      const identity = await p.request.post(base + "/api/session", {
+        headers: { Origin: base },
+        data: {},
+      });
+      assert.equal(identity.status(), 200);
       await p.goto(base);
     }
     const rooms = await call(h, "/rooms"); // arrays are spread into numeric keys
@@ -541,6 +546,13 @@ const base = "http://localhost:8787",
       url: "https://drive.google.com/file/d/1TVTrleolsrLJUzch6QUHnhIdJ54klpBi/view",
       generation: final.generation,
     });
+    // Dismiss the playlist sheet before interacting with the native player.
+    if (
+      await h
+        .getByRole("button", { name: "Đóng bảng", exact: true })
+        .isVisible()
+    )
+      await h.getByRole("button", { name: "Đóng bảng", exact: true }).click();
     await h
       .getByRole("button", { name: "Mở bản xem trước Drive", exact: true })
       .click();

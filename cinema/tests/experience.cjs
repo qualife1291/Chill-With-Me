@@ -186,6 +186,11 @@ fs.mkdirSync(shots, { recursive: true });
       .locator(".cinema-toolbar")
       .getByRole("button", { name: "Chat", exact: true })
       .click();
+    assert.equal(
+      await controls().getAttribute("aria-pressed"),
+      "false",
+      "chat replaces the view sheet",
+    );
     assert.equal(await h.locator(".voice-options").getAttribute("open"), null);
     assert(
       !(await h.getByLabel("Giọng tiếng Việt", { exact: true }).isVisible()),
@@ -208,6 +213,7 @@ fs.mkdirSync(shots, { recursive: true });
       .locator(".cinema-toolbar")
       .getByRole("button", { name: "Chat", exact: true })
       .click();
+    await openControls();
     await sound.selectOption("wind");
     await h.waitForTimeout(200);
     assert(

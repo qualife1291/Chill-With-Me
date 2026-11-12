@@ -191,10 +191,12 @@ const base = "http://localhost:8787",
     checks.push(
       "closed-chat incoming toast includes name, opens chat; no self-toast or toast while chat is open",
     );
+    await h.setViewportSize({ width: 844, height: 390 });
+    await controls(h);
     for (let i = 0; i < 4; i++)
       await cmd(g, { type: "chat", text: `Burst ${i}` });
     await h.waitForFunction(
-      () => document.querySelectorAll(".chat-toast").length === 3,
+      () => document.querySelectorAll(".chat-toast").length === 1,
     );
     assert.equal(
       await h
@@ -205,10 +207,36 @@ const base = "http://localhost:8787",
     );
     await h
       .locator(".chat-toasts")
+      .getByText("Burst 3", { exact: true })
+      .waitFor();
+    for (const viewport of [
+      { width: 844, height: 390 },
+      { width: 390, height: 844 },
+    ]) {
+      await h.setViewportSize(viewport);
+      const notice = await h.locator(".chat-toasts").boundingBox();
+      const sheet = await h.locator(".room-controls").boundingBox();
+      assert(
+        notice.y >= 56 && notice.y + notice.height <= viewport.height - 76,
+        "toast covers toolbar or dock",
+      );
+      assert(
+        !(
+          notice.x < sheet.x + sheet.width &&
+          notice.x + notice.width > sheet.x &&
+          notice.y < sheet.y + sheet.height &&
+          notice.y + notice.height > sheet.y
+        ),
+        "chat preview overlaps control sheet",
+      );
+    }
+    await h
+      .locator(".chat-toasts")
       .waitFor({ state: "detached", timeout: 10000 });
     checks.push(
-      "chat preview stack is bounded to three messages and expires automatically",
+      "burst chat retains the latest preview only, expires automatically, and clears toolbar/dock/control sheet in portrait and landscape",
     );
+    await h.setViewportSize({ width: 1440, height: 1000 });
     let hn = await sounds(h),
       gn = await sounds(g);
     await openActions(h);

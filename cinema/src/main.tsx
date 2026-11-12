@@ -181,8 +181,16 @@ function App() {
     [bodyYaw, setBodyYaw] = useState<0 | 180>(0),
     [quickLink, setQuickLink] = useState(""),
     [quickBusy, setQuickBusy] = useState(false),
-    [panel, setPanel] = useState<"" | "chat" | "queue" | "people" | "info">(""),
-    [showControls, setShowControls] = useState(false),
+    [sheet, setSheet] = useState<
+      | ""
+      | "chat"
+      | "queue"
+      | "people"
+      | "info"
+      | "view"
+      | "actions"
+      | "readiness"
+    >(""),
     [approvalDismissed, setApprovalDismissed] = useState(false),
     [light, setLight] = useState(false),
     [message, setMessage] = useState(""),
@@ -223,10 +231,38 @@ function App() {
   const [lobbyLight, setLobbyLight] = useState(false);
   const reducedMotion = useReducedMotion();
   const viewportRoot = useRef<HTMLElement>(null);
-  const compact = useRoomViewport(viewportRoot);
-  useEffect(() => {
-    if (compact && panel && showControls) setPanel("");
-  }, [compact, panel, showControls]);
+  useRoomViewport(viewportRoot);
+  // A single owner prevents independently mounted HUD sheets from overlapping.
+  type Panel = "" | "chat" | "queue" | "people" | "info";
+  const panel: Panel =
+    sheet === "view" || sheet === "actions" || sheet === "readiness"
+      ? ""
+      : sheet;
+  const showControls = sheet === "view";
+  const setPanel: React.Dispatch<React.SetStateAction<Panel>> = (next) =>
+    setSheet((current) => {
+      const previous: Panel =
+        current === "view" || current === "actions" || current === "readiness"
+          ? ""
+          : current;
+      const value = typeof next === "function" ? next(previous) : next;
+      return value || (previous ? "" : current);
+    });
+  const setShowControls: React.Dispatch<React.SetStateAction<boolean>> = (
+    next,
+  ) =>
+    setSheet((current) => {
+      const value =
+        typeof next === "function" ? next(current === "view") : next;
+      return value ? "view" : current === "view" ? "" : current;
+    });
+  const setReadinessOpen = React.useCallback(
+    (open: boolean) =>
+      setSheet((current) =>
+        open ? "readiness" : current === "readiness" ? "" : current,
+      ),
+    [],
+  );
   const [pendingMessages, setPendingMessages] = useState<
     { id: string; text: string; failed: boolean }[]
   >([]);
@@ -663,8 +699,7 @@ function App() {
     setPitch(0);
     setBodyYaw(0);
     setZoom(0);
-    setPanel("");
-    setShowControls(false);
+    setSheet("");
     setTts(speech.enable());
     try {
       if (demo) {
@@ -1109,7 +1144,7 @@ function App() {
         data-clock-calibrated={clock.calibrated}
         className={
           status === "joined" && room
-            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""}`
+            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""}`
             : undefined
         }
       >
@@ -1563,12 +1598,12 @@ function App() {
                 command={command}
                 soundsEnabled={sounds.enabled}
                 onToggleSounds={sounds.toggle}
-                onOpen={() => {
-                  if (compact) {
-                    setShowControls(false);
-                    setPanel("");
-                  }
-                }}
+                open={sheet === "actions"}
+                onOpenChange={(open) =>
+                  setSheet((current) =>
+                    open ? "actions" : current === "actions" ? "" : current,
+                  )
+                }
               />
             )}
             {!light && (
@@ -1620,10 +1655,6 @@ function App() {
                     document.querySelector<HTMLButtonElement>(
                       '.cinema-toolbar button[aria-label="Chat"]',
                     );
-                  if (
-                    matchMedia("(max-width:900px), (max-height:500px)").matches
-                  )
-                    setShowControls(false);
                   setPanel("chat");
                   setTab("chat");
                 }}
@@ -1671,12 +1702,6 @@ function App() {
                     aria-expanded={panel === k}
                     aria-controls={k === "info" ? "room-info" : "room-panel"}
                     onClick={(e) => {
-                      if (
-                        k !== "chat" ||
-                        matchMedia("(max-width:900px), (max-height:500px)")
-                          .matches
-                      )
-                        setShowControls(false);
                       panelOpener.current = e.currentTarget;
                       setPanel((v) => (v === k ? "" : k));
                       if (k !== "info") setTab(k);
@@ -1702,13 +1727,6 @@ function App() {
                 aria-expanded={showControls}
                 aria-controls="scene-control-sheet"
                 onClick={() => {
-                  if (
-                    panel &&
-                    (panel !== "chat" ||
-                      matchMedia("(max-width:900px), (max-height:500px)")
-                        .matches)
-                  )
-                    setPanel("");
                   setShowControls((v) => !v);
                 }}
               >
@@ -1729,6 +1747,8 @@ function App() {
                 <Maximize size={18} aria-hidden="true" />
               </button>
               <PlaybackReadiness
+                open={sheet === "readiness"}
+                onOpenChange={setReadinessOpen}
                 room={room}
                 id={id}
                 onCommand={(c) => command(c)}
@@ -1804,7 +1824,9 @@ function App() {
             </div>
             <div className="theater-layout">
               <div className="stage-column">
-                {speech.warning && <p role="status">{speech.warning}</p>}
+                {speech.warning && !sheet && (
+                  <p role="status">{speech.warning}</p>
+                )}
 
                 <div className="transport">
                   <span className="muted">
@@ -2258,65 +2280,72 @@ function App() {
                         </article>
                       ))}
                     </div>
-                    <button
-                      className="tts-toggle"
-                      aria-pressed={tts}
-                      onClick={() => {
-                        if (tts) {
-                          speech.stop();
-                          setTts(false);
-                        } else setTts(speech.enable());
-                      }}
-                    >
-                      <Volume2 size={16} />
-                      {tts ? "Tắt đọc tin" : "Đọc tin bằng giọng thiết bị"}
-                    </button>
-                    <details className="voice-options">
-                      <summary>Giọng và tốc độ đọc</summary>
-                      <div className="voice-settings">
-                        <label>
-                          Giọng tiếng Việt
-                          <select
-                            aria-label="Giọng tiếng Việt"
-                            value={speech.voiceURI}
-                            onChange={(e) => speech.selectVoice(e.target.value)}
+                    <div className="chat-tools">
+                      <button
+                        className="tts-toggle"
+                        aria-pressed={tts}
+                        onClick={() => {
+                          if (tts) {
+                            speech.stop();
+                            setTts(false);
+                          } else setTts(speech.enable());
+                        }}
+                      >
+                        <Volume2 size={16} />
+                        {tts ? "Tắt đọc tin" : "Đọc tin bằng giọng thiết bị"}
+                      </button>
+                      <details className="voice-options">
+                        <summary>Giọng và tốc độ đọc</summary>
+                        <div className="voice-settings">
+                          <label>
+                            Giọng tiếng Việt
+                            <select
+                              aria-label="Giọng tiếng Việt"
+                              value={speech.voiceURI}
+                              onChange={(e) =>
+                                speech.selectVoice(e.target.value)
+                              }
+                            >
+                              <option value="">Tự chọn giọng tiếng Việt</option>
+                              {speech.voices.map((v, i) => (
+                                <option
+                                  key={v.voiceURI || i}
+                                  value={v.voiceURI}
+                                >
+                                  {v.name || "Tiếng Việt"}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            Tốc độ đọc · {speech.rate.toFixed(2)}×
+                            <input
+                              type="range"
+                              aria-label="Tốc độ đọc tin"
+                              min="0.75"
+                              max="1.25"
+                              step="0.05"
+                              value={speech.rate}
+                              onChange={(e) =>
+                                speech.setRate(Number(e.target.value))
+                              }
+                            />
+                          </label>
+                          <button
+                            onClick={() => {
+                              setTts(speech.enable());
+                            }}
                           >
-                            <option value="">Tự chọn giọng tiếng Việt</option>
-                            {speech.voices.map((v, i) => (
-                              <option key={v.voiceURI || i} value={v.voiceURI}>
-                                {v.name || "Tiếng Việt"}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label>
-                          Tốc độ đọc · {speech.rate.toFixed(2)}×
-                          <input
-                            type="range"
-                            aria-label="Tốc độ đọc tin"
-                            min="0.75"
-                            max="1.25"
-                            step="0.05"
-                            value={speech.rate}
-                            onChange={(e) =>
-                              speech.setRate(Number(e.target.value))
-                            }
-                          />
-                        </label>
-                        <button
-                          onClick={() => {
-                            setTts(speech.enable());
-                          }}
-                        >
-                          Nghe thử giọng
-                        </button>
-                      </div>
-                    </details>
-                    {speech.warning && (
-                      <p className="voice-warning" role="status">
-                        {speech.warning}
-                      </p>
-                    )}
+                            Nghe thử giọng
+                          </button>
+                        </div>
+                        {speech.warning && (
+                          <p className="voice-warning" role="status">
+                            {speech.warning}
+                          </p>
+                        )}
+                      </details>
+                    </div>
                     <form
                       className="composer"
                       onSubmit={(e) => {

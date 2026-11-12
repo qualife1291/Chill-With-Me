@@ -220,6 +220,7 @@ const base = "http://localhost:8787",
         privateRequests++;
         return r.abort();
       });
+      await api(p, "/session", {});
       await p.goto(base);
     }
     assert(!(await api(h, "/rooms")).some((r) => r.open));
