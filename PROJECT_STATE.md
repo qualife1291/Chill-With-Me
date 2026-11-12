@@ -34,9 +34,7 @@ Evidence boundaries: UI mocks YouTube/device speech; real drawing buffers/contex
 
 ## Deployment / open gates
 
-Local UI revision passed; push/deploy of this revision is pending below.
-
-Target only `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, `ROOMS`/`RoomSlot`, migration `v1`. Preserve rooms, bindings and billing. Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/ . Verified public code `4b31ebd`, version `97750356-c5b3-44fd-83b2-1c2dbb265ff3`, deployed 11/11/2026 by normal Wrangler Static Assets. All 14 public files match the tested build byte-for-byte; three room summaries pass. Reports: `cinema/evidence/production.json`, `deployment-attempt.json`. The previous HTTP 401 upload block did not recur; Worker + ASSETS + ROOMS updated together without migration/reset/billing changes. Push is not automatic deployment. Optional embedded builds retain `encodeBody: "manual"`.
+Target only `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, `ROOMS`/`RoomSlot`, migration `v1`. Preserve rooms, bindings and billing. Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/ . Verified public code `e72e48a`, version `2e805754-c5d6-4348-88e6-484375ab59a2`, deployed 12/11/2026 by normal Wrangler Static Assets. All 14 public files match the tested build byte-for-byte; three room summaries pass. Reports: `cinema/evidence/production.json`, `deployment-attempt.json`. The previous HTTP 401 upload block did not recur; Worker + ASSETS + ROOMS updated together without migration/reset/billing changes. Push is not automatic deployment. Optional embedded builds retain `encodeBody: "manual"`.
 
 Open acceptance: Physical iOS/Android/desktop media/touch/voice pilot and sustained 3×10 media/GPU/reconnect/quota/rollback checks remain open. Operator/privacy processes and full provider/consent/enrollment/delete/quality/budget voice gates remain open; do not invent provider controls or mark the full roadmap complete.
 
