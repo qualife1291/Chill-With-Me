@@ -31,3 +31,11 @@
 | [`accessibility-i18n`](../.agents/skills/accessibility-i18n/SKILL.md) | Accessibility, internationalization, localization và inclusive UX |
 | [`privacy-data-governance`](../.agents/skills/privacy-data-governance/SKILL.md) | Data privacy, retention, consent, PII controls and auditability |
 | [`failure-resilience`](../.agents/skills/failure-resilience/SKILL.md) | Thiết kế retry, offline-first, circuit breakers, disaster recovery và graceful degradation |
+
+Official supplemental skills (pinned provenance/license: [.agents/official-skills.json](../.agents/official-skills.json)):
+
+| Skill | Application |
+|---|---|
+| [frontend-design](../.agents/skills/frontend-design/SKILL.md) | Intentional Chill With Me visual hierarchy, concise copy, screenshot critique; preserve the established product palette |
+| [webapp-testing](../.agents/skills/webapp-testing/SKILL.md) | Inspect actual DOM, use semantic selectors, screenshots and console diagnostics; retain the Node Playwright suite |
+| [security-best-practices](../.agents/skills/security-best-practices/SKILL.md) | React/browser threat review and evidence-based findings; local api-security complements Cloudflare backend checks |

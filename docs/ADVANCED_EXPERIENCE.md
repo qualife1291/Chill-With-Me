@@ -40,7 +40,7 @@ All mutations stay local. Verify helpers, actual generated codec bytes, real MSE
 
 ## Shared activities proposal · researched 2026-11-13
 
-These are planned extensions, not enabled providers or games. Keep one world renderer/native screen, three rooms and 2–10 members, authoritative admission/session/generation/revision checks, personal Hold and no media bytes in SQLite. Load each activity only when selected; no new runtime dependency for this proposal.
+This is the design sequence; current implementation/release facts live in PROJECT_STATE. PDF/images and emotion variants now have an implementation; screen share, new providers and games remain proposals. Keep one world renderer/native screen, three rooms and 2–10 members, authoritative admission/session/generation/revision checks, personal Hold and no media bytes in SQLite. Load each activity only when selected.
 
 | Order / scope | Source decision and implementation slice | Acceptance / fallback |
 | --- | --- | --- |
@@ -54,6 +54,51 @@ Candidate game metadata/licenses were inspected, not executed or imported (the l
 
 For graphics, [Kenney](https://kenney.nl/support) documents CC0 game assets; choose a coherent minimal atlas/theme, retain each asset's license and measure bytes/draw calls before replacing the existing licensed rigs. Prefer instancing/shared geometry, transform/opacity-only finite animations, DPR caps and no continuous background effects. Existing 88 calls/35 geometries/12 textures is a resource baseline, not measured FPS or battery savings.
 
-Emotion expansion: investigate ❤️ love, 😂 laugh, 😮 surprise, 🎉 celebration and 🙏 thanks as an optional allowlisted `variant` of known wire kinds, with legacy fallback. Do not introduce unknown reaction enum values to old clients. Keep one room effect, 3-second TTL, 5-second sender cooldown, 12/24 emoji or 36/90 sparks and local effect mute. The first strip retains four existing kinds; add presets only with restrained, licensed/synthesized cues and reduced-motion/audio tests. The strip replaces dock launchers while open and remains separate from character actions.
+Emotion expansion uses ❤️ love, 😂 laugh, 😮 surprise, 🎉 celebration and 🙏 thanks as an optional allowlisted `variant` of known wire kinds, with legacy fallback. Keep one room effect, 3-second TTL, 5-second sender cooldown, 12/24 emoji or 36/90 sparks and local effect mute. The nine-choice strip scrolls within its lane with a fixed close button, replaces dock launchers while open and remains separate from character actions. Sounds are synthesized locally; no recording/provider dependency.
 
 Definition of done for each slice: build/logic/server ACL + two-profile lifecycle, bounded memory/network work, 44px hit-tested controls at 320px/landscape, keyboard/reduced motion, failure messages, source/room/hidden cleanup and safe rollback by disabling the new mode. Measure actual decoded/dropped frames, active-frame p95, peak memory and thermal/battery on iOS/Android/M1 before enabling higher defaults. No certified device targets or service quotas are inferred from headless tests. Release each slice separately; no DB migration/reset or paid service activation without its own concrete scope.
+
+Detailed game sources, rule ambiguities, mobile layouts, asset licenses and deterministic test gates: [Trò chơi Việt Nam](VIETNAMESE_GAMES.md). Do not treat a repository README as a definitive national rulebook.
+
+## Chill With Me product direction · researched 2026-11-13
+
+The product promise is spending comfortable time together. Four connected uses: **cùng xem, cùng thư giãn, cùng làm, cùng chơi**. Activities should be invitations, not obligations: no daily streaks, ranking pressure, unsolicited notifications or persistent 3D effects. Keep the screen and people central; one “Cùng làm gì?” entry can open a small activity chooser in the existing sheet rather than another toolbar. A change of activity must not silently discard the movie, open a microphone or change another person's volume.
+
+The following are new proposals, not implemented features. Priorities balance usefulness, client cost and external dependencies; budgets are acceptance targets to measure, not performance claims.
+
+| Priority / experience | Concrete first slice | UX, privacy and performance acceptance |
+| --- | --- | --- |
+| P1 · Cùng tập trung | Shared 15/25/45-minute focus/rest timer; host starts/pauses, viewers follow a server deadline. Personal silent completion option | Derive countdown locally from the room clock; broadcast only transitions, no per-second server writes. Hidden-tab timer throttling must not alter results. One compact status, no full-screen interrupt or auto-play audio; reconnect/host transfer/CAS tests |
+| P1 · Không khí chung, âm riêng | Host proposes a warm/rain/night mood; each person accepts scene lighting or uses their own. Reuse existing personal rain/wind and audio priority | Opt-in, low initial volume, local Hold respected; no forced sound. Use existing instanced scenery/light uniforms, finite transitions and demand rendering; no weather physics or new audio download. Hidden/leave must dispose sound and GPU work |
+| P1 · Câu chuyện nhỏ | Authored Vietnamese conversation cards, “hôm nay có gì vui?”, gentle would-you-rather, tiny cooperative quizzes | Allow skip/close without explanation; no personal profiling, AI calls, score pressure or auto-reading. Curated local text, capped deck, room revision for card changes. Screen-reader, moderation and 320px sheet checks |
+| P1 · Hẹn nhau quay lại | Download a calendar invitation and share a room link through the device share sheet; clipboard fallback | User taps explicitly; `.ics` generated locally, no email/calendar account integration. A room expires after 24h, so event should open the lobby; share a private invitation separately only when intended. Escape CR/LF/content fields, preserve Vietnamese and timezone; do not leak a private capability into calendar metadata |
+| P1 · Độ mượt có bằng chứng | On-demand local playback report: buffered seconds, decoded/dropped frames where supported, room clock/RTT and selected scene quality | Observe active native playback for a bounded window, stop on close/hidden; no continuous telemetry/upload. Provider iframes cannot expose native decode counters. Explain unavailable values; hints do not prove quality. Use this before enabling automatic GPU pressure control |
+| P2 · Khoảnh khắc chung | Save a small timestamp + short note for the current film, click to request host jump | Metadata only, ≤20 moments/room, ≤120 chars each, deleted with room/source policy. Never extract provider pixels, record speech or download video. Seek remains host-only/generation-bound; viewers propose, host decides |
+| P2 · Bảng ý tưởng | Bounded shared sticky notes / simple sketch pad using SVG or Canvas2D | ≤50 notes, ≤200 strokes, cap points/payload and batch updates; validate text/numbers, per-sender rate limit and revision rules. Author/host deletion, no automatic export/persistence. Stop 3D rendering while covered; touch drawing only inside a clearly labeled mode |
+| P2 · Mở lại nhẹ hơn | Optional installable PWA shell, static cache on demand and explicit update prompt | Cache versioned app assets only; never `/api`, room snapshots, invitation links, file Blobs, media/provider responses. Do not precache all PDF fonts/decoders. Clear retired cache versions; test failed update/offline, don't claim an offline room without network |
+| P2 · Cùng hát bản được phép | Native/local music + bounded lyric file aligned to media time; keep existing WebVTT first | Locally owned/licensed content, no Spotify/Zing stream extraction. Parse a small allowlisted format as text, not HTML; timing/offset/seek cleanup. No mic scoring or voice recording in the first slice; visible lyrics remain readable with motion off |
+| P2 · Vimeo chính thức | Assess official Player SDK with owned/permitted Vimeo videos: play/pause/time events + `setMuted` for personal Hold | Allowlist exact Vimeo URLs and retain unlisted `h` privately where needed. Embedding/privacy/autoplay may deny playback. Two-profile drift, volume/mute, errors and provider policy pilot before advertising support; no arbitrary-site iframe |
+| P3 · Cùng nghe ngoài phòng | Persistent notification opt-in for an explicitly requested event | Mobile requires Service Worker notifications; `new Notification()` is not a universal mobile path. No permission prompt on entry, no server push or paid service activated by this plan. Privacy/retention and abuse controls before any delivery backend |
+
+### Primary technical sources actually read
+
+- [MDN Page Visibility](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API): background timers/RAF can be throttled. Compute timer state from timestamps; do not count interval ticks or pause the shared room on one person's hidden tab.
+- [MDN Web Share](https://developer.mozilla.org/en-US/docs/Web/API/Web_Share_API): HTTPS, feature detection and transient user activation; `canShare` validates supported payloads. Dismissal is not an application error and must not send anything silently.
+- [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545.txt), sections 3.1/3.3.11: CRLF content lines, folding at 75 octets and escaping TEXT values. Calendar output needs injection/UTF-8/timezone tests, not plain string interpolation.
+- [MDN PWA caching](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Caching): cache strategy trades freshness for latency. Use a narrow cache allowlist; an example caching all responses is unsuitable for private room data.
+- [MDN playback quality](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality): native `VideoPlaybackQuality` counters can support a local observation window. A single cumulative total or software render count is not FPS/battery certification.
+- [Vimeo official player.js](https://github.com/vimeo/player.js): asynchronous control methods, time/play/pause events, mute API and unlisted-video URL requirements. API presence does not grant content rights or remove embed restrictions; inspect/pin license/version before importing.
+- [MDN Notifications](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API): permission requested from a gesture, persistent notifications required on most mobile browsers. This is a separate scope from current in-page chat previews.
+- [WebRTC TURN](https://webrtc.org/getting-started/turn-server): direct peer connections often fail across networks; TURN relays need infrastructure. Screen sharing remains a measured pilot with explicit cost/quota gates, not a promise of free 10-person HD mesh.
+- [MDN WebVTT](https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API): timed text cues also support chapters/metadata. Reuse the native timeline/validated captions path; no provider iframe injection.
+
+All nine returned usable content on 13/11/2026. Reading documents is separate from importing a dependency or certifying browser/provider behavior. Existing YouTube Premium and Spotify/Zing restrictions in this document still apply.
+
+### Delivery sequence after the current PDF/emotion release
+
+1. **Measure first:** local playback diagnostics + shared focus timer. Small server state, no new provider, one sheet; verify interruption/reconnect/hidden lifecycle and personal Hold before release.
+2. **Make it social:** authored conversation cards + opt-in mood suggestions; calendar/share after private-link review. Retain quiet defaults and no background polling.
+3. **Play together:** prototype Ô ăn quan with a confirmed rule pack, then room lô tô; see the dedicated rule/source document. Test with people familiar with each game before public labels say complete.
+4. **Broader collaboration:** bounded notes/sketches and PWA static cache. Screen share/Vimeo/lyrics follow their separate permission, content, WAN and device gates. Stronger motion remains opt-in and off by default.
+
+Each release must ship a concrete, tested slice, keep existing room/media contracts, and leave unresolved provider/device gates visible in the roadmap. Do not enable all proposals at once or turn the home page into a grid of unfinished controls.

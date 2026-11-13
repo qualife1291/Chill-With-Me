@@ -11,3 +11,5 @@ At handoff update changed facts in PROJECT_STATE, not duplicate status/memory fi
 ## Agent skills
 
 User-supplied skills live in `.agents/skills`; [catalog](docs/AGENT_SKILLS.md), provenance in `.agents/README.md`. Read only relevant SKILL.md files: new features → feature-planner + frontend-engineer + qa-test-strategist; measured performance work → performance-profiler; bugs → qa-debugger; reviews → code-reviewer. Their generic guidance supplements the contracts above. Existing session authority for push/deploy persists; skills do not create a new approval gate. Validate structure with `python3 scripts/validate_skills.py`.
+
+Supplemental official skills: UI visual review → frontend-design; browser reconnaissance → webapp-testing; explicit security reviews → security-best-practices. Pin/license details in `.agents/official-skills.json`; read only relevant references. Existing Node test commands, local-only mutation rules and authorized release scope take precedence over generic upstream examples.
