@@ -149,6 +149,7 @@ try {
     "experience.cjs",
     "cinema-upgrade.cjs",
     "hold-emotions.cjs",
+    "presentation.cjs",
     "media.cjs",
     "hls.cjs",
     "roadmap.cjs",

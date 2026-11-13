@@ -1,3 +1,9 @@
+import { documentMetadataSchema, type Presentation } from "./presentation";
+import {
+  REACTION_VARIANTS,
+  reactionVariants,
+  type ReactionVariant,
+} from "./reactions";
 import { parsePlaylist, MAX_IMPORT_ITEMS, MAX_IMPORT_BYTES } from "./playlist";
 import { z } from "zod";
 import { spaceSchema, type Space } from "./spaces";
@@ -117,7 +123,28 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("sit"), instant: z.boolean().optional() }),
   z.object({ type: z.literal("ping") }),
   z.object({ type: z.literal("wave") }),
-  z.object({ type: z.literal("reaction"), kind: reactionSchema }),
+  z.object({
+    type: z.literal("reaction"),
+    kind: reactionSchema,
+    variant: z.enum(REACTION_VARIANTS).optional(),
+  }),
+  z.object({
+    type: z.literal("present"),
+    file: documentMetadataSchema,
+    expectedRevision: z.number().int().min(0),
+    generation: z.number().int().min(0),
+  }),
+  z.object({
+    type: z.literal("slide"),
+    fileId: z.string().uuid(),
+    page: z.number().int().min(1).max(200),
+    expectedRevision: z.number().int().min(1),
+  }),
+  z.object({
+    type: z.literal("stop-presentation"),
+    fileId: z.string().uuid(),
+    expectedRevision: z.number().int().min(1),
+  }),
   z.object({ type: z.literal("poke"), id: z.string().min(1).max(128) }),
 ]);
 export type Command = z.infer<typeof commandSchema>;
@@ -152,6 +179,8 @@ export type Suggestion = {
   at: number;
 };
 export type Room = {
+  presentation?: Presentation;
+  presentationRevision?: number;
   space?: Space;
   seating?: z.infer<typeof seatingSchema>;
   visibility?: z.infer<typeof visibilitySchema>;
@@ -185,6 +214,7 @@ export type Room = {
   reaction?: {
     id: string;
     kind: ReactionKind;
+    variant?: ReactionVariant;
     memberId?: string;
     name?: string;
     at: number;
@@ -333,6 +363,12 @@ export function requestJoin(
   });
   r.revision++;
 }
+function clearPresentation(r: Room) {
+  if (!r.presentation) return;
+  r.presentationRevision =
+    (r.presentationRevision || r.presentation.revision) + 1;
+  delete r.presentation;
+}
 export function apply(r: Room, actor: string, c: Command, now: number) {
   const member = r.members.find((m) => m.id === actor);
   if (!member) throw Error("FORBIDDEN");
@@ -353,6 +389,11 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     actor !== r.host
   )
     throw Error("HOST_ONLY");
+  if (
+    r.presentation &&
+    ["next", "play", "pause", "seek", "resume", "wait"].includes(c.type)
+  )
+    throw Error("PRESENTATION_ACTIVE");
   const checkQueue = (expected: number | undefined) => {
     if (expected !== undefined && expected !== (r.queueRevision || 0))
       throw Error("STALE_QUEUE");
@@ -360,6 +401,48 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
   const bumpQueue = () => {
     r.queueRevision = (r.queueRevision || 0) + 1;
   };
+  if (c.type === "present") {
+    if (c.generation !== r.generation) throw Error("STALE_GENERATION");
+    if (c.expectedRevision !== (r.presentationRevision || 0))
+      throw Error("STALE_PRESENTATION");
+    const file = documentMetadataSchema.parse(c.file);
+    if (file.mime !== "application/pdf" && file.pages !== 1)
+      throw Error("INVALID_DOCUMENT");
+    if (
+      [r.current, ...r.queue].some(
+        (i) => i?.source?.kind === "local" && i.source.fileId === file.fileId,
+      ) ||
+      r.presentation?.source.fileId === file.fileId
+    )
+      throw Error("INVALID_DOCUMENT");
+    r.position = target(r, now);
+    r.anchor = now;
+    r.playing = false;
+    r.waiting = [];
+    delete r.readinessPaused;
+    r.presentationRevision = (r.presentationRevision || 0) + 1;
+    r.presentation = {
+      source: { ...file, kind: "document", ownerId: actor },
+      page: 1,
+      revision: r.presentationRevision,
+    };
+    r.revision++;
+    return;
+  }
+  if (c.type === "slide" || c.type === "stop-presentation") {
+    const p = r.presentation;
+    if (!p || p.source.fileId !== c.fileId || p.revision !== c.expectedRevision)
+      throw Error("STALE_PRESENTATION");
+    if (c.type === "stop-presentation") clearPresentation(r);
+    else {
+      if (c.page > p.source.pages) throw Error("INVALID_DOCUMENT_PAGE");
+      p.page = c.page;
+      p.revision++;
+      r.presentationRevision = p.revision;
+    }
+    r.revision++;
+    return;
+  }
   if (c.type === "wait" || c.type === "ready" || c.type === "resume") {
     if (c.generation !== r.generation) throw Error("STALE_GENERATION");
     if (!r.current) throw Error("NO_VIDEO");
@@ -376,6 +459,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     } else if (c.type === "ready")
       r.waiting = waiting.filter((id) => id !== actor);
     else {
+      clearPresentation(r);
       r.waiting = [];
       delete r.readinessPaused;
       r.position = target(r, now);
@@ -499,6 +583,8 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     if (member.waveAt !== undefined && now - member.waveAt < 2400) return;
     member.waveAt = now;
   } else if (c.type === "reaction") {
+    if (c.variant && reactionVariants[c.variant].kind !== c.kind)
+      throw Error("INVALID_REACTION");
     if (r.reaction && now < r.reaction.at + REACTION_MS)
       throw Error("REACTION_BUSY");
     if (
@@ -510,6 +596,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     r.reaction = {
       id: crypto.randomUUID(),
       kind: c.kind,
+      ...(c.variant ? { variant: c.variant } : {}),
       memberId: actor,
       name: member.name,
       at: now,
@@ -620,6 +707,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     bumpQueue();
   } else if (c.type === "next") {
     if (c.generation !== r.generation) throw Error("STALE_GENERATION");
+    clearPresentation(r);
     r.waiting = [];
     delete r.readinessPaused;
     const previous = r.current;
@@ -639,11 +727,17 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     r.position = c.type === "seek" ? c.position : target(r, now);
     r.anchor = now;
     if (c.type === "play") {
+      clearPresentation(r);
       r.playing = true;
       delete r.readinessPaused;
     }
     if (c.type === "pause") r.playing = false;
   }
+  if (
+    r.presentation &&
+    !r.members.some((m) => m.id === r.presentation!.source.ownerId)
+  )
+    clearPresentation(r);
   if (r.waiting)
     r.waiting = r.waiting.filter((id) => r.members.some((m) => m.id === id));
   r.revision++;
@@ -687,6 +781,7 @@ export function view(r: Room, id: string) {
             reaction: {
               id: r.reaction.id,
               kind: r.reaction.kind,
+              ...(r.reaction.variant ? { variant: r.reaction.variant } : {}),
               at: r.reaction.at,
             },
           }
@@ -807,6 +902,13 @@ export function sweep(r: Room, now: number) {
       delete r.successor;
     }
     if (!r.members.some((m) => m.id === r.successor)) delete r.successor;
+    r.revision++;
+  }
+  if (
+    r.presentation &&
+    !r.members.some((m) => m.id === r.presentation!.source.ownerId)
+  ) {
+    clearPresentation(r);
     r.revision++;
   }
   if (!r.members.length && r.emptySince === undefined) {

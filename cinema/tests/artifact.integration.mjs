@@ -8,7 +8,7 @@ if (!["localhost", "127.0.0.1"].includes(new URL(base).hostname))
   throw Error("Artifact checks target local runtimes only");
 const dist = fileURLToPath(new URL("../dist/", import.meta.url));
 const paths = readdirSync(dist, { recursive: true, withFileTypes: true })
-  .filter((f) => f.isFile())
+  .filter((f) => f.isFile() && f.name !== "_headers")
   .map((f) => relative(dist, join(f.parentPath, f.name)).replaceAll("\\", "/"));
 const assets = [];
 for (const path of paths) {
@@ -29,6 +29,12 @@ for (const path of paths) {
   });
 }
 assert.equal((await fetch(base + "/models/missing.glb")).status, 404);
+assert.equal((await fetch(base + "/pdf/missing.wasm")).status, 404);
+const headers = (await fetch(base + "/")).headers;
+assert.equal(headers.get("x-content-type-options"), "nosniff");
+assert.equal(headers.get("x-frame-options"), "DENY");
+assert.equal(headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+assert.equal(headers.get("permissions-policy"), "camera=(), microphone=(), geolocation=()");
 const rooms = await (await fetch(base + "/api/rooms")).json();
 assert.equal(rooms.length, 3);
 writeFileSync(

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playFireworkSound } from "./fireworkSound";
 import type { ReactionKind } from "../shared/model";
-export type RoomSound = ReactionKind | "poke";
+import type { ReactionVariant } from "../shared/reactions";
+export type RoomSound = ReactionKind | ReactionVariant | "poke";
 /** Short, locally synthesized cues. Never queue audio behind an autoplay block. */
 export function useRoomSounds(session = "", sideGain = 1) {
   const [enabled, setEnabled] = useState(() => {
@@ -165,18 +166,22 @@ export function useRoomSounds(session = "", sideGain = 1) {
         ageMs >= 3000
       )
         return;
-      if (kind === "flowers" && ageMs >= 2200) return;
-      if (kind === "flowers") stopCues();
+      if ((kind === "flowers" || kind === "celebrate") && ageMs >= 2200) return;
+      if (kind === "flowers" || kind === "celebrate") stopCues();
       const length =
-        kind === "flowers"
+        kind === "flowers" || kind === "celebrate"
           ? 2800 - ageMs
-          : kind === "troll"
-            ? 1050
-            : kind === "applause"
-              ? 1000
-              : kind === "sad"
-                ? 750
-                : 350;
+          : kind === "love" || kind === "wow"
+            ? 750
+            : kind === "thanks" || kind === "laugh"
+              ? 900
+              : kind === "troll"
+                ? 1050
+                : kind === "applause"
+                  ? 1000
+                  : kind === "sad"
+                    ? 750
+                    : 350;
       activeUntil.current = Math.max(activeUntil.current, Date.now() + length);
       clearTimeout(activeTimer.current);
       setActive(true);
@@ -184,7 +189,7 @@ export function useRoomSounds(session = "", sideGain = 1) {
         () => setActive(false),
         Math.max(0, activeUntil.current - Date.now()),
       );
-      if (kind === "flowers") {
+      if (kind === "flowers" || kind === "celebrate") {
         fireworkStop.current = playFireworkSound(ctx, bus, ageMs);
         return;
       }
@@ -215,7 +220,20 @@ export function useRoomSounds(session = "", sideGain = 1) {
         osc.start(at);
         osc.stop(at + length + 0.02);
       };
-      if (kind === "applause") {
+      if (kind === "love" || kind === "thanks" || kind === "wow") {
+        const notes =
+          kind === "love"
+            ? [523.25, 659.25, 783.99]
+            : kind === "thanks"
+              ? [392, 523.25, 659.25, 783.99]
+              : [330, 494, 740];
+        notes.forEach((n, i) =>
+          tone(n, i * 0.12, 0.28, kind === "wow" ? n * 1.2 : n),
+        );
+      } else if (kind === "laugh") {
+        for (let i = 0; i < 4; i++)
+          tone(i % 2 ? 480 : 390, i * 0.15, 0.12, 250, "triangle");
+      } else if (kind === "applause") {
         // Filtered noise bursts resemble a small round of applause, without a media download.
         const buffer = ctx.createBuffer(
           2,

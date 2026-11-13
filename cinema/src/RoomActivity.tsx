@@ -1,16 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import type { Member, ReactionKind, Room } from "../shared/model";
+import type { Member, Room } from "../shared/model";
 import { REACTION_MS } from "../shared/model";
 import Fireworks from "./Fireworks";
 import ReactionCloud from "./ReactionCloud";
 import type { RoomSound } from "./useRoomSounds";
-export const reactions: Record<ReactionKind, { icon: string; label: string }> =
-  {
-    flowers: { icon: "🎆", label: "Pháo bông" },
-    applause: { icon: "👏", label: "Vỗ tay" },
-    sad: { icon: "🥺", label: "Mếu mào" },
-    troll: { icon: "😜", label: "Trêu vui" },
-  };
+import { reactionPreset } from "../shared/reactions";
 type Message = Room["messages"][number];
 function useRemaining(
   at: number | undefined,
@@ -88,9 +82,12 @@ export default function RoomActivity({
     reacted.current = event.id;
     const age = Date.now() + offset - event.at;
     if (age > -1000 && age < REACTION_MS)
-      playSound(event.kind, Math.max(0, age));
+      playSound(event.variant || event.kind, Math.max(0, age));
   }, [room.reaction, offset, playSound]);
   const reaction = room.reaction;
+  const preset = reaction
+    ? reactionPreset(reaction.kind, reaction.variant)
+    : undefined;
   return (
     <>
       {!chatOpen && toasts.length > 0 && (
@@ -145,6 +142,7 @@ export default function RoomActivity({
             <ReactionCloud
               key={effectsBudget}
               kind={reaction.kind}
+              variant={reaction.variant}
               at={reaction.at}
               offset={offset}
               budget={effectsBudget}
@@ -153,12 +151,12 @@ export default function RoomActivity({
           <div
             className={`room-reaction reaction-${reaction.kind}${effectsBudget === 0 ? " quiet-reaction" : ""}`}
             role="status"
-            aria-label={reactions[reaction.kind].label}
+            aria-label={preset!.label}
           >
             <div className="reaction-symbol" aria-hidden="true">
-              {reactions[reaction.kind].icon}
+              {preset!.icon}
             </div>
-            <span>{reactions[reaction.kind].label}</span>
+            <span>{preset!.label}</span>
           </div>
         </div>
       )}

@@ -1,4 +1,10 @@
 import {
+  documentMime,
+  documentMetadataSchema,
+  type DocumentFile,
+  type SharedFile,
+} from "../shared/presentation";
+import {
   MAX_RELAY_BYTES,
   CHUNK_BYTES,
   packFileChunk,
@@ -20,9 +26,14 @@ export type FileProgress = {
   size: number;
   error?: string;
 };
-const unavailable =
+const mediaUnavailable =
   "Không nhận được file. Người gửi cần giữ tab mở; hãy thử lại hoặc dùng link video công khai.";
 export class FileShare {
+  private get unavailable() {
+    return this.mode === "document"
+      ? "Chưa nhận được tài liệu. Mở Tương tác → Trình chiếu để thử nhận qua phòng. Người gửi cần giữ tab mở."
+      : mediaUnavailable;
+  }
   private room: Room | null = null;
   private id = "";
   private connected = false;
@@ -45,7 +56,10 @@ export class FileShare {
     string,
     { fileId: string; ack?: (offset: number) => void; cancel?: () => void }
   >();
-  constructor(private send: (msg: FileSignal | ArrayBuffer) => void) {}
+  constructor(
+    private send: (msg: FileSignal | ArrayBuffer) => void,
+    private mode: "media" | "document" = "media",
+  ) {}
   subscribe = (fn: () => void) => {
     this.listeners.add(fn);
     return () => {
@@ -82,19 +96,30 @@ export class FileShare {
   }
   setRoom(room: Room | null, id: string) {
     if (this.room?.session !== room?.session || id !== this.id) this.clear();
-    const old = this.room?.current?.id;
+    const wasDocument = this.mode === "media" && !!this.room?.presentation;
+    const old =
+      this.mode === "document" ? this.source()?.fileId : this.room?.current?.id;
     this.room = room;
     this.id = id;
-    const all = [room?.current, ...(room?.queue || [])];
+    const all =
+      this.mode === "document"
+        ? [room?.presentation?.source]
+        : [room?.current?.source, ...(room?.queue || []).map((i) => i.source)];
     for (const [key, f] of this.owned)
       if (
         !f.pending &&
-        !all.some((i) => i?.source?.kind === "local" && i.source.fileId === key)
+        !all.some(
+          (s) =>
+            (s?.kind === "local" || s?.kind === "document") && s.fileId === key,
+        )
       ) {
         URL.revokeObjectURL(f.url);
         this.owned.delete(key);
       }
-    if (old !== room?.current?.id) {
+    if (
+      old !==
+      (this.mode === "document" ? this.source()?.fileId : room?.current?.id)
+    ) {
       this.clearRelay();
       for (const key of this.peers.keys()) this.close(key);
       if (this.received) {
@@ -105,6 +130,13 @@ export class FileShare {
     }
     for (const key of this.peers.keys())
       if (!room?.members.some((m) => m.id === key)) this.close(key);
+    const documentActive = this.mode === "media" && !!room?.presentation;
+    if (wasDocument !== documentActive) {
+      this.clearRelay();
+      for (const key of this.peers.keys()) this.close(key);
+      if (!this.state.url)
+        this.update({ received: 0, size: this.source()?.size || 0 });
+    }
     this.ensure();
   }
   transport(ready: boolean) {
@@ -119,7 +151,30 @@ export class FileShare {
     this.room = null;
     this.clear();
   }
+  prepareDocument(file: File, pages: number): DocumentFile {
+    if (this.mode !== "document") throw Error("Luồng tài liệu chưa sẵn sàng.");
+    const metadata = documentMetadataSchema.parse({
+      fileId: crypto.randomUUID(),
+      name: file.name.slice(0, 120),
+      size: file.size,
+      mime: documentMime(file.name, file.type),
+      pages,
+    });
+    if (
+      [...this.owned.values()].reduce((n, v) => n + v.file.size, 0) +
+        file.size >
+      40 * 1024 * 1024
+    )
+      throw Error(
+        "Chỉ giữ tối đa tài liệu hiện tại và một file thay thế (40 MB).",
+      );
+    const url = URL.createObjectURL(file);
+    this.owned.set(metadata.fileId, { file, url, pending: true });
+    return { ...metadata, kind: "document", ownerId: this.id };
+  }
   async prepare(file: File): Promise<LocalMedia> {
+    if (this.mode !== "media")
+      throw Error("Hãy chọn tài liệu từ mục Trình chiếu.");
     const mime = localMime(file.name, file.type);
     if (!mime)
       throw Error("Hãy chọn MP4, WebM, MOV hoặc audio MP3, M4A, Ogg, WAV.");
@@ -192,12 +247,21 @@ export class FileShare {
     if (f) URL.revokeObjectURL(f.url);
     this.owned.delete(fileId);
   }
-  async restore(file: File) {
+  async restore(file: File, documentPages?: number) {
     const s = this.source();
-    if (!s || s.ownerId !== this.id) throw Error(unavailable);
+    if (!s || s.ownerId !== this.id) throw Error(this.unavailable);
     if (file.name.slice(0, 120) !== s.name || file.size !== s.size)
       throw Error("Hãy chọn lại đúng file đã chia sẻ.");
-    const prepared = await this.prepare(file);
+    if (
+      s.kind === "document" &&
+      (documentPages !== s.pages ||
+        documentMime(file.name, file.type) !== s.mime)
+    )
+      throw Error("Tài liệu không khớp số trang hoặc định dạng ban đầu.");
+    const prepared =
+      s.kind === "document"
+        ? this.prepareDocument(file, documentPages!)
+        : await this.prepare(file);
     const f = this.owned.get(prepared.fileId)!;
     this.owned.delete(prepared.fileId);
     this.remove(s.fileId);
@@ -345,6 +409,8 @@ export class FileShare {
     }
   }
   private source() {
+    if (this.mode === "document")
+      return this.room?.presentation?.source || null;
     const s = this.room?.current?.source;
     return s?.kind === "local" ? s : null;
   }
@@ -356,7 +422,7 @@ export class FileShare {
   }
   private emit(to: string, signal: FileSignal["signal"]) {
     const s = this.source();
-    if (!s || !this.connected || !this.room) throw Error(unavailable);
+    if (!s || !this.connected || !this.room) throw Error(this.unavailable);
     this.send({
       type: "file-signal",
       session: this.room.session,
@@ -366,6 +432,7 @@ export class FileShare {
     });
   }
   private ensure() {
+    if (this.mode === "media" && this.room?.presentation) return;
     const s = this.source();
     if (!s) return;
     const f = this.owned.get(s.fileId);
@@ -391,16 +458,23 @@ export class FileShare {
     )
       return;
     if (!this.room?.members.some((m) => m.id === s.ownerId)) {
-      this.update({ received: 0, size: s.size, error: unavailable });
+      this.update({ received: 0, size: s.size, error: this.unavailable });
       return;
     }
     this.update({ received: 0, size: s.size });
-    void this.request(s).catch(() => this.fail(s.ownerId, s.fileId));
+    const request = this.request(s),
+      peer = this.peers.get(s.ownerId);
+    void request.catch(() => {
+      if (this.peers.get(s.ownerId) === peer) this.fail(s.ownerId, s.fileId);
+    });
   }
   private fail(id: string, fileId: string) {
+    if (this.peers.get(id)?.fileId && this.peers.get(id)!.fileId !== fileId)
+      return;
+    if (this.mode === "media" && this.room?.presentation) return;
     this.close(id);
     if (this.source()?.fileId === fileId && !this.state.url)
-      this.update({ ...this.state, error: unavailable });
+      this.update({ ...this.state, error: this.unavailable });
   }
   private peer(id: string, fileId: string) {
     this.close(id);
@@ -436,7 +510,7 @@ export class FileShare {
     };
     return p;
   }
-  private async request(s: LocalMedia) {
+  private async request(s: SharedFile) {
     const p = this.peer(s.ownerId, s.fileId),
       dc = p.pc.createDataChannel("video", { ordered: true });
     p.dc = dc;
@@ -504,6 +578,7 @@ export class FileShare {
       !this.room?.members.some((m) => m.id === from)
     )
       return;
+    let handlingPeer: Peer | undefined;
     try {
       if (msg.signal.type === "relay-request") {
         if (s.ownerId === this.id) void this.transmitRelay(from, s.fileId);
@@ -526,6 +601,7 @@ export class FileShare {
           return;
         }
         const p = this.peer(from, s.fileId);
+        handlingPeer = p;
         p.pc.ondatachannel = (e) => {
           if (this.peers.get(from) !== p) return;
           e.channel.onopen = () => {
@@ -545,6 +621,7 @@ export class FileShare {
       } else {
         const p = this.peers.get(from);
         if (!p) return;
+        handlingPeer = p;
         if (msg.signal.type === "unavailable") {
           this.fail(from, s.fileId);
           return;
@@ -568,7 +645,8 @@ export class FileShare {
         }
       }
     } catch {
-      this.fail(from, s.fileId);
+      if (!handlingPeer || this.peers.get(from) === handlingPeer)
+        this.fail(from, s.fileId);
     }
   }
   private async transmit(id: string, p: Peer, dc: RTCDataChannel, file: File) {
@@ -587,7 +665,7 @@ export class FileShare {
             e ? reject(e) : resolve();
           };
           const low = () => finish(),
-            closed = () => finish(Error(unavailable)),
+            closed = () => finish(Error(this.unavailable)),
             timer = setTimeout(closed, 15000);
           dc.addEventListener("bufferedamountlow", low, { once: true });
           dc.addEventListener("close", closed, { once: true });

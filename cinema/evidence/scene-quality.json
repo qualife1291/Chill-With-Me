@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "date": "2026-11-13T12:11:59.160Z",
+  "date": "2026-11-13T19:05:21.586Z",
   "checks": [
     "hidden lobby skips periodic room requests and refreshes when visible",
     "economy reduces actual drawing-buffer pixels without replacing native player or iframe",

@@ -15,10 +15,17 @@ export default function PlaybackReadiness({
 }) {
   const [busy, setBusy] = useState(false);
   useEffect(() => {
+    if (room.presentation) return;
     if (room.waiting?.length) onOpenChange(true);
     else if (room.playing) onOpenChange(false);
-  }, [room.waiting?.length, room.playing, room.generation, onOpenChange]);
-  if (!room.current) return null;
+  }, [
+    room.presentation,
+    room.waiting?.length,
+    room.playing,
+    room.generation,
+    onOpenChange,
+  ]);
+  if (!room.current || room.presentation) return null;
   const waiting = (room.waiting || []).filter((id) =>
       room.members.some((m) => m.id === id),
     ),

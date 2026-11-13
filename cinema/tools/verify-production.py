@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Read-only verification of the one approved public Worker against local dist."""
+from concurrent.futures import ThreadPoolExecutor
 import argparse
 import hashlib
 import json
@@ -35,20 +36,32 @@ def main():
               'checks': 'Read-only GET; compare every dist asset; three room summaries; no production mutation'}
     path = ROOT / 'evidence/production.json'
     try:
-        files = sorted(p for p in (ROOT / 'dist').rglob('*') if p.is_file())
+        files = sorted(p for p in (ROOT / 'dist').rglob('*') if p.is_file() and p.name != '_headers')
         if not files or not (ROOT / 'dist/index.html').is_file():
             raise ValueError('Build dist before verifying production')
-        assets = []
-        for item in files:
+        def verify_asset(item):
             relative = item.relative_to(ROOT / 'dist').as_posix()
             actual = fetch('/' if relative == 'index.html' else '/' + relative)
             if actual != item.read_bytes():
                 raise ValueError('Public asset does not match tested build: ' + relative)
-            assets.append({'path': relative, 'bytes': len(actual), 'sha256': hashlib.sha256(actual).hexdigest()})
+            return {'path': relative, 'bytes': len(actual), 'sha256': hashlib.sha256(actual).hexdigest()}
+        # Bounded parallel GETs keep optional PDF resources from making verification serial.
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            assets = list(pool.map(verify_asset, files))
+        raw_headers = subprocess.run(
+            ['curl', '--fail', '--silent', '--show-error', '--head', '--max-time', '30', BASE + '/'],
+            check=True, capture_output=True).stdout.decode()
+        observed_headers = {line.partition(':')[0].strip().lower(): line.partition(':')[2].strip()
+                            for line in raw_headers.splitlines() if ':' in line}
+        expected_headers = {'x-content-type-options': 'nosniff', 'x-frame-options': 'DENY',
+                            'referrer-policy': 'strict-origin-when-cross-origin',
+                            'permissions-policy': 'camera=(), microphone=(), geolocation=()'}
+        if any(observed_headers.get(k) != v for k, v in expected_headers.items()):
+            raise ValueError('Public static security headers do not match the tested policy')
         rooms = json.loads(fetch('/api/rooms'))
         if len(rooms) != 3 or sorted(r['slot'] for r in rooms) != [1, 2, 3]:
             raise ValueError('Expected the three configured room summaries')
-        report.update(passed=True, assets=assets, room_slots=len(rooms))
+        report.update(passed=True, assets=assets, room_slots=len(rooms), security_headers=expected_headers)
     except Exception as error:
         report['error'] = str(error)
         path.write_text(json.dumps(report, indent=2) + '\n')

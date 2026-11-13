@@ -1,3 +1,4 @@
+import { sharedFile } from "../shared/presentation";
 import {
   unpackFileChunk,
   packFileChunk,
@@ -121,13 +122,10 @@ export class RoomSlot extends DurableObject<Env> {
         >;
       };
       if (!a.relay) continue;
-      const source = r.current?.source;
       a.relay = Object.fromEntries(
         Object.entries(a.relay).filter(
           ([id, v]) =>
-            source?.kind === "local" &&
-            source.fileId === v.fileId &&
-            r.members.some((m) => m.id === id),
+            !!sharedFile(r, v.fileId) && r.members.some((m) => id === m.id),
         ),
       );
       if (!Object.keys(a.relay).length) delete a.relay;
@@ -335,12 +333,12 @@ export class RoomSlot extends DurableObject<Env> {
             { fileId: string; offset: number; requestedAt: number }
           >;
         };
-        const source = r?.current?.source;
+        const source = sharedFile(r, h.fileId);
         if (
           !r ||
           h.session !== r.session ||
           a.session !== r.session ||
-          source?.kind !== "local" ||
+          !source ||
           source.ownerId !== a.id ||
           source.fileId !== h.fileId ||
           source.size > MAX_RELAY_BYTES ||
@@ -466,9 +464,8 @@ export class RoomSlot extends DurableObject<Env> {
           msg.to === a.id
         )
           throw Error("FORBIDDEN");
-        const source = r.current?.source;
-        if (source?.kind !== "local" || source.fileId !== msg.fileId)
-          throw Error("STALE_FILE");
+        const source = sharedFile(r, msg.fileId);
+        if (!source) throw Error("STALE_FILE");
         const owner = source.ownerId;
         if (
           (["offer", "relay-request", "relay-ack"].includes(msg.signal.type) &&
@@ -520,8 +517,8 @@ export class RoomSlot extends DurableObject<Env> {
               attachment.relay = Object.fromEntries(
                 Object.entries(attachment.relay || {}).filter(
                   ([id, v]) =>
-                    v.fileId === source.fileId &&
-                    r.members.some((m) => m.id === id),
+                    !!sharedFile(r, v.fileId) &&
+                    r.members.some((m) => id === m.id),
                 ),
               );
               attachment.relay[a.id] = {

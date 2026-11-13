@@ -64,6 +64,13 @@ export default function NativePlayer(props: PlayerProps) {
       (host && nativePending.current > 0)
     )
       return;
+    if (r.presentation) {
+      if (!v.paused) {
+        expectedPlayback.current = "pause";
+        v.pause();
+      }
+      return;
+    }
     const t = target(r, latest.current.serverNow?.() ?? Date.now() + offset);
     if (
       force ||
@@ -125,7 +132,15 @@ export default function NativePlayer(props: PlayerProps) {
     sync(true);
     const timer = setInterval(() => sync(), 1000);
     return () => clearInterval(timer);
-  }, [room.generation, room.playing, room.position, room.anchor, isHost, url]);
+  }, [
+    room.generation,
+    room.playing,
+    room.position,
+    room.anchor,
+    room.presentation?.source.fileId,
+    isHost,
+    url,
+  ]);
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
@@ -223,6 +238,11 @@ export default function NativePlayer(props: PlayerProps) {
             sync(true);
           }}
           onPlay={() => {
+            if (latest.current.room.presentation) {
+              expectedPlayback.current = "pause";
+              ref.current?.pause();
+              return;
+            }
             if (expectedPlayback.current === "play") {
               expectedPlayback.current = null;
               return;

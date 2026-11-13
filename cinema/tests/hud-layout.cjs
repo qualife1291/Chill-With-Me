@@ -148,6 +148,11 @@ fs.mkdirSync(shots, { recursive: true });
           )) {
             if (!visible(el)) continue;
             const b = el.getBoundingClientRect();
+            const scrollLane = el.closest(".reaction-options");
+            if (scrollLane) {
+              const lane = scrollLane.getBoundingClientRect();
+              if (b.left < lane.left || b.right > lane.right) continue;
+            }
             if (b.width < 44 || b.height < 44)
               failures.push(
                 "touch target below 44px: " + (el.ariaLabel || el.textContent),
@@ -297,6 +302,35 @@ fs.mkdirSync(shots, { recursive: true });
             .evaluate((el) => el.contains(document.activeElement)),
           "focus did not enter reaction strip",
         );
+        for (const name of [
+          "Thả tim",
+          "Cười vui",
+          "Bất ngờ",
+          "Chúc mừng",
+          "Cảm ơn",
+        ]) {
+          const button = page.getByRole("button", { name, exact: true });
+          await button.scrollIntoViewIfNeeded();
+          assert(
+            await button.evaluate((el) => {
+              const r = el.getBoundingClientRect(),
+                lane = el.closest(".reaction-options").getBoundingClientRect();
+              return (
+                r.width >= 44 &&
+                r.height >= 44 &&
+                r.left >= lane.left - 1 &&
+                r.right <= lane.right + 1 &&
+                el.contains(
+                  document.elementFromPoint(
+                    r.x + r.width / 2,
+                    r.y + r.height / 2,
+                  ),
+                )
+              );
+            }),
+            "expanded emotion choice cannot be reached: " + name,
+          );
+        }
         await page.keyboard.press("End");
         assert.equal(
           await page.evaluate(() => document.activeElement.ariaLabel),

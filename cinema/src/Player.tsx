@@ -140,6 +140,10 @@ function YouTubePlayerView({
                 p.getVideoData().video_id !== r.current.videoId
               )
                 return;
+              if (r.presentation) {
+                if (e.data === 1) p.pauseVideo();
+                return;
+              }
               if (
                 !r.readinessPaused &&
                 e.data === 0 &&
@@ -200,6 +204,12 @@ function YouTubePlayerView({
     const sync = () => {
       const { room: r, offset: o, isHost: host } = latest.current;
       if (!r.current) return;
+      if (r.presentation) {
+        lastSample.current = null;
+        quietUntil.current = performance.now() + 1200;
+        if (p.getPlayerState() === 1) p.pauseVideo();
+        return;
+      }
       const t = target(r, latest.current.serverNow?.() ?? Date.now() + o);
       if (
         loaded.current !== r.generation ||
@@ -243,6 +253,7 @@ function YouTubePlayerView({
     room.anchor,
     room.readinessPaused,
     room.waiting?.length,
+    room.presentation?.source.fileId,
   ]);
   useEffect(() => {
     if (!ready) return;
@@ -250,7 +261,13 @@ function YouTubePlayerView({
       const p = player.current,
         r = latest.current.room;
       if (p && latest.current.held && !p.isMuted()) p.mute();
-      if (!p || !r.current || !latest.current.isHost || r.readinessPaused)
+      if (
+        !p ||
+        !r.current ||
+        !latest.current.isHost ||
+        r.readinessPaused ||
+        r.presentation
+      )
         return;
       if (
         p.getVideoData().video_id &&

@@ -1,18 +1,21 @@
 import { useState, type CSSProperties } from "react";
 import type { ReactionKind } from "../shared/model";
-const icons = { applause: "👏", sad: "🥺", troll: "😜", flowers: "🎆" };
+import { reactionPreset, type ReactionVariant } from "../shared/reactions";
 export default function ReactionCloud({
   kind,
+  variant,
   at,
   offset,
   budget,
 }: {
   kind: ReactionKind;
+  variant?: ReactionVariant;
   at: number;
   offset: number;
   budget: number;
 }) {
   // Stable phase across chat/pose snapshots; no animation restart or frame loop.
+  const icon = reactionPreset(kind, variant).icon;
   const [age] = useState(() => Math.max(0, Date.now() + offset - at));
   return (
     <div className="reaction-floats" aria-hidden="true">
@@ -31,12 +34,14 @@ export default function ReactionCloud({
           }
         >
           {i % 3
-            ? icons[kind]
-            : kind === "applause"
+            ? icon
+            : variant === "love" || variant === "thanks" || variant === "wow"
               ? "✨"
-              : kind === "troll"
-                ? "😂"
-                : "💧"}
+              : kind === "applause"
+                ? "✨"
+                : kind === "troll"
+                  ? "😂"
+                  : "💧"}
         </i>
       ))}
     </div>

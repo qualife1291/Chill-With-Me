@@ -112,3 +112,20 @@ Giới hạn vẫn giữ: pilot vật lý/GPU, sustained WAN/quota/rollback prod
 - [x] Nghiên cứu nguồn chính thức và ghi phương án/rủi ro/acceptance cho screen share, slide, Spotify/Zing/phim, cảm giác mạnh và loto/ô ăn quan; ưu tiên đồ họa nhẹ, pin, codec, quyền nội dung và thiết bị thật.
 
 Phương án, nguồn/giấy phép, thứ tự triển khai và acceptance chi tiết: [Shared activities proposal](ADVANCED_EXPERIENCE.md#shared-activities-proposal--researched-2026-11-13). Các mục đề xuất chưa phải tính năng đã phát hành.
+
+## Trình chiếu và cảm xúc mở rộng — 13/11/2026
+
+- [x] PDF/ảnh đồng bộ theo trang do host điều khiển; nội dung-mode riêng, không dùng seek video. Giữ native player mounted, tạm dừng phim khi bắt đầu; trở lại phim theo thao tác rõ ràng. Host/epoch/revision/dedupe vẫn áp dụng.
+- [x] PDF.js lazy/pinned, tối đa 20 MiB/200 trang, ảnh raster giới hạn pixel; validate trước khi phát, giới hạn canvas hiện tại + trang tiếp, cancel/destroy/revoke khi đổi nguồn/thoát. Không đưa bytes vào DB.
+- [x] Mở rộng file transfer theo allowlist tài liệu riêng; giữ đường media hiện hành, owner/current-recipient/connection guards, relay/backpressure và giới hạn tài nguyên; file/chunk/Blob cũ được giải phóng.
+- [x] Thêm preset tim/cười/ngạc nhiên/chúc mừng/cảm ơn bằng variant của kind hiện có; strip cuộn gọn với nút đóng luôn nhìn thấy, âm thanh tổng hợp riêng, TTL/cooldown/reduced motion giữ nguyên.
+- [x] Unit/server/security + hai profile PDF thật, lỗi/password/file quá lớn, thay trang nhanh, late join, đứt kết nối, đổi file/phòng, native player identity, audio cleanup và ma trận mobile; hồi quy đầy đủ trước push/deploy.
+
+Các đợt tiếp theo và gate nhà cung cấp/thiết bị: [shared activities](ADVANCED_EXPERIENCE.md#shared-activities-proposal--researched-2026-11-13). Bản này hoàn thiện lát cắt slide và preset trước; chưa đánh dấu screen share, SDK nhạc hay game đã triển khai.
+
+## Hướng phát triển Chill With Me — nghiên cứu 13/11/2026
+
+- [x] Bổ sung ba skill chính thức có license/commit/SHA-256; áp dụng thiết kế, browser QA và bảo mật cùng các skill clean code/mobile hiện có. Validator kiểm cả cấu trúc và checksum, tổng 32 skill.
+- [x] Mở rộng nghiên cứu ngoài game: timer tập trung, mood opt-in, thẻ trò chuyện, hẹn lịch/chia sẻ, chẩn đoán media, khoảnh khắc, bảng ý tưởng, PWA cache chọn lọc, lyric và Vimeo. Nguồn chính thức/ưu tiên/acceptance ở [product direction](ADVANCED_EXPERIENCE.md#chill-with-me-product-direction--researched-2026-11-13).
+- [x] Đặc tả nghiên cứu luật/biến thể, nguồn, đồ họa, mobile, license và test cho [Ô ăn quan, lô tô, cờ gánh](VIETNAMESE_GAMES.md); không nhập engine thiếu kiểm chứng.
+- [ ] Đợt sau bản PDF: triển khai chẩn đoán media cục bộ + timer chung, rồi thẻ trò chuyện/mood và prototype game có rule pack được kiểm chứng. Các tính năng này mới là kế hoạch, không đánh dấu đã phát hành.

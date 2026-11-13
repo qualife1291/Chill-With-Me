@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "node tools/test-logic.mjs",
     "cf:types": "wrangler types",
     "worker:check": "wrangler deploy --dry-run",
     "serve": "wrangler dev",
@@ -18,10 +18,11 @@
     "@react-three/fiber": "^9.0.0",
     "hls.js": "1.7.4",
     "lucide-react": "^0.468.0",
+    "pdfjs-dist": "6.5.438",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "^0.180.0",
-    "zod": "^3.24.0"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "latest",

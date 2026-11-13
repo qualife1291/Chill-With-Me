@@ -3,14 +3,14 @@
   "members": 10,
   "renderer": "Chromium headless SwiftShader; one renderer, not ten devices",
   "idle": {
-    "elapsed": 1200.2999999998137,
+    "elapsed": 1200.4000000022352,
     "renderedFrames": 0
   },
   "animation": {
-    "elapsed": 3214.800000000745,
+    "elapsed": 3066.5,
     "rendererFrames": 10,
-    "rafP50": 292.59999999962747,
-    "rafP95": 443.09999999962747
+    "rafP50": 275.4000000022352,
+    "rafP95": 359.19999999925494
   },
   "resources": {
     "calls": 88,

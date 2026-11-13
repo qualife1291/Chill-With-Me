@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Armchair, Hand, Volume2, VolumeX, Smile, X } from "lucide-react";
-import { reactions } from "./RoomActivity";
+import { reactionChoices, type ReactionVariant } from "../shared/reactions";
 import type { Room, Member, Command, ReactionKind } from "../shared/model";
 export default function QuickActions({
   room,
@@ -12,6 +12,7 @@ export default function QuickActions({
   onOpenChange: setOpen,
   reactionsOpen,
   onReactionsChange,
+  onPresentation,
 }: {
   room: Room;
   me: Member;
@@ -20,6 +21,7 @@ export default function QuickActions({
   onToggleSounds: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPresentation: () => void;
   reactionsOpen: boolean;
   onReactionsChange: (open: boolean) => void;
 }) {
@@ -56,16 +58,22 @@ export default function QuickActions({
     const timer = setTimeout(() => setCooling(false), 5000);
     return () => clearTimeout(timer);
   }, [cooling]);
-  const sendReaction = async (kind: ReactionKind) => {
+  const sendReaction = async (
+    kind: ReactionKind,
+    variant?: ReactionVariant,
+  ) => {
     setSendingReaction(true);
     try {
-      await command({ type: "reaction", kind }, () => {
-        setCooling(true);
-        onReactionsChange(false);
-        requestAnimationFrame(() =>
-          reactionOpener.current?.focus({ preventScroll: true }),
-        );
-      });
+      await command(
+        { type: "reaction", kind, ...(variant ? { variant } : {}) },
+        () => {
+          setCooling(true);
+          onReactionsChange(false);
+          requestAnimationFrame(() =>
+            reactionOpener.current?.focus({ preventScroll: true }),
+          );
+        },
+      );
     } finally {
       setSendingReaction(false);
     }
@@ -149,22 +157,20 @@ export default function QuickActions({
         aria-label="Cảm xúc cả rạp"
         hidden={!reactionsOpen}
       >
-        {(Object.keys(reactions) as ReactionKind[]).map((kind) => (
-          <button
-            key={kind}
-            type="button"
-            title={
-              cooling
-                ? "Đợi một chút trước cảm xúc tiếp theo"
-                : reactions[kind].label
-            }
-            aria-label={reactions[kind].label}
-            disabled={sendingReaction || cooling || !!room.reaction}
-            onClick={() => void sendReaction(kind)}
-          >
-            <span aria-hidden="true">{reactions[kind].icon}</span>
-          </button>
-        ))}
+        <div className="reaction-options">
+          {reactionChoices.map(({ kind, variant, label, icon }) => (
+            <button
+              key={variant || kind}
+              type="button"
+              title={cooling ? "Đợi một chút trước cảm xúc tiếp theo" : label}
+              aria-label={label}
+              disabled={sendingReaction || cooling || !!room.reaction}
+              onClick={() => void sendReaction(kind, variant)}
+            >
+              <span aria-hidden="true">{icon}</span>
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           aria-label="Đóng cảm xúc"
@@ -194,6 +200,14 @@ export default function QuickActions({
             <X size={18} />
           </button>
         </header>
+        <button
+          type="button"
+          className="presentation-launcher"
+          aria-label="Trình chiếu PDF / ảnh"
+          onClick={onPresentation}
+        >
+          ▧ Trình chiếu PDF / ảnh
+        </button>
         <div className="action-row">
           <button
             onClick={() =>

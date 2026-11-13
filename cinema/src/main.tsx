@@ -1,3 +1,5 @@
+import { DOCUMENT_ACCEPT } from "../shared/presentation";
+import { unpackFileChunk } from "../shared/fileRelay";
 import CinemaPreferences from "./CinemaPreferences";
 import { usePreference } from "./usePreference";
 import { AUDIO_PRIORITIES, audioMix } from "../shared/audioMix";
@@ -72,6 +74,8 @@ import "./style.css";
 import "./room-layout.css";
 import { useRoomViewport } from "./useRoomViewport";
 import { useReducedMotion } from "./useReducedMotion";
+const PresentationScreen = lazy(() => import("./PresentationScreen"));
+const PresentationControls = lazy(() => import("./PresentationControls"));
 const AvatarPreview = lazy(() => import("./AvatarPreview"));
 const Lobby = lazy(() => import("./Lobby"));
 const Cinema = React.memo(lazy(() => import("./Cinema")));
@@ -107,6 +111,13 @@ const errors: Record<string, string> = {
   REQUEST_QUEUE_FULL: "Có nhiều người đang chờ duyệt. Hãy thử lại sau.",
   INVALID_INPUT: "Thông tin chưa hợp lệ. Hãy kiểm tra rồi thử lại.",
   FAILED: "Chưa thực hiện được thao tác. Hãy thử lại.",
+  PRESENTATION_ACTIVE:
+    "Phòng đang trình chiếu. Dừng trình chiếu trước khi điều khiển video.",
+  STALE_PRESENTATION:
+    "Tài liệu vừa thay đổi. Hãy kiểm tra trang hiện tại rồi thử lại.",
+  INVALID_DOCUMENT: "Tài liệu không hợp lệ. Hãy chọn PDF hoặc ảnh phù hợp.",
+  INVALID_DOCUMENT_PAGE: "Trang này không có trong tài liệu.",
+  INVALID_REACTION: "Cảm xúc chưa hợp lệ. Hãy chọn lại.",
   REACTION_BUSY: "Cảm xúc đang diễn ra. Đợi một chút nhé.",
   REACTION_COOLDOWN: "Bạn chờ 5 giây giữa hai cảm xúc nhé.",
   INVITE_REQUIRED: "Phòng riêng cần link mời hợp lệ từ chủ phòng.",
@@ -198,6 +209,7 @@ function App() {
       | "view"
       | "actions"
       | "readiness"
+      | "presentation"
     >(""),
     [approvalDismissed, setApprovalDismissed] = useState(false),
     [light, setLight] = useState(false),
@@ -243,14 +255,20 @@ function App() {
   // A single owner prevents independently mounted HUD sheets from overlapping.
   type Panel = "" | "chat" | "queue" | "people" | "info";
   const panel: Panel =
-    sheet === "view" || sheet === "actions" || sheet === "readiness"
+    sheet === "view" ||
+    sheet === "actions" ||
+    sheet === "readiness" ||
+    sheet === "presentation"
       ? ""
       : sheet;
   const showControls = sheet === "view";
   const setPanel: React.Dispatch<React.SetStateAction<Panel>> = (next) =>
     setSheet((current) => {
       const previous: Panel =
-        current === "view" || current === "actions" || current === "readiness"
+        current === "view" ||
+        current === "actions" ||
+        current === "readiness" ||
+        current === "presentation"
           ? ""
           : current;
       const value = typeof next === "function" ? next(previous) : next;
@@ -275,20 +293,37 @@ function App() {
     { id: string; text: string; failed: boolean }[]
   >([]);
   const chatSocket = useRef<WebSocket | null>(null);
-  const files = useMemo(
-    () =>
-      new FileShare((msg) => {
-        const socket = chatSocket.current;
-        if (socket?.readyState !== WebSocket.OPEN)
-          throw Error("Mất kết nối phòng");
-        socket.send(msg instanceof ArrayBuffer ? msg : JSON.stringify(msg));
-      }),
-    [],
-  );
+  const [files, documentFiles] = useMemo(() => {
+    const send = (
+      msg: Parameters<ConstructorParameters<typeof FileShare>[0]>[0],
+    ) => {
+      const socket = chatSocket.current;
+      if (socket?.readyState !== WebSocket.OPEN)
+        throw Error("Mất kết nối phòng");
+      socket.send(msg instanceof ArrayBuffer ? msg : JSON.stringify(msg));
+    };
+    return [new FileShare(send), new FileShare(send, "document")] as const;
+  }, []);
   useEffect(() => {
-    files.setRoom(status === "joined" ? room : null, id);
-  }, [files, room, status, id]);
-  useEffect(() => () => files.dispose(), [files]);
+    for (const share of [files, documentFiles])
+      share.setRoom(status === "joined" ? room : null, id);
+  }, [files, documentFiles, room, status, id]);
+  useEffect(
+    () => () => {
+      files.dispose();
+      documentFiles.dispose();
+    },
+    [files, documentFiles],
+  );
+  const [documentBusy, setDocumentBusy] = useState(false),
+    [documentReady, setDocumentReady] = useState(false);
+  const documentAbort = useRef<AbortController | null>(null);
+  useEffect(
+    () => () => {
+      documentAbort.current?.abort();
+    },
+    [room?.session, status],
+  );
   const queueDrag = useRef<{
     id: string;
     revision: number;
@@ -337,7 +372,12 @@ function App() {
   const approval = useRef<HTMLElement>(null),
     quickModal = useRef<HTMLElement>(null);
   const isHost = room?.host === id && status === "joined";
-  const quickActive = !!(isHost && !room?.current && room?.queue.length === 0);
+  const quickActive = !!(
+    isHost &&
+    !room?.current &&
+    !room?.presentation &&
+    room?.queue.length === 0
+  );
   const approvalActive = !!(
     isHost &&
     room?.pending.length &&
@@ -380,7 +420,10 @@ function App() {
     sounds.active,
     ambience.mode !== "off",
   );
-  const wake = useWakeLock(activeSession, !!room?.current && !!room?.playing);
+  const wake = useWakeLock(
+    activeSession,
+    !!room?.presentation || (!!room?.current && !!room?.playing),
+  );
   const [previewMode, setPreviewMode] = useState(false);
   const [held, setHeld] = useState(false);
   const [reactionsOpen, setReactionsOpen] = useState(false);
@@ -394,7 +437,7 @@ function App() {
     !!source && source.kind !== "youtube" && !isAudio(source) && !previewMode,
   );
   useMediaSession(
-    activeSession ? room : null,
+    activeSession && !room?.presentation ? room : null,
     isHost,
     command,
     clock.serverNow,
@@ -584,12 +627,21 @@ function App() {
         setConnection("Đã kết nối");
         clock.connect(ws);
         files.transport(true);
+        documentFiles.transport(true);
       };
       ws.onmessage = (e) => {
         if (stop || socket !== ws) return;
         lastMessageAt = performance.now();
         if (e.data instanceof ArrayBuffer) {
-          files.onChunk(e.data);
+          try {
+            const fileId = unpackFileChunk(e.data).header.fileId;
+            (fileId === latestRoom.current?.presentation?.source.fileId
+              ? documentFiles
+              : files
+            ).onChunk(e.data);
+          } catch {
+            /* Invalid packets cannot select another transfer. */
+          }
           return;
         }
         const v = JSON.parse(e.data);
@@ -598,11 +650,18 @@ function App() {
           return;
         }
         if (v.type === "file-error") {
-          files.relayError(v.fileId);
+          (v.fileId === latestRoom.current?.presentation?.source.fileId
+            ? documentFiles
+            : files
+          ).relayError(v.fileId);
           return;
         }
         if (v.type === "file-signal") {
-          void files.onSignal(v);
+          void (
+            v.fileId === latestRoom.current?.presentation?.source.fileId
+              ? documentFiles
+              : files
+          ).onSignal(v);
           return;
         }
         if (v.type === "look") {
@@ -661,6 +720,7 @@ function App() {
         if (stop || socket !== ws) return;
         clock.disconnect(ws);
         files.transport(false);
+        documentFiles.transport(false);
         if (e.code === 4002) {
           finishRoom("TAB_REPLACED");
           stop = true;
@@ -724,6 +784,7 @@ function App() {
       window.removeEventListener("pagehide", hide);
       if (chatSocket.current === socket) chatSocket.current = null;
       files.transport(false);
+      documentFiles.transport(false);
       clock.disconnect(socket);
       socket?.close();
     };
@@ -855,7 +916,11 @@ function App() {
       report(e);
     }
   }
-  async function command(c: Command, onSuccess?: () => void) {
+  async function command(
+    c: Command,
+    onSuccess?: () => void,
+    options: { preserveNotice?: boolean } = {},
+  ) {
     if (c.type === "chat" && !demo) {
       await sendChat(c);
       return;
@@ -863,7 +928,7 @@ function App() {
 
     const commandSession = room?.session;
     if (c.type === "close" || c.type === "leave") exitIntent.current = true;
-    setError("");
+    if (!options.preserveNotice) setError("");
     try {
       if (demo && room) {
         if (c.type === "close" || c.type === "leave") {
@@ -887,6 +952,9 @@ function App() {
         };
         if (
           [
+            "present",
+            "slide",
+            "stop-presentation",
             "seek",
             "play",
             "pause",
@@ -951,6 +1019,62 @@ function App() {
       if (prepared && !ok) files.remove(prepared.fileId);
       setQuickBusy(false);
       setQueueBusy(false);
+    }
+  }
+  async function presentFile(file: File, restore = false) {
+    const current = latestRoom.current;
+    if (
+      !current ||
+      documentBusy ||
+      (restore
+        ? current.presentation?.source.ownerId !== id
+        : current.host !== id)
+    )
+      return;
+    const abort = new AbortController();
+    documentAbort.current?.abort();
+    documentAbort.current = abort;
+    setDocumentBusy(true);
+    setError("");
+    let prepared: ReturnType<FileShare["prepareDocument"]> | undefined,
+      ok = false;
+    try {
+      const { validateDocument } = await import("./presentationDocument");
+      const meta = await validateDocument(file, abort.signal);
+      if (
+        abort.signal.aborted ||
+        latestRoom.current?.session !== current.session ||
+        (restore
+          ? latestRoom.current?.presentation?.source.fileId !==
+              current.presentation?.source.fileId ||
+            latestRoom.current?.presentation?.source.ownerId !== id
+          : latestRoom.current?.host !== id)
+      )
+        return;
+      if (restore) await documentFiles.restore(file, meta.pages);
+      else {
+        prepared = documentFiles.prepareDocument(file, meta.pages);
+        await command(
+          {
+            type: "present",
+            file: prepared,
+            expectedRevision: current.presentationRevision || 0,
+            generation: current.generation,
+          },
+          () => {
+            ok = true;
+            documentFiles.confirm(prepared!.fileId);
+          },
+        );
+      }
+    } catch (e) {
+      if (!abort.signal.aborted) report(e);
+    } finally {
+      if (prepared && !ok) documentFiles.remove(prepared.fileId);
+      if (documentAbort.current === abort) {
+        documentAbort.current = null;
+        setDocumentBusy(false);
+      }
     }
   }
   async function queueAction(c: Command, onSuccess?: () => void) {
@@ -1189,7 +1313,7 @@ function App() {
         data-clock-calibrated={clock.calibrated}
         className={
           status === "joined" && room
-            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""} ${reactionsOpen ? "has-reactions" : ""}`
+            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""} ${reactionsOpen ? "has-reactions" : ""} ${room.presentation ? "has-presentation" : ""}`
             : undefined
         }
       >
@@ -1643,6 +1767,7 @@ function App() {
                 command={command}
                 soundsEnabled={sounds.enabled}
                 onToggleSounds={sounds.toggle}
+                onPresentation={() => setSheet("presentation")}
                 reactionsOpen={reactionsOpen}
                 onReactionsChange={setReactionsOpen}
                 open={sheet === "actions"}
@@ -1652,6 +1777,37 @@ function App() {
                   )
                 }
               />
+            )}
+            {sheet === "presentation" && (
+              <Suspense
+                fallback={
+                  <section className="activity-sheet" role="status">
+                    Đang mở trình chiếu…
+                    <button type="button" onClick={() => setSheet("")}>
+                      Đóng
+                    </button>
+                  </section>
+                }
+              >
+                <PresentationControls
+                  room={room}
+                  isHost={isHost}
+                  files={documentFiles}
+                  command={command}
+                  onFile={presentFile}
+                  busy={documentBusy}
+                  onClose={() => {
+                    setSheet("");
+                    requestAnimationFrame(() =>
+                      document
+                        .querySelector<HTMLButtonElement>(
+                          ".interaction-trigger",
+                        )
+                        ?.focus(),
+                    );
+                  }}
+                />
+              </Suspense>
             )}
             <button
               className="personal-hold"
@@ -1997,25 +2153,47 @@ function App() {
                         light ? "screen-surface flat" : "screen-surface"
                       }
                     >
-                      <Player
-                        serverNow={clock.serverNow}
-                        files={files}
-                        isHost={!!host}
-                        onControl={(c) => command(c)}
-                        held={held}
-                        duckAudio={mix.duckMedia}
-                        captions={captions}
-                        onPreviewModeChange={setPreviewMode}
-                        room={room}
-                        offset={offset}
-                        onEnded={() => {
-                          if (host)
-                            void command({
-                              type: "next",
-                              generation: room.generation,
-                            });
-                        }}
-                      />
+                      <div
+                        className={
+                          room.presentation && documentReady
+                            ? "screen-media covered"
+                            : "screen-media"
+                        }
+                      >
+                        <Player
+                          serverNow={clock.serverNow}
+                          files={files}
+                          isHost={!!host}
+                          // Player reconciliation must not dismiss file-validation warnings.
+                          onControl={(c) =>
+                            command(c, undefined, { preserveNotice: true })
+                          }
+                          held={held}
+                          duckAudio={mix.duckMedia}
+                          captions={captions}
+                          onPreviewModeChange={setPreviewMode}
+                          room={room}
+                          offset={offset}
+                          onEnded={() => {
+                            if (host && !room.presentation)
+                              void command(
+                                { type: "next", generation: room.generation },
+                                undefined,
+                                { preserveNotice: true },
+                              );
+                          }}
+                        />
+                      </div>
+                      {room.presentation && (
+                        <Suspense fallback={null}>
+                          <PresentationScreen
+                            presentation={room.presentation}
+                            files={documentFiles}
+                            economical={sceneQuality.dpr <= 0.75}
+                            onReady={setDocumentReady}
+                          />
+                        </Suspense>
+                      )}
                     </div>
                     {light ? (
                       <div className="seat-map">
@@ -2163,10 +2341,29 @@ function App() {
                         ? "Thêm link mới để mọi người xem tiếp."
                         : "Dán link YouTube, Drive, HLS VOD (.m3u8) hoặc video / nhạc HTTPS để phát ngay."}
                     </p>
+                    <label className="file-picker document-picker">
+                      <span>
+                        {documentBusy
+                          ? "Đang kiểm tra tài liệu…"
+                          : "Hoặc trình chiếu PDF / ảnh"}
+                      </span>
+                      <small>PDF, PNG, JPEG, WebP · 20 MB · 200 trang</small>
+                      <input
+                        type="file"
+                        aria-label="Chọn tài liệu để bắt đầu"
+                        accept={DOCUMENT_ACCEPT}
+                        disabled={documentBusy || quickBusy}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (f) void presentFile(f);
+                        }}
+                      />
+                    </label>
                     <form
                       onSubmit={async (e) => {
                         e.preventDefault();
-                        if (quickBusy) return;
+                        if (quickBusy || documentBusy) return;
                         setQuickBusy(true);
                         await command({
                           type: "start",
@@ -2196,7 +2393,7 @@ function App() {
                           aria-label="Chọn video để bắt đầu"
                           type="file"
                           accept={FILE_ACCEPT}
-                          disabled={quickBusy}
+                          disabled={quickBusy || documentBusy}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) void uploadFile(file, "start");
@@ -2213,7 +2410,7 @@ function App() {
                       <div className="actions" style={{ marginTop: 16 }}>
                         <button
                           className="primary"
-                          disabled={quickBusy}
+                          disabled={quickBusy || documentBusy}
                           type="submit"
                         >
                           {quickBusy ? "Đang mở video…" : "Phát ngay"}

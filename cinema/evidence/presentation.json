@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "date": "2026-11-13T19:14:21.698Z",
+  "checks": [
+    "real three-page PDF validates/rasterizes; password/201-page/corrupt files reject before mutation and warnings survive background movie reconciliation; lazy worker, host-only controls, pixel budget, native player/timeline preserved; authenticated document relay reaches viewer",
+    "late rejoin requires approval, hides document from pending profile and follows the current page after authenticated transfer",
+    "page CAS rejects stale updates, both clients follow current page; 320px/landscape/tablet sheet hit testing passes; Hold and new emotion sound work during presentation",
+    "content-selected authenticated relay preserves both local movie Blobs and real native decoders across document start/stop",
+    "PNG/JPEG/WebP decode and relay real raster pixels under the economical canvas cap, preserving the local movie across replacement/stop",
+    "original document owner restores and relays after host transfer and reload without gaining host page controls",
+    "stop prunes metadata, terminates PDF workers and preserves paused movie; PDF can satisfy initial source without a fake video or seek",
+    "late real image decode closes its bitmap exactly once after exit, with no reopened room or retained PDF worker"
+  ],
+  "bitmap": {
+    "width": 1920,
+    "height": 1080,
+    "pixel": [
+      38,
+      76,
+      64,
+      255
+    ]
+  },
+  "limitations": "Real PDF.js/canvas/WebSocket relay and gated real bitmap completion; generated owned PDFs; YouTube API and absent RTC are explicit fixtures. Physical mobile/GPU/network/thermal and WAN direct transfer remain open."
+}

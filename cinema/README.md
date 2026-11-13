@@ -26,7 +26,7 @@ npm run verify:local
 
 The runner builds once, waits for that build, then runs individual logic cases, strict Worker types, document paths, dry-run, API/playlist/private/bulk/relay security, UI/3D/chat/device speech, real native media, roadmap UI, one-renderer/ten-avatar smoke, 30 backend sockets and embedded asset/gzip equality **sequentially**. It stops on failure and preserves existing occupied rooms. It starts a local embedded Worker on 8788 if needed and stops only that process when finished. Do not edit source or rebuild while it runs.
 
-Requirements: ffmpeg, Chromium and Playwright. `tests/browser-runtime.cjs` uses local Playwright or the managed cloud runtime; `PLAYWRIGHT_MODULE_PATH`/`CHROMIUM_EXECUTABLE_PATH` can select an existing install. Outside that environment, install QA tools without changing app dependencies:
+Requirements: ffmpeg, Chromium, Playwright and Python fixture libraries `reportlab`, `pypdf`, `Pillow` for the real PDF/image suite. The managed environment has these installed; elsewhere install the Python libraries in a QA virtualenv. They are test tools, not browser/runtime dependencies. `tests/browser-runtime.cjs` uses local Playwright or the managed cloud runtime; `PLAYWRIGHT_MODULE_PATH`/`CHROMIUM_EXECUTABLE_PATH` can select an existing install. Outside that environment, install QA tools without changing app dependencies:
 
 ```bash
 npm install --no-save --package-lock=false playwright
@@ -54,6 +54,7 @@ node tests/fireworks-audio.cjs     # real offline synthesis: three blasts, bound
 node tests/experience.cjs           # compact/mobile controls, real lighting pixels, ambient WebAudio lifecycle and voice ducking
 node tests/source-links.cjs         # optional read-only external playback observations; not a deterministic release gate
 node tests/spaces.cjs               # creation/admission, three scenes, idle rig cache, mobile layout, public diagnostics path
+node tests/presentation.cjs         # real PDF/images/worker/relay, page ACL/CAS, invalid files, native player identity and mobile sheet
 ```
 
 GitHub `Source checks` checks build/logic/types/docs/dry-run on Node 22/24. It does not run physical devices or the local full-browser runner. CI configuration and an observed remote CI pass are separate facts.
@@ -66,6 +67,7 @@ GitHub `Source checks` checks build/logic/types/docs/dry-run on Node 22/24. It d
 | Direct HTTPS | MP4/WebM/Ogg/MOV/M4V/MP3/M4A/WAV extensions, signed query allowed; browser codec/provider rules apply |
 | HLS VOD | HTTPS `.m3u8`; native when supported, otherwise lazy hls.js/MSE; adaptive/manual quality is local; CORS/codec/provider access required; live/DRM unsupported |
 | Local file | ≤100 MiB each, ≤250 MiB sender-held total; sender keeps tab/file open; playback after full receipt, catches up |
+| PDF / still image presentation | Local PDF, PNG, JPEG or WebP, ≤20 MiB/200 PDF pages/16 million image pixels; host page navigation, separate from movie time |
 | Direct file sharing | Ordered reliable WebRTC, public STUN, no TURN; NAT/UDP policy can prevent connection |
 | Explicit room relay | ≤25 MiB; 16 KiB binary chunks/256 KiB ack window; authenticated current owner/recipient/item, exact cursor/size and timeouts |
 | Drive | Try native download URL; sharing/quota/confirmation/CORS may block it. Preview fallback is explicitly **unsynchronized**, with no ended/Next API |
@@ -74,6 +76,18 @@ GitHub `Source checks` checks build/logic/types/docs/dry-run on Node 22/24. It d
 Files are not transcoded, compressed or upscaled. MOV is a container: H.264/AAC MOV was tested; HEVC/ProRes depend on the browser. Unknown embed sites, arbitrary extensionless URLs, live HLS/DASH/DRM and universal download proxying are unsupported. HLS manifests are accepted as remote VOD links, not uploaded/imported manifest files. The supplied Drive sample downloaded as H.264/AAC MP4, but actual browser playback failed CORS; download/share a permitted file or use a direct media URL for synchronized playback.
 
 SQLite holds one room JSON row, bounded metadata/queue/chat, ≤200 command ID/timestamp records and short throttles. **No file bytes, blob table, R2 bucket or recordings.** End/Next removes old media metadata without creating played history. Queue removal/leave/close also prune Blob URLs, file/chunk references, native media resources and transfer connections/cursors. Reload loses file handles: the original owner reselects the same file. Relay consumes Worker/DO resources; sustained throughput/quota is unmeasured.
+
+## Shared presentation
+
+Choose **Tương tác → Trình chiếu PDF / ảnh**, or select a document as the initial room source. Only the host starts/stops or changes pages; approved viewers follow the current page, including after joining late. Password-protected, malformed and over-limit files reject before changing the room. SVG, animated WebP, PPTX and arbitrary HTML are unsupported.
+
+Starting a presentation pauses the current film without replacing its native element, source or generation. Movie transport/OS handlers are inactive during the deck; stop the presentation and explicitly press Play to continue. Personal Hold, chat, voice, approvals and reactions remain available. The canvas uses the same physical world screen; it does not create a second WebGL renderer or floating player.
+
+The sender retains the document/tab; direct WebRTC and the explicit **Nhận qua phòng** relay use the existing authenticated transfer path. Only the displayed content is eligible for relay; native-movie transfers pause during a deck, while completed movie Blobs/decoders remain available for returning. Document IDs cannot collide with active/queued local media. Reload requires the original owner to select the same file; stopping or removing the owner prunes document metadata, cursors, URLs and PDF workers. No history or automatic server upload is created.
+
+After host transfer, the original sender can still restore that document on re-entry, while page controls belong to the new host. File-validation warnings remain visible across automatic video reconciliation; dismiss them or select another file to retry.
+
+PDF.js is pinned and lazy, with fonts/decoders served from local Static Assets only when needed. No scripting UI, XFA, annotations or external link widgets are enabled. Rendering keeps the displayed and incoming canvas, bounds both axes to 1440/1920 and area to about 1/2 MP for economical/full mode, cancels replaced work and stops page rendering while hidden. These are canvas/image budgets, not a hard quota on all PDF parser memory. Complex files can still require reducing the source document. Native resolution is never upscaled as a quality guarantee.
 
 ## Release
 
@@ -96,6 +110,8 @@ node tests/artifact.integration.mjs
 
 Preserve `encodeBody: "manual"`; embedded assets consume Worker requests. Regular Static Assets deployment is preferred. Generated artifacts/state are ignored by Git.
 
+The PDF assets make the optional embedded artifact exceed the conservative 3 MiB gzip free-code budget used by the bundle warning; use **normal `wrangler.jsonc` Static Assets** for this release, not the embedded test config. This does not activate billing. `public/_headers` configures static-response protection; the bundler consumes that same file, and release verification checks the actual public headers and every public asset (excluding Cloudflare's `_headers` control file).
+
 Male scalp hair is derived from the pinned CC0 Rogue head mesh, follows the head bone and uses the selected hair color. Scene quantization retains one skin per model; runtime clones share a skeleton across body parts within each avatar. To regenerate, use the documented offline glTF toolchain with `AVATAR_TOOLS` and run `tools/prepare-avatars.mjs` against the two original source GLBs; it invokes `tools/add-male-hair.mjs`. Never add the offline toolchain to app dependencies.
 
 KayKit GLB provenance/checksums/license: `public/models/manifest.json`. The offline preparation tool lives in `tools/prepare-avatars.mjs`; keep tools outside app dependencies and update hashes/tests intentionally.
@@ -110,7 +126,7 @@ Personal **Hold** is available to both host and viewers in the bottom dock. It m
 
 Compact screens keep one-hand −/+ zoom inside the view sheet, alongside pinch; the bottom navigation only toggles gesture mode. Transport icons retain 44px targets and accessible names.
 
-“Cảm xúc” opens a compact icon strip in the bottom dock; it remains separate from “Tương tác” (sit/wave/poke/sound toggle), replaces other dock controls while open, and leaves the current chat/view sheet accessible. Escape/outside tap/close dismiss it; a successful send closes and restores focus. The four existing reaction kinds and their cooldown/TTL stay compatible.
+“Cảm xúc” opens a compact, scrollable icon strip in the bottom dock, with a fixed close button; it remains separate from “Tương tác” (sit/wave/poke/presentation/sound toggle), replaces other dock controls while open, and leaves the current chat/view sheet accessible. Escape/outside tap/close dismiss it; a successful send closes and restores focus. The nine presets include fireworks, applause, sad, troll, love, laugh, surprise, celebration and thanks. Five new variants retain the four existing wire kinds and their cooldown/TTL, with synthesized cues and legacy fallback. Reduced motion and effect mute remain personal.
 
 Host approval opens immediately in the center, even before the first video; new requests reopen a deferred dialog. When chat is closed, the latest incoming message appears as one preview for 6 seconds; click to open chat. It sits above the action dock or in the free notification lane beside an open sheet. Poke sounds only on the recipient. Reactions are anonymous: fireworks use three timed bursts; other emoji rise through the center for 3 seconds without a central card or large glyph. Each sender waits 5 seconds, only one room effect runs at a time, and the event is deleted on expiry. Chat voice/reading-speed choices live behind “Giọng và tốc độ đọc” in a bounded scroll area. All screens share one active sheet (chat, playlist, people, info, view, quick actions or readiness); opening one replaces the previous sheet. Escape/focus restoration and required-dialog rules remain intact.
 

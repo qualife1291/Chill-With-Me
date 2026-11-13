@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "date": "2026-11-13T12:14:12.520Z",
+  "date": "2026-11-13T19:10:28.448Z",
   "checks": [
     "Media Session host seek uses authenticated generation commands; invalid seek ignored, viewer handlers cleared and server ACL retained; metadata set",
     "Wake Lock opt-in: no request when paused; acquire while playing; release on pause/hidden/off, reacquire on visible; stale async request released; unsupported warning",
