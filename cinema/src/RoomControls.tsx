@@ -12,6 +12,7 @@ export default function RoomControls({
   camera,
   onCamera,
   onReset,
+  onZoom,
   light,
   onLight,
   onClose,
@@ -37,6 +38,7 @@ export default function RoomControls({
   camera: string;
   onCamera: (mode: string) => void;
   onReset: () => void;
+  onZoom: (delta: number) => void;
   light: boolean;
   onLight: () => void;
   onClose: () => void;
@@ -97,7 +99,25 @@ export default function RoomControls({
           </button>
         ))}
       </div>
-      <p className="control-hint">Kéo để nhìn · Cuộn để thu/phóng</p>
+      {!light && (
+        <div className="view-zoom" role="group" aria-label="Thu/phóng góc nhìn">
+          <button
+            type="button"
+            aria-label="Thu nhỏ góc nhìn"
+            onClick={() => onZoom(3)}
+          >
+            − Thu nhỏ
+          </button>
+          <button
+            type="button"
+            aria-label="Phóng gần góc nhìn"
+            onClick={() => onZoom(-3)}
+          >
+            + Phóng gần
+          </button>
+        </div>
+      )}
+      <p className="control-hint">Kéo để nhìn · Cuộn/pinch để thu/phóng</p>
       <label className="scene-quality">
         Độ nét cảnh 3D
         <select

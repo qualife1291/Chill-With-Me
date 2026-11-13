@@ -97,10 +97,16 @@ fs.mkdirSync(shots, { recursive: true });
             el.getBoundingClientRect().width > 0 &&
             el.getBoundingClientRect().height > 0 &&
             getComputedStyle(el).visibility !== "hidden";
+          const failures = [];
+          const reactions = document.querySelector(".reaction-strip");
+          if (
+            visible(reactions) &&
+            reactions.getBoundingClientRect().top < innerHeight - 80
+          )
+            failures.push("reaction strip covers scene lane");
           const panels = surfaces
             .map((s) => document.querySelector(s))
             .filter(visible);
-          const failures = [];
           if (panels.length !== (state === "closed" ? 0 : 1))
             failures.push("panel count " + panels.length);
           const dock = document
@@ -138,7 +144,7 @@ fs.mkdirSync(shots, { recursive: true });
             }
           }
           for (const el of document.querySelectorAll(
-            ".cinema-toolbar > button,.cinema-toolbar summary,.actions-trigger,.transport button,.touch-navigation button,.recenter-view,.composer #message,.composer button[aria-label='Gửi tin']",
+            ".cinema-toolbar > button,.cinema-toolbar summary,.actions-trigger,.personal-hold,.reaction-strip button,.transport button,.touch-navigation button,.recenter-view,.composer #message,.composer button[aria-label='Gửi tin']",
           )) {
             if (!visible(el)) continue;
             const b = el.getBoundingClientRect();
@@ -220,19 +226,102 @@ fs.mkdirSync(shots, { recursive: true });
       ]) {
         await toolbar(label).click();
         await inspect(state, name);
+        if (state === "view" && (width <= 1100 || height <= 500)) {
+          const zoomOut = page.getByRole("button", {
+            name: "Thu nhỏ góc nhìn",
+            exact: true,
+          });
+          const zoomIn = page.getByRole("button", {
+            name: "Phóng gần góc nhìn",
+            exact: true,
+          });
+          await zoomOut.scrollIntoViewIfNeeded();
+          const beforeZoom = Number(
+            await page.locator(".screen-surface").getAttribute("data-zoom"),
+          );
+          for (const button of [zoomOut, zoomIn]) {
+            const good = await button.evaluate((el) => {
+              const r = el.getBoundingClientRect();
+              return (
+                r.width >= 44 &&
+                r.height >= 44 &&
+                el.contains(
+                  document.elementFromPoint(
+                    r.x + r.width / 2,
+                    r.y + r.height / 2,
+                  ),
+                )
+              );
+            });
+            assert(good, "one-hand zoom target covered or too small");
+          }
+          await zoomOut.click();
+          await page.waitForFunction(
+            (z) =>
+              Number(document.querySelector(".screen-surface").dataset.zoom) >
+              z + 2.5,
+            beforeZoom,
+          );
+          await zoomIn.click();
+          await page.waitForFunction(
+            (z) =>
+              Math.abs(
+                Number(document.querySelector(".screen-surface").dataset.zoom) -
+                  z,
+              ) < 0.1,
+            beforeZoom,
+          );
+          await inspect("view", name + "-one-hand-zoom");
+        }
       }
       await page
-        .getByRole("button", { name: "Hành động và cảm xúc", exact: true })
+        .getByRole("button", { name: "Tương tác nhân vật", exact: true })
         .click();
       await inspect("actions", name);
       await page.locator(".playback-readiness summary").click();
       await inspect("readiness", name);
       await page.locator(".playback-readiness summary").click();
       await inspect("closed", name);
+      for (const [state, label] of [
+        ["chat", "Chat"],
+        ["view", "Góc nhìn 🎮"],
+      ]) {
+        await toolbar(label).click();
+        await page
+          .getByRole("button", { name: "Cảm xúc", exact: true })
+          .click();
+        await inspect(state, name + "-reactions");
+        assert(
+          await page
+            .locator(".reaction-strip")
+            .evaluate((el) => el.contains(document.activeElement)),
+          "focus did not enter reaction strip",
+        );
+        await page.keyboard.press("End");
+        assert.equal(
+          await page.evaluate(() => document.activeElement.ariaLabel),
+          "Đóng cảm xúc",
+        );
+        await page.keyboard.press("Home");
+        assert(
+          await page.getByRole("group", { name: "Cảm xúc cả rạp" }).isVisible(),
+        );
+        assert(!(await page.locator(".action-choices").isVisible()));
+        if (state === "chat") await page.keyboard.press("Escape");
+        else
+          await page
+            .getByRole("button", { name: "Đóng cảm xúc", exact: true })
+            .click();
+        await page.waitForFunction(
+          () =>
+            document.activeElement?.getAttribute("aria-label") === "Cảm xúc",
+        );
+        await toolbar(label).click();
+      }
       // Reverse ordering, repeated opening/closing, and outside dismissal.
       for (let i = 0; i < 2; i++) {
         await page
-          .getByRole("button", { name: "Hành động và cảm xúc", exact: true })
+          .getByRole("button", { name: "Tương tác nhân vật", exact: true })
           .click();
         await toolbar("Chat").click();
         await toolbar("Góc nhìn 🎮").click();

@@ -255,6 +255,8 @@
   touch-action: none;
 }
 .quick-actions {
+  display: flex;
+  gap: 8px;
   position: fixed;
   right: var(--hud-edge);
   bottom: var(--dock-bottom);
@@ -336,14 +338,9 @@
   border: 1px solid #ffffff25;
   border-radius: 10px;
 }
-.action-choices .control-hint {
-  font-size: 11px;
-  line-height: 1.4;
-  min-height: 30px;
-}
 .touch-navigation {
   position: fixed;
-  left: var(--hud-edge);
+  left: calc(var(--hud-edge) + 104px);
   bottom: var(--dock-bottom);
   z-index: 30;
   display: flex;
@@ -651,13 +648,8 @@
     width: 48px;
     padding: 11px;
   }
-  .touch-navigation button:not(:first-child) {
+  .cinema-app .touch-navigation button:not(:first-child) {
     display: none;
-  }
-  .touch-navigation:has(button[aria-pressed="true"]) button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
   }
   .room-controls select,
   .action-choices select,
@@ -731,10 +723,6 @@
   .cinema-app .chat-toasts {
     width: min(300px, calc(100vw - 16px));
   }
-  .cinema-app.show-controls .transport {
-    left: 8px;
-    transform: none;
-  }
 }
 @media (max-width: 360px) {
   .cinema-app .cinema-toolbar,
@@ -763,5 +751,105 @@
 @media (max-height: 500px) and (max-width: 600px) {
   .cinema-app {
     --sheet-height: max(100px, calc(var(--panel-viewport, 100svh) - 228px));
+  }
+}
+
+.room-controls .view-zoom {
+  display: none;
+}
+/* A single bottom lane: Hold stays reachable, reactions replace its launchers.
+   An expanded strip coexists with a sheet without covering its content. */
+.personal-hold {
+  position: fixed;
+  left: var(--hud-edge);
+  bottom: var(--dock-bottom);
+  z-index: 38;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 96px;
+  height: 48px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #26312c;
+  border: 1px solid #c5ad7c66;
+  color: #f6eedf;
+}
+.personal-hold[aria-pressed="true"] {
+  background: #d4b180;
+  color: #18221e;
+  border-color: #ffe0a3;
+}
+.reaction-strip {
+  position: fixed;
+  right: var(--hud-edge);
+  bottom: var(--dock-bottom);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #c5ad7c66;
+  border-radius: 20px;
+  background: #302d24;
+  box-shadow: 0 4px 16px #0004;
+}
+.reaction-strip[hidden] {
+  display: none;
+}
+.reaction-strip button {
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #394238;
+  border: 1px solid transparent;
+}
+.reaction-strip button span {
+  font-size: 24px;
+  line-height: 1;
+}
+.cinema-app.has-reactions .touch-navigation,
+.cinema-app.has-reactions .transport,
+.cinema-app.has-reactions .quick-actions > .actions-trigger {
+  display: none;
+}
+@media (max-width: 1100px), (max-height: 500px) {
+  .room-controls .view-zoom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .personal-hold {
+    left: 8px;
+    width: 48px;
+  }
+  .personal-hold span {
+    display: none;
+  }
+  .touch-navigation {
+    left: 64px;
+  }
+  .cinema-app.show-controls .transport-label {
+    display: none;
+  }
+  .cinema-app.show-controls .transport button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 8px;
+  }
+  .cinema-app.show-controls .transport {
+    left: 64px;
+    transform: none;
+  }
+  .reaction-strip {
+    left: auto;
+    right: 8px;
+    max-width: calc(100vw - 72px);
   }
 }

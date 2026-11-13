@@ -148,6 +148,7 @@ try {
     "spaces.cjs",
     "experience.cjs",
     "cinema-upgrade.cjs",
+    "hold-emotions.cjs",
     "media.cjs",
     "hls.cjs",
     "roadmap.cjs",

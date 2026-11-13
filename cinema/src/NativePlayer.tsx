@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useMediaHold } from "./useMediaHold";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { target, type Room, type Command } from "../shared/model";
 import {
   mediaSource,
@@ -18,6 +25,7 @@ export type PlayerProps = {
   onEnded: () => void;
   onControl: (c: Command) => Promise<void>;
   duckAudio: boolean;
+  held?: boolean;
   files: FileShare;
   captions?: { url: string; name: string };
   onPreviewModeChange?: (preview: boolean) => void;
@@ -41,7 +49,8 @@ export default function NativePlayer(props: PlayerProps) {
   const [error, setError] = useState(""),
     [blocked, setBlocked] = useState(false),
     [preview, setPreview] = useState(false);
-  useEffect(() => {
+  useMediaHold(ref, !!props.held, url);
+  useLayoutEffect(() => {
     props.onPreviewModeChange?.(preview);
     return () => props.onPreviewModeChange?.(false);
   }, [preview, props.onPreviewModeChange]);
@@ -353,13 +362,21 @@ export default function NativePlayer(props: PlayerProps) {
               : "Google có thể chặn phát trực tiếp. Có thể mở bản xem trước, hoặc tải file và chia sẻ lại từ máy để xem cùng phòng."}
           </p>
           <button
+            disabled={!!props.held}
             onClick={() => {
+              if (latest.current.held) return;
               setPreview((v) => !v);
               setError("");
             }}
           >
             {preview ? "Thử phát đồng bộ lại" : "Mở bản xem trước Drive"}
           </button>
+          {props.held && (
+            <p role="status">
+              Bỏ Hold trước khi mở Drive preview; iframe này không có API tắt
+              tiếng.
+            </p>
+          )}
           <a
             className="media-external"
             target="_blank"

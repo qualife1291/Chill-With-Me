@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "date": "2026-11-13T12:14:45.542Z",
+  "checks": [
+    "host/viewer Hold independently mutes real native media without pause, remount or room commands; volume changes and previous manual mute restore",
+    "held members retain chat, targeted poke audio, shared reaction audio with duck/restore, wave and host Next; replacing native source stays muted",
+    "YouTube API fixture holds before first load and across generations, enforces mute for either role and restores prior mute/volume",
+    "unsupported Drive preview explicitly blocks Hold, and Hold blocks opening its unmuteable iframe; native recovery restores capability",
+    "room close/new session resets personal Hold; no old-room preference leaks into the next session"
+  ],
+  "limitations": "Native Chromium codecs/WebAudio real; provider APIs controlled fixtures. Mobile geometry covered separately by hud-layout; physical iOS/Android/macOS audio and YouTube remain open."
+}

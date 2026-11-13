@@ -10,6 +10,8 @@ export default function QuickActions({
   onToggleSounds,
   open,
   onOpenChange: setOpen,
+  reactionsOpen,
+  onReactionsChange,
 }: {
   room: Room;
   me: Member;
@@ -18,23 +20,37 @@ export default function QuickActions({
   onToggleSounds: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  reactionsOpen: boolean;
+  onReactionsChange: (open: boolean) => void;
 }) {
-  const root = useRef<HTMLDivElement>(null);
-  const opener = useRef<HTMLButtonElement>(null);
+  const root = useRef<HTMLDivElement>(null),
+    opener = useRef<HTMLButtonElement>(null),
+    reactionOpener = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (!open) return;
+    if (!open && !reactionsOpen) return;
     const outside = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
+      if (!root.current?.contains(e.target as Node)) {
+        setOpen(false);
+        onReactionsChange(false);
+      }
     };
     document.addEventListener("pointerdown", outside, true);
     return () => document.removeEventListener("pointerdown", outside, true);
-  }, [open, setOpen]);
+  }, [open, reactionsOpen, setOpen, onReactionsChange]);
+  useEffect(() => {
+    if (reactionsOpen)
+      root.current
+        ?.querySelector<HTMLButtonElement>(
+          ".reaction-strip button:not(:disabled)",
+        )
+        ?.focus({ preventScroll: true });
+  }, [reactionsOpen]);
   const selected = () => {
     setOpen(false);
     opener.current?.focus({ preventScroll: true });
   };
-  const [sendingReaction, setSendingReaction] = useState(false);
-  const [cooling, setCooling] = useState(false);
+  const [sendingReaction, setSendingReaction] = useState(false),
+    [cooling, setCooling] = useState(false);
   useEffect(() => {
     if (!cooling) return;
     const timer = setTimeout(() => setCooling(false), 5000);
@@ -45,7 +61,10 @@ export default function QuickActions({
     try {
       await command({ type: "reaction", kind }, () => {
         setCooling(true);
-        selected();
+        onReactionsChange(false);
+        requestAnimationFrame(() =>
+          reactionOpener.current?.focus({ preventScroll: true }),
+        );
       });
     } finally {
       setSendingReaction(false);
@@ -56,65 +75,125 @@ export default function QuickActions({
       className="quick-actions"
       ref={root}
       onKeyDown={(e) => {
+        if (
+          reactionsOpen &&
+          ["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)
+        ) {
+          const buttons = Array.from(
+            root.current?.querySelectorAll<HTMLButtonElement>(
+              ".reaction-strip button:not(:disabled)",
+            ) || [],
+          );
+          const at = buttons.indexOf(
+            document.activeElement as HTMLButtonElement,
+          );
+          const next =
+            e.key === "Home"
+              ? 0
+              : e.key === "End"
+                ? buttons.length - 1
+                : (at + (e.key === "ArrowRight" ? 1 : -1) + buttons.length) %
+                  buttons.length;
+          e.preventDefault();
+          e.stopPropagation();
+          buttons[next]?.focus();
+        }
         if (e.key === "Escape") {
           e.stopPropagation();
-          setOpen(false);
-          opener.current?.focus();
+          if (reactionsOpen) {
+            onReactionsChange(false);
+            requestAnimationFrame(() => reactionOpener.current?.focus());
+          } else {
+            setOpen(false);
+            opener.current?.focus();
+          }
         }
       }}
     >
       <button
-        className="actions-trigger"
+        className="actions-trigger interaction-trigger"
         ref={opener}
         type="button"
-        aria-label="Hành động và cảm xúc"
+        aria-label="Tương tác nhân vật"
+        title="Tương tác nhân vật"
         aria-expanded={open}
         aria-controls="quick-action-panel"
         onClick={() => {
+          onReactionsChange(false);
           setOpen(!open);
+        }}
+      >
+        <Hand size={22} />
+        <span>Tương tác</span>
+      </button>
+      <button
+        className="actions-trigger reactions-trigger"
+        ref={reactionOpener}
+        type="button"
+        aria-label="Cảm xúc"
+        title="Cảm xúc cả rạp"
+        aria-expanded={reactionsOpen}
+        aria-controls="reaction-strip"
+        onClick={() => {
+          setOpen(false);
+          onReactionsChange(!reactionsOpen);
         }}
       >
         <Smile size={23} />
         <span>Cảm xúc</span>
       </button>
+      <div
+        id="reaction-strip"
+        className="reaction-strip"
+        role="group"
+        aria-label="Cảm xúc cả rạp"
+        hidden={!reactionsOpen}
+      >
+        {(Object.keys(reactions) as ReactionKind[]).map((kind) => (
+          <button
+            key={kind}
+            type="button"
+            title={
+              cooling
+                ? "Đợi một chút trước cảm xúc tiếp theo"
+                : reactions[kind].label
+            }
+            aria-label={reactions[kind].label}
+            disabled={sendingReaction || cooling || !!room.reaction}
+            onClick={() => void sendReaction(kind)}
+          >
+            <span aria-hidden="true">{reactions[kind].icon}</span>
+          </button>
+        ))}
+        <button
+          type="button"
+          aria-label="Đóng cảm xúc"
+          title="Đóng cảm xúc"
+          onClick={() => {
+            onReactionsChange(false);
+            requestAnimationFrame(() => reactionOpener.current?.focus());
+          }}
+        >
+          <X size={18} />
+        </button>
+        <span className="sr-only" aria-live="polite">
+          {cooling
+            ? "Đợi một chút trước cảm xúc tiếp theo"
+            : "Cả rạp cùng thấy · 3 giây mỗi cảm xúc"}
+        </span>
+      </div>
       <section
         id="quick-action-panel"
         className="action-choices"
-        aria-label="Hành động nhanh"
+        aria-label="Tương tác nhân vật"
         hidden={!open}
       >
         <header>
-          <strong>Hành động & cảm xúc</strong>
-          <button
-            type="button"
-            aria-label="Đóng cảm xúc"
-            onClick={() => {
-              setOpen(false);
-              opener.current?.focus();
-            }}
-          >
+          <strong>Tương tác nhân vật</strong>
+          <button type="button" aria-label="Đóng tương tác" onClick={selected}>
             <X size={18} />
           </button>
         </header>
-
-        <div
-          className="reaction-actions"
-          role="group"
-          aria-label="Cảm xúc cả rạp"
-        >
-          {(Object.keys(reactions) as ReactionKind[]).map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              disabled={sendingReaction || cooling || !!room.reaction}
-              onClick={() => void sendReaction(kind)}
-            >
-              <span aria-hidden="true">{reactions[kind].icon}</span>
-              {reactions[kind].label}
-            </button>
-          ))}
-        </div>
-
         <div className="action-row">
           <button
             onClick={() =>
@@ -150,21 +229,14 @@ export default function QuickActions({
               ))}
           </select>
         </label>
-        <p className="control-hint" aria-live="polite">
-          {cooling
-            ? "Đợi một chút trước cảm xúc tiếp theo…"
-            : "Cả rạp cùng thấy · 3 giây mỗi cảm xúc"}
-        </p>
         <button
           className="sound-toggle"
           type="button"
           aria-pressed={soundsEnabled}
           onClick={onToggleSounds}
         >
-          {soundsEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          {soundsEnabled
-            ? "Âm thanh tương tác: Bật"
-            : "Âm thanh tương tác: Tắt"}
+          {soundsEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}Âm
+          thanh tương tác: {soundsEnabled ? "Bật" : "Tắt"}
         </button>
       </section>
     </div>

@@ -1,4 +1,4 @@
-const { openActions } = require("./browser-runtime.cjs");
+const { openActions, openReactions } = require("./browser-runtime.cjs");
 const assert = require("node:assert/strict"),
   fs = require("node:fs"),
   path = require("node:path");
@@ -256,12 +256,12 @@ const base = "http://localhost:8787",
         r.postDataJSON()?.command?.type === "reaction",
     );
     await g.emulateMedia({ reducedMotion: "reduce" });
-    await openActions(h);
+    await openReactions(h);
     await h.getByRole("button", { name: "Pháo bông", exact: true }).click();
     const envelope = (await sentReaction).postDataJSON();
     await h.getByRole("status", { name: "Pháo bông", exact: true }).waitFor();
     await g.getByRole("status", { name: "Pháo bông", exact: true }).waitFor();
-    await openActions(g);
+    await openReactions(g);
     assert(
       await g
         .getByRole("button", { name: "Pháo bông", exact: true })
@@ -333,7 +333,7 @@ const base = "http://localhost:8787",
       .click();
     gn = await sounds(g);
     hn = await sounds(h);
-    await openActions(g);
+    await openReactions(g);
     await g.getByRole("button", { name: "Vỗ tay", exact: true }).click();
     await h.getByRole("status", { name: "Vỗ tay", exact: true }).waitFor();
     await h.waitForFunction((n) => window.__sounds.length === n + 9, hn);
@@ -392,7 +392,7 @@ const base = "http://localhost:8787",
 
     hn = await sounds(h);
     await h.bringToFront();
-    await openActions(h);
+    await openReactions(h);
     await h.getByRole("button", { name: "Mếu mào", exact: true }).click();
     await g.getByRole("status", { name: "Mếu mào", exact: true }).waitFor();
     assert.equal(
@@ -413,7 +413,7 @@ const base = "http://localhost:8787",
     await g.locator(".room-reaction").waitFor({ state: "detached" });
     await g.bringToFront();
     hn = await sounds(h);
-    await openActions(g);
+    await openReactions(g);
     await g.getByRole("button", { name: "Trêu vui", exact: true }).click();
     await h.getByRole("status", { name: "Trêu vui", exact: true }).waitFor();
     await h.waitForFunction((n) => window.__sounds.length === n + 8, hn);

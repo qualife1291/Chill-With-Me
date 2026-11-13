@@ -14,6 +14,9 @@ export type YouTubePlayer = {
   getVideoData: () => { video_id?: string };
   getVolume: () => number;
   setVolume: (n: number) => void;
+  mute: () => void;
+  unMute: () => void;
+  isMuted: () => boolean;
   destroy: () => void;
 };
 declare global {
@@ -46,6 +49,7 @@ function YouTubePlayerView({
   isHost,
   onControl,
   duckAudio,
+  held = false,
   serverNow,
 }: {
   room: Room;
@@ -55,9 +59,11 @@ function YouTubePlayerView({
   isHost: boolean;
   onControl: (c: Command) => Promise<void>;
   duckAudio: boolean;
+  held?: boolean;
 }) {
   const el = useRef<HTMLDivElement>(null),
     player = useRef<YouTubePlayer | null>(null),
+    initialMute = useRef<boolean | undefined>(undefined),
     loaded = useRef(-1),
     endedGeneration = useRef(-1),
     quietUntil = useRef(0),
@@ -74,9 +80,18 @@ function YouTubePlayerView({
     onEnded,
     isHost,
     onControl,
+    held,
     serverNow,
   });
-  latest.current = { room, offset, onEnded, isHost, onControl, serverNow };
+  latest.current = {
+    room,
+    offset,
+    onEnded,
+    isHost,
+    onControl,
+    held,
+    serverNow,
+  };
   const [error, setError] = useState(""),
     [ready, setReady] = useState(false);
   const current = !!room.current;
@@ -99,7 +114,14 @@ function YouTubePlayerView({
             rel: 0,
           },
           events: {
-            onReady: () => setReady(true),
+            onReady: () => {
+              const p = player.current;
+              if (p && latest.current.held) {
+                initialMute.current = p.isMuted();
+                p.mute();
+              }
+              setReady(true);
+            },
             onAutoplayBlocked: () =>
               setError(
                 "Trình duyệt đang chặn tự phát. Bấm Phát / bắt kịp phòng để tiếp tục.",
@@ -155,12 +177,23 @@ function YouTubePlayerView({
       cancelled = true;
       player.current?.destroy();
       player.current = null;
+      initialMute.current = undefined;
       loaded.current = -1;
       lastSample.current = null;
       duck.current = null;
       setReady(false);
     };
   }, [current, isHost]);
+  useEffect(() => {
+    const p = player.current;
+    if (!ready || !p || !held) return;
+    const previous = initialMute.current ?? p.isMuted();
+    initialMute.current = undefined;
+    p.mute();
+    return () => {
+      if (player.current === p && !previous) p.unMute();
+    };
+  }, [held, ready]);
   useEffect(() => {
     const p = player.current;
     if (!ready || !p) return;
@@ -216,6 +249,7 @@ function YouTubePlayerView({
     const t = setInterval(() => {
       const p = player.current,
         r = latest.current.room;
+      if (p && latest.current.held && !p.isMuted()) p.mute();
       if (!p || !r.current || !latest.current.isHost || r.readinessPaused)
         return;
       if (

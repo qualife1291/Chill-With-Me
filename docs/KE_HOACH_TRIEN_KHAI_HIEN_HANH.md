@@ -103,3 +103,12 @@ Chưa mở khóa: R2/account activation và upload resumable; TURN/WAN file rela
 - [x] Test unit, browser/multi-profile/mobile, ảnh UI, audio nodes/duck/restore, idle/visibility, native media, 100s local lease soak 3×10; hồi quy tổng hợp đạt trước release (source/version deploy xem PROJECT_STATE). Rollback: tắt tùy chọn cá nhân hoặc quay lại version trong PROJECT_STATE; không reset phòng.
 
 Giới hạn vẫn giữ: pilot vật lý/GPU, sustained WAN/quota/rollback production, R2 activation/billing, TURN, full voice provider/consent và WebGPU depth-mask compatibility chưa được coi là đạt bằng giả lập. Số đo resource/idle hiện hành trong evidence là baseline, không phải FPS thiết bị thật.
+
+## Hold cá nhân và thanh cảm xúc — 13/11/2026
+
+- [x] Hold cho host/viewer: mute video cục bộ, giữ volume/mute trước đó, tiếp tục timeline, chat/voice/action/lease; giữ Hold khi đổi nguồn trong cùng phiên, reset khi rời/đổi phòng. Native và YouTube dùng mute API; Drive preview không cung cấp mute API nên phải có chặn/warning rõ trước khi mở.
+- [x] Tách menu cảm xúc thành thanh icon ngang trong hàng nút dưới, tách hành động nhân vật; không che bảng/chat/transport, hỗ trợ bàn phím, Escape, giảm chuyển động và cooldown hiện có. Nghiên cứu preset thêm nhưng chưa đổi wire enum cho client cũ.
+- [x] Kiểm tra host/viewer, nguồn mới, mute sẵn, volume thủ công, ducking, menu mở cùng bảng, 320px/landscape, zoom một tay và cleanup; hồi quy cuối đạt 44/44 bước, 102 logic cases, HUD 87 checks/89 ảnh. Bằng chứng và source/version release xem PROJECT_STATE.
+- [x] Nghiên cứu nguồn chính thức và ghi phương án/rủi ro/acceptance cho screen share, slide, Spotify/Zing/phim, cảm giác mạnh và loto/ô ăn quan; ưu tiên đồ họa nhẹ, pin, codec, quyền nội dung và thiết bị thật.
+
+Phương án, nguồn/giấy phép, thứ tự triển khai và acceptance chi tiết: [Shared activities proposal](ADVANCED_EXPERIENCE.md#shared-activities-proposal--researched-2026-11-13). Các mục đề xuất chưa phải tính năng đã phát hành.

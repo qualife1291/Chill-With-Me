@@ -27,9 +27,28 @@ module.exports = { chromium: playwright.chromium, executablePath };
 
 module.exports.openActions = async (page) => {
   const trigger = page.getByRole("button", {
-    name: "Hành động và cảm xúc",
+    name: "Tương tác nhân vật",
     exact: true,
   });
+  if (!(await trigger.isVisible())) {
+    const closeReactions = page.getByRole("button", {
+      name: "Đóng cảm xúc",
+      exact: true,
+    });
+    if (await closeReactions.isVisible()) await closeReactions.click();
+    const closeView = page.getByRole("button", {
+      name: "Đóng điều khiển",
+      exact: true,
+    });
+    if (!(await trigger.isVisible()) && (await closeView.isVisible()))
+      await closeView.click();
+  }
+  if ((await trigger.getAttribute("aria-expanded")) !== "true")
+    await trigger.click();
+};
+
+module.exports.openReactions = async (page) => {
+  const trigger = page.getByRole("button", { name: "Cảm xúc", exact: true });
   if ((await trigger.getAttribute("aria-expanded")) !== "true")
     await trigger.click();
 };

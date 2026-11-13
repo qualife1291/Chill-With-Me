@@ -44,6 +44,7 @@ import {
   Check,
   X,
   Volume2,
+  VolumeX,
   Info,
   MessageCircle,
   ListVideo,
@@ -381,6 +382,12 @@ function App() {
   );
   const wake = useWakeLock(activeSession, !!room?.current && !!room?.playing);
   const [previewMode, setPreviewMode] = useState(false);
+  const [held, setHeld] = useState(false);
+  const [reactionsOpen, setReactionsOpen] = useState(false);
+  useEffect(() => {
+    setHeld(false);
+    setReactionsOpen(false);
+  }, [activeSession]);
   const source = room?.current ? mediaSource(room.current) : undefined;
   const captions = useLocalCaptions(
     activeSession && room?.current ? activeSession + ":" + room.current.id : "",
@@ -1182,7 +1189,7 @@ function App() {
         data-clock-calibrated={clock.calibrated}
         className={
           status === "joined" && room
-            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""}`
+            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""} ${reactionsOpen ? "has-reactions" : ""}`
             : undefined
         }
       >
@@ -1636,6 +1643,8 @@ function App() {
                 command={command}
                 soundsEnabled={sounds.enabled}
                 onToggleSounds={sounds.toggle}
+                reactionsOpen={reactionsOpen}
+                onReactionsChange={setReactionsOpen}
                 open={sheet === "actions"}
                 onOpenChange={(open) =>
                   setSheet((current) =>
@@ -1644,6 +1653,24 @@ function App() {
                 }
               />
             )}
+            <button
+              className="personal-hold"
+              type="button"
+              aria-label={held ? "Bỏ Hold" : "Hold cá nhân"}
+              aria-pressed={held}
+              disabled={previewMode}
+              title={
+                previewMode
+                  ? "Drive preview chưa hỗ trợ tắt tiếng từ ứng dụng; hãy dùng mute trong trình phát."
+                  : held
+                    ? "Bỏ Hold để nghe lại video"
+                    : "Tắt tiếng video trên máy bạn, vẫn dùng mọi tính năng phòng"
+              }
+              onClick={() => setHeld((v) => !v)}
+            >
+              {held ? <VolumeX size={19} /> : <Volume2 size={19} />}
+              <span>{held ? "Bỏ Hold" : "Hold"}</span>
+            </button>
             {!light && (
               <div className="touch-navigation" aria-label="Di chuyển góc nhìn">
                 <button
@@ -1874,6 +1901,10 @@ function App() {
                   {host && (
                     <div className="actions">
                       <button
+                        aria-label={
+                          room.playing ? "Tạm dừng video" : "Phát video"
+                        }
+                        title={room.playing ? "Tạm dừng video" : "Phát video"}
                         onClick={() =>
                           void command({
                             type: room.playing ? "pause" : "play",
@@ -1888,6 +1919,8 @@ function App() {
                         )}
                       </button>
                       <button
+                        aria-label="Phát tiếp"
+                        title="Phát tiếp"
                         onClick={() => {
                           if (
                             !room.current ||
@@ -1900,7 +1933,7 @@ function App() {
                         }}
                       >
                         <SkipForward size={16} />
-                        Phát tiếp
+                        <span className="transport-label">Phát tiếp</span>
                       </button>
                     </div>
                   )}
@@ -1969,6 +2002,7 @@ function App() {
                         files={files}
                         isHost={!!host}
                         onControl={(c) => command(c)}
+                        held={held}
                         duckAudio={mix.duckMedia}
                         captions={captions}
                         onPreviewModeChange={setPreviewMode}
@@ -2083,6 +2117,7 @@ function App() {
                           resetView();
                         }}
                         onReset={resetView}
+                        onZoom={zoomBy}
                         light={light}
                         quality={sceneQuality.quality}
                         onQuality={sceneQuality.change}

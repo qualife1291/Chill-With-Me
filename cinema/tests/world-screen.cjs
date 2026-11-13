@@ -435,10 +435,8 @@ fs.mkdirSync(shots, { recursive: true });
       .getByRole("button", { name: "Trở lại bấm video", exact: true })
       .click();
     assert.equal(await p.locator(".scene-gesture-layer").count(), 0);
-    await p
-      .getByRole("button", { name: "Hành động và cảm xúc", exact: true })
-      .click();
-    await p.getByRole("region", { name: "Hành động nhanh" }).waitFor();
+    await p.getByRole("button", { name: "Cảm xúc", exact: true }).click();
+    await p.getByRole("group", { name: "Cảm xúc cả rạp" }).waitFor();
     assert(
       await p
         .getByRole("button", { name: "Pháo bông", exact: true })
@@ -449,7 +447,7 @@ fs.mkdirSync(shots, { recursive: true });
       .press("Escape");
     assert.equal(
       await p
-        .getByRole("button", { name: "Hành động và cảm xúc", exact: true })
+        .getByRole("button", { name: "Cảm xúc", exact: true })
         .getAttribute("aria-expanded"),
       "false",
     );
