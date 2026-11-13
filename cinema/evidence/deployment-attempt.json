@@ -1,21 +1,25 @@
 {
-  "date": "2026-11-12T03:43:13.619231+00:00",
-  "source": "e72e48a",
+  "date": "2026-11-13T11:22:11.966286+00:00",
+  "source": "264dcf2",
   "deployed": true,
-  "version": "2e805754-c5d6-4348-88e6-484375ab59a2",
+  "version": "fb20cc74-76f8-45dc-9fb7-63b0fbea508d",
   "worker": "cung-xem-cinema-alpha",
   "mode": "regular Static Assets + Worker",
   "publicAssetsMatched": 14,
   "roomSummaries": 3,
-  "localStages": 40,
-  "logicCases": 96,
+  "localStages": 43,
+  "logicCases": 102,
+  "agentSkillsValidated": 29,
+  "upgradeGroups": 8,
   "hudChecks": 67,
   "hudScreenshots": 69,
+  "leaseSoakSeconds": 100.177,
+  "leaseSoakSockets": 30,
   "preserved": [
     "ROOMS/RoomSlot SQLite migration v1",
     "room data",
     "ASSETS delivery",
     "billing"
   ],
-  "limitations": "No physical Chrome/macOS/M1 GPU certification; public verification is read-only."
+  "limitations": "No physical OS keys/Wake Lock, acoustic, Mac M1/GPU, WAN/quota or production rollback certification. Full voice/R2/TURN/WebGPU gates remain open."
 }
