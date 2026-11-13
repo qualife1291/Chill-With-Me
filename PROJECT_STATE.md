@@ -33,7 +33,7 @@ Boundaries: software GPU; YouTube/speech/OS APIs use declared fixtures; native c
 
 ## Deployment and next work
 
-Ready source is verified locally; public Worker is still the prior Hold release until a new deploy is recorded. Current public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/ ; source `3ef2d9a`, version `664593be-acff-400f-ba11-c04a4bb11b6e`. Last source CI Node 22/24 passed [run](https://github.com/qualife1291/Chill-With-Me/actions/runs/43424273376). Push alone does not deploy. Reports: `cinema/evidence/production.json`, `deployment-attempt.json`.
+Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/ ; deployed source `92c30f9`, version `6831cc53-d4e6-4fe4-a652-cb6509bc8f59`. All 221 public assets match the tested build byte-for-byte; four static security headers and three room summaries pass read-only verification. Source CI Node 22/24 passed [run](https://github.com/qualife1291/Chill-With-Me/actions/runs/43491343876). Prior verified version `664593be-acff-400f-ba11-c04a4bb11b6e` retained; rollback drill not performed. Push alone does not deploy. Reports: `cinema/evidence/production.json`, `deployment-attempt.json`.
 
 Deploy only `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, ROOMS/RoomSlot, SQLite migration v1. Use normal `wrangler.jsonc` Static Assets. PDF assets exceed the conservative 3 MiB embedded-code gzip guard; optional embedded config is for local tests, retain `encodeBody: "manual"`. Static `_headers` now shared with bundler; verify actual public headers/assets. Preserve room data/bindings/billing; no unrelated Workers.
 

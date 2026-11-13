@@ -1,33 +1,49 @@
 {
-  "date": "2026-11-13T12:21:24.623890+00:00",
-  "source": "3ef2d9a",
+  "date": "2026-11-13T19:24:05.900779+00:00",
+  "source": "92c30f9",
+  "sourceFull": "92c30f9f6d13856e4e4c6e66584a372acd7c5f3b",
   "deployed": true,
-  "version": "664593be-acff-400f-ba11-c04a4bb11b6e",
+  "version": "6831cc53-d4e6-4fe4-a652-cb6509bc8f59",
   "worker": "cung-xem-cinema-alpha",
   "mode": "regular Static Assets + Worker",
-  "publicAssetsMatched": 14,
+  "publicAssetsMatched": 221,
+  "publicSecurityHeaders": {
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()"
+  },
   "roomSummaries": 3,
-  "localStages": 44,
-  "logicCases": 102,
-  "agentSkillsValidated": 29,
-  "holdGroups": 5,
+  "localStages": 46,
+  "logicCases": 114,
+  "verificationRecovery": {
+    "reason": "Managed environment restart interrupted the runner during experience.cjs; processes ended, source and build were preserved without edits.",
+    "testSynchronizationFix": "presentation.cjs waits for both profile canvases to detach after Stop before setting the next file; stale rejection was correct. Runtime source/build unchanged.",
+    "completedJournal": "/tmp/chill-pre-restart-journal.log",
+    "recoveredStages": 37,
+    "semantics": "Completed exit-zero stages reused from the parent journal; interrupted and remaining stages rerun sequentially against the unchanged build. Not an uninterrupted soak.",
+    "additionalCompletedJournal": "/tmp/chill-after-restart-first-attempt.log"
+  },
+  "agentSkillsValidated": 32,
+  "presentationGroups": 8,
   "hudChecks": 87,
   "hudScreenshots": 89,
-  "leaseSoakSeconds": 100.124,
+  "leaseSoakSeconds": 100.43559921,
   "leaseSoakSockets": 30,
-  "preserved": [
-    "ROOMS/RoomSlot SQLite migration v1",
-    "room data",
-    "ASSETS delivery",
-    "billing"
-  ],
-  "limitations": "Provider APIs are fixtures in browser QA; native codecs and WebAudio real. No physical iOS/Android/macOS audio, Mac M1/GPU, battery/thermal, WAN/quota or production rollback certification. Full voice/R2/TURN/WebGPU gates remain open.",
   "sourceCI": {
     "passed": true,
     "node": [
       22,
       24
     ],
-    "run": "https://github.com/qualife1291/Chill-With-Me/actions/runs/43424273376"
-  }
+    "run": "https://github.com/qualife1291/Chill-With-Me/actions/runs/43491343876"
+  },
+  "previousVerifiedVersion": "664593be-acff-400f-ba11-c04a4bb11b6e",
+  "preserved": [
+    "ROOMS/RoomSlot SQLite migration v1",
+    "room data",
+    "ASSETS delivery",
+    "billing"
+  ],
+  "limitations": "Local aggregate recovered completed stages after managed environment restart; not one uninterrupted soak. Real native codecs/PDF/bitmap/canvas/WebAudio, declared provider/OS fixtures and software GPU. No physical-device, Mac M1, acoustic/battery/thermal, WAN/quota or rollback certification. Full voice/R2/TURN/provider/CSP gates remain open."
 }
