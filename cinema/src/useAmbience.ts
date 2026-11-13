@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ambientGain, noiseTexture, type Ambience } from "../shared/ambience";
+import { boundedVolume } from "../shared/audioMix";
 type Engine = {
   context: AudioContext;
   source: AudioBufferSourceNode;
@@ -18,10 +19,11 @@ function dispose(engine: Engine | null) {
   engine.gain.disconnect();
   void engine.context.close().catch(() => {});
 }
-export function useAmbience(session: string, speaking: boolean) {
+export function useAmbience(session: string, speaking: boolean, sideGain = 1) {
   const engine = useRef<Engine | null>(null);
   const [mode, setMode] = useState<Ambience>("off");
-  const [volume, setVolume] = useState(15);
+  const [volume, updateVolume] = useState(15);
+  const setVolume = (value: number) => updateVolume(boundedVolume(value));
   const [warning, setWarning] = useState("");
   const stop = useCallback(() => {
     const old = engine.current;
@@ -46,11 +48,11 @@ export function useAmbience(session: string, speaking: boolean) {
     const current = engine.current;
     if (current)
       current.gain.gain.setTargetAtTime(
-        ambientGain(volume, speaking),
+        ambientGain(volume, speaking) * sideGain,
         current.context.currentTime,
         0.04,
       );
-  }, [volume, speaking, mode]);
+  }, [volume, speaking, mode, sideGain]);
   const change = (next: Ambience) => {
     stop();
     setWarning("");
@@ -86,7 +88,7 @@ export function useAmbience(session: string, speaking: boolean) {
           if (engine.current !== current) return;
           if (context.state === "running") {
             gain.gain.setTargetAtTime(
-              ambientGain(volume, speaking),
+              ambientGain(volume, speaking) * sideGain,
               context.currentTime,
               0.04,
             );

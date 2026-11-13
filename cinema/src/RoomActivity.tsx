@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Member, ReactionKind, Room } from "../shared/model";
 import { REACTION_MS } from "../shared/model";
 import Fireworks from "./Fireworks";
+import ReactionCloud from "./ReactionCloud";
 import type { RoomSound } from "./useRoomSounds";
 export const reactions: Record<ReactionKind, { icon: string; label: string }> =
   {
@@ -141,34 +142,13 @@ export default function RoomActivity({
             />
           )}
           {reaction.kind !== "flowers" && effectsBudget > 0 && (
-            <div className="reaction-floats" aria-hidden="true">
-              {Array.from({ length: Math.min(9, effectsBudget) }, (_, i) => (
-                <i
-                  key={i}
-                  style={
-                    {
-                      "--sway": (i % 2 ? -1 : 1) * (12 + ((i * 7) % 28)) + "px",
-                      "--drift":
-                        (i % 2 ? 1 : -1) * (10 + ((i * 11) % 32)) + "px",
-                      "--size": 25 + ((i * 7) % 13) + "px",
-                      "--delay": i * 120 + "ms",
-                      "--tilt": (i % 2 ? 12 : -12) + "deg",
-                    } as import("react").CSSProperties
-                  }
-                >
-                  {
-                    [
-                      reactions[reaction.kind].icon,
-                      reaction.kind === "applause"
-                        ? "✨"
-                        : reaction.kind === "troll"
-                          ? "😂"
-                          : "💧",
-                    ][i % 2]
-                  }
-                </i>
-              ))}
-            </div>
+            <ReactionCloud
+              key={effectsBudget}
+              kind={reaction.kind}
+              at={reaction.at}
+              offset={offset}
+              budget={effectsBudget}
+            />
           )}
           <div
             className={`room-reaction reaction-${reaction.kind}${effectsBudget === 0 ? " quiet-reaction" : ""}`}

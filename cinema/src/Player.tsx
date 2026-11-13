@@ -45,7 +45,7 @@ function YouTubePlayerView({
   onEnded,
   isHost,
   onControl,
-  speaking,
+  duckAudio,
   serverNow,
 }: {
   room: Room;
@@ -54,7 +54,7 @@ function YouTubePlayerView({
   onEnded: () => void;
   isHost: boolean;
   onControl: (c: Command) => Promise<void>;
-  speaking: boolean;
+  duckAudio: boolean;
 }) {
   const el = useRef<HTMLDivElement>(null),
     player = useRef<YouTubePlayer | null>(null),
@@ -272,12 +272,12 @@ function YouTubePlayerView({
   useEffect(() => {
     const p = player.current;
     if (!ready || !p) return;
-    if (speaking && !duck.current) {
+    if (duckAudio && !duck.current) {
       const original = p.getVolume(),
         applied = Math.min(original, original * 0.25);
       duck.current = { original, applied };
       p.setVolume(applied);
-    } else if (!speaking && duck.current) {
+    } else if (!duckAudio && duck.current) {
       if (Math.abs(p.getVolume() - duck.current.applied) < 1)
         p.setVolume(duck.current.original);
       duck.current = null;
@@ -289,7 +289,7 @@ function YouTubePlayerView({
         duck.current = null;
       }
     };
-  }, [speaking, ready]);
+  }, [duckAudio, ready]);
   return (
     <section className="player-panel" data-control={isHost ? "host" : "viewer"}>
       {!current ? (

@@ -41,7 +41,7 @@ Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKi
 | S4 browser realtime | Suite hai profile với backend local, YouTube/speech mô phỏng; nhập/kéo/phím, pose, queue, chat, voice và mobile layout | Không thay thế iOS/Android hardware, quảng cáo/autoplay/video nhúng thật |
 | S5 lifecycle/hardening | Reserve 20s, reconnect 30s, pending TTL/cancel, takeover, designated successor/transfer, alarm/empty room; cookie/role guards; phòng riêng có capability fragment, summary ẩn, host-only key, thu hồi lời mời/pending | Operator moderation/privacy/retention đầy đủ còn backlog |
 | S6 graphics polish | Model CC0 có hash/manifest, tóc nam gắn theo xương đầu, skeleton dùng chung trong từng avatar, ghế instancing, tool tối ưu ngoài app deps, clone skeleton độc lập và disposal, demand render/DPR cap, reduced motion, fallback | Cổng GPU: cần số đo FPS/memory/thermal trên thiết bị thật, không lấy software WebGL của máy test làm kết quả mobile |
-| S7 playlist/player QA | Video/audio/file cleanup; import TXT/M3U/batch atomic (20 link/16 KiB); drag/up/down CAS; suggest/review bounded; RTT theo nonce/socket/epoch và monotonic player clock; giữ native iframe | Không phát HLS/playlist URL tuỳ ý; actual YouTube/ad/autoplay/foreground drift và mạng bất đối xứng vẫn cần pilot |
+| S7 playlist/player QA | Video/audio/file cleanup; import TXT/M3U/batch atomic (20 link/16 KiB); drag/up/down CAS; suggest/review bounded; RTT theo nonce/socket/epoch và monotonic player clock; giữ native iframe | HLS VOD hữu hạn đã hỗ trợ; không coi playlist URL bất kỳ là tương thích; actual YouTube/ad/autoplay/foreground drift và mạng bất đối xứng vẫn cần pilot |
 | S8 load/release | Short smoke 3×10 authenticated WS và broadcast, kiểm tra asset/gzip; có config/deploy artifact | Chưa có sustained media/GPU soak, quota/account/rollback drill; source/version và kết quả GET asset/API xem PROJECT_STATE; R2 chưa bật (10042) |
 | S9 full voice/cloning | Research/corpus và voice thiết bị fallback; không thu mic hoặc giả nút clone | Provider production phù hợp, credential/quota, consent/enrollment/delete, chất lượng/latency và signed audio đều chưa qua gate |
 
@@ -67,7 +67,7 @@ Giao diện hiện tại có sảnh 3D, chọn/xem trước model nam/nữ KayKi
 
 ## Nâng cấp tiếp theo — nghiên cứu ngày 11/11/2026
 
-Nguồn dưới đây đã đọc từ tài liệu chính thức; đây là kế hoạch, chưa phải tính năng đã triển khai. Giữ một roadmap tại đây, trạng thái chạy/test chỉ ở PROJECT_STATE và evidence.
+Nguồn dưới đây đã đọc từ tài liệu chính thức; Media Session, Wake Lock và phụ đề local đã có implementation; nghiệm thu và giới hạn xem PROJECT_STATE. Những phần còn lại vẫn là kế hoạch. Giữ một roadmap tại đây, trạng thái chạy/test chỉ ở PROJECT_STATE và evidence.
 
 | Ưu tiên | Công nghệ / tính năng | Phạm vi và điều kiện nghiệm thu |
 | --- | --- | --- |
@@ -92,3 +92,14 @@ Chưa mở khóa: R2/account activation và upload resumable; TURN/WAN file rela
 - [x] Hiệu ứng không khung/nhãn/tên; nhiều icon bay đa hướng, pháo bông xuất phát đa hướng, cùng âm hiện có và giới hạn hạt/reduced motion.
 - [x] Chế độ nhìn quanh trên video cho mobile, kéo 1 ngón/pinch 2 ngón, zoom +/- và reset dễ chạm; không remount hoặc tự đổi native video.
 - [x] Test popup, chạm thật qua CDP, pinch, cancel/blur, đồng bộ cảm xúc/âm thanh và hồi quy trước deploy.
+
+## Nâng cấp trải nghiệm và agent skills — 13/11/2026
+
+- [x] Nhập 29 skill có provenance, giữ hợp đồng dự án; validation cấu trúc và review theo skill được chọn.
+- [x] Hiệu ứng cảm xúc/pháo bông dày hơn, ở giữa màn hình, không tên/khung; giới hạn hạt theo thiết bị, reduced motion và TTL vẫn áp dụng. Nâng lớp âm thanh tổng hợp, kiểm peak/cancel/cleanup.
+- [x] Ưu tiên âm thanh cá nhân: video / tương tác / cân bằng; duck video khi hiệu ứng hoặc TTS, giữ thay đổi âm lượng thủ công và phục hồi khi mute/leave/đổi nguồn. Warning khi trình duyệt không hỗ trợ hoặc chặn âm.
+- [x] Trải nghiệm rạp opt-in: rung camera nhẹ theo tương tác, giữ video bám màn chiếu; Off mặc định, tôn trọng reduced motion, giới hạn biên độ/thời gian, không hứa video lập thể hay phân tích âm thanh YouTube.
+- [x] Media Session theo quyền host, Wake Lock opt-in theo phát/visible, phụ đề WebVTT local có validate dung lượng/encoding/timestamp và cleanup; fallback rõ cho iframe/thiết bị thiếu API.
+- [x] Test unit, browser/multi-profile/mobile, ảnh UI, audio nodes/duck/restore, idle/visibility, native media, 100s local lease soak 3×10; hồi quy tổng hợp đạt trước release (source/version deploy xem PROJECT_STATE). Rollback: tắt tùy chọn cá nhân hoặc quay lại version trong PROJECT_STATE; không reset phòng.
+
+Giới hạn vẫn giữ: pilot vật lý/GPU, sustained WAN/quota/rollback production, R2 activation/billing, TURN, full voice provider/consent và WebGPU depth-mask compatibility chưa được coi là đạt bằng giả lập. Số đo resource/idle hiện hành trong evidence là baseline, không phải FPS thiết bị thật.

@@ -297,8 +297,9 @@ fs.mkdirSync(shots, { recursive: true });
             .filter((p) => p.opacity > 0.1),
         );
       assert(
-        positions.length > 0 && positions.every((p) => p.r.left > 1290),
-        "stream must stay in right lane",
+        positions.length > 0 &&
+          positions.every((p) => p.r.left >= 250 && p.r.right <= 1200),
+        "reaction cloud stays in the central viewport",
       );
       await capture("stream-" + delay);
     }

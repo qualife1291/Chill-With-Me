@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Room } from "../shared/model";
-export function useChatSpeech(room: Room | null, enabled: boolean) {
+export function useChatSpeech(
+  room: Room | null,
+  enabled: boolean,
+  volumeScale = 1,
+) {
   const [speaking, setSpeaking] = useState(false),
     [warning, setWarning] = useState("");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -19,9 +23,15 @@ export function useChatSpeech(room: Room | null, enabled: boolean) {
       return 0.95;
     }
   });
+  const volumeRef = useRef(volumeScale);
+  volumeRef.current = Math.max(
+    0,
+    Math.min(1, Number.isFinite(volumeScale) ? volumeScale : 1),
+  );
   const rateRef = useRef(rate);
   rateRef.current = rate;
   const setRate = (value: number) => {
+    if (!Number.isFinite(value)) return;
     const bounded = Math.min(1.25, Math.max(0.75, value));
     setRateState(bounded);
     try {
@@ -94,6 +104,7 @@ export function useChatSpeech(room: Room | null, enabled: boolean) {
     u.voice = voice;
     u.rate = rateRef.current;
     u.pitch = 1;
+    u.volume = volumeRef.current;
     const finish = () => {
       if (!active.current || ticket !== serial.current) return;
       active.current = false;

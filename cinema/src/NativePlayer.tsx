@@ -17,11 +17,13 @@ export type PlayerProps = {
   isHost: boolean;
   onEnded: () => void;
   onControl: (c: Command) => Promise<void>;
-  speaking: boolean;
+  duckAudio: boolean;
   files: FileShare;
+  captions?: { url: string; name: string };
+  onPreviewModeChange?: (preview: boolean) => void;
 };
 export default function NativePlayer(props: PlayerProps) {
-  const { room, isHost, speaking, files } = props,
+  const { room, isHost, duckAudio, files } = props,
     source = mediaSource(room.current!);
   const transfer = useSyncExternalStore(files.subscribe, files.snapshot);
   const url = source.kind === "local" ? transfer.url : playableURL(source);
@@ -39,6 +41,10 @@ export default function NativePlayer(props: PlayerProps) {
   const [error, setError] = useState(""),
     [blocked, setBlocked] = useState(false),
     [preview, setPreview] = useState(false);
+  useEffect(() => {
+    props.onPreviewModeChange?.(preview);
+    return () => props.onPreviewModeChange?.(false);
+  }, [preview, props.onPreviewModeChange]);
   function sync(force = false) {
     const v = ref.current,
       { room: r, offset, isHost: host } = latest.current;
@@ -114,12 +120,12 @@ export default function NativePlayer(props: PlayerProps) {
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
-    if (speaking && !duck.current) {
+    if (duckAudio && !duck.current) {
       const original = v.volume,
         applied = original * 0.25;
       duck.current = { original, applied };
       v.volume = applied;
-    } else if (!speaking && duck.current) {
+    } else if (!duckAudio && duck.current) {
       if (Math.abs(v.volume - duck.current.applied) < 0.001)
         v.volume = duck.current.original;
       duck.current = null;
@@ -131,7 +137,7 @@ export default function NativePlayer(props: PlayerProps) {
         duck.current = null;
       }
     };
-  }, [speaking, url]);
+  }, [duckAudio, url]);
   function control(type: "play" | "pause" | "seek") {
     const p = latest.current,
       v = ref.current;
@@ -246,7 +252,21 @@ export default function NativePlayer(props: PlayerProps) {
               );
           }}
           aria-label="Video của phòng"
-        />
+        >
+          {props.captions?.url && !isAudio(source) && (
+            <track
+              key={props.captions.url}
+              kind="subtitles"
+              src={props.captions.url}
+              srcLang="und"
+              label={props.captions.name || "Phụ đề riêng"}
+              default
+              onLoad={(e) => {
+                e.currentTarget.track.mode = "showing";
+              }}
+            />
+          )}
+        </video>
       ) : (
         <div className="empty-player">
           <p>

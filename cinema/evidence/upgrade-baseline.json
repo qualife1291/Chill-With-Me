@@ -1,0 +1,85 @@
+{
+  "source": "1c813d9",
+  "environment": "Chromium/Linux SwiftShader; resource counts and offline audio, not device FPS",
+  "render": {
+    "pass": true,
+    "members": 10,
+    "renderer": "Chromium headless SwiftShader; one renderer, not ten devices",
+    "idle": {
+      "elapsed": 1200.1999999999534,
+      "renderedFrames": 0
+    },
+    "animation": {
+      "elapsed": 3234.1999999999534,
+      "rendererFrames": 11,
+      "rafP50": 275.0999999999767,
+      "rafP95": 376.4000000000233
+    },
+    "resources": {
+      "calls": 88,
+      "triangles": 54140,
+      "geometries": 35,
+      "textures": 12
+    }
+  },
+  "fireworkSound": {
+    "passed": true,
+    "checks": [
+      "three audible synthesis bursts with bounded finite samples",
+      "late events skip past blasts",
+      "cancel removes scheduled future cues",
+      "expired events are silent; final tail is silent"
+    ],
+    "measurements": {
+      "normal": {
+        "peak": 0.08808528631925583,
+        "rms": 0.011680016513557306,
+        "finite": true,
+        "burstPower": [
+          0.0010763021707830402,
+          0.001079691090393283,
+          0.0010742636875109611
+        ],
+        "first40ms": 1.6366636512928287e-06,
+        "tailPower": 0
+      },
+      "late": {
+        "peak": 0.08793934434652328,
+        "rms": 0.006646450900444538,
+        "finite": true,
+        "burstPower": [
+          7.844512947065077e-06,
+          0,
+          0
+        ],
+        "first40ms": 0,
+        "tailPower": 0
+      },
+      "cancelled": {
+        "peak": 0,
+        "rms": 0,
+        "finite": true,
+        "burstPower": [
+          0,
+          0,
+          0
+        ],
+        "first40ms": 0,
+        "tailPower": 0
+      },
+      "expired": {
+        "peak": 0,
+        "rms": 0,
+        "finite": true,
+        "burstPower": [
+          0,
+          0,
+          0
+        ],
+        "first40ms": 0,
+        "tailPower": 0
+      }
+    },
+    "limitations": "Actual Chromium OfflineAudioContext rendering of the current TypeScript sound helper at a 0.14 output bus. No recordings; not acoustic quality or physical-device sound pressure certification."
+  }
+}

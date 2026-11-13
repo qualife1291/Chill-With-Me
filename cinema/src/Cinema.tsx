@@ -1,3 +1,4 @@
+import { cinemaMotion, type MotionMode } from "../shared/immersive";
 import SceneVisibility from "./SceneVisibility";
 import { useInitialGPUOptions } from "./useSceneQuality";
 import Seating from "./Seating";
@@ -250,6 +251,8 @@ function Camera({
   controlsOpen,
   zoom,
   reducedMotion,
+  motion = "off",
+  motionAt = 0,
   surface,
 }: {
   yaw: number;
@@ -258,6 +261,8 @@ function Camera({
   controlsOpen: boolean;
   zoom: number;
   reducedMotion: boolean;
+  motion?: MotionMode;
+  motionAt?: number;
   surface: RefObject<HTMLDivElement | null>;
   room: Room;
   id: string;
@@ -266,9 +271,20 @@ function Camera({
 }) {
   const { camera, size, invalidate, gl } = useThree();
   const own = room.members.find((member) => member.id === id);
+  const motionStart =
+    motion !== "off"
+      ? Math.max(
+          motionAt,
+          room.reaction?.at || 0,
+          own?.pokedAt || 0,
+          own?.waveAt || 0,
+        )
+      : 0;
   useEffect(() => {
     invalidate();
   }, [
+    motion,
+    motionStart,
     yaw,
     pitch,
     bodyYaw,
@@ -356,6 +372,19 @@ function Camera({
       look.applyAxisAngle(math.up, (-smoothYaw.current * Math.PI) / 180);
       math.right.crossVectors(look, math.up).normalize();
       look.applyAxisAngle(math.right, (smoothPitch.current * Math.PI) / 180);
+    }
+    const pulse = cinemaMotion(motion, now - motionStart, reducedMotion);
+    if (pulse.active) {
+      const distance = look.length();
+      math.right.crossVectors(look, math.up).normalize();
+      look
+        .addScaledVector(math.right, pulse.x * distance)
+        .addScaledVector(math.up, pulse.y * distance);
+      invalidate();
+    }
+    if (sceneDiagnostics) {
+      gl.domElement.dataset.motionActive = String(pulse.active);
+      gl.domElement.dataset.motionOffset = JSON.stringify([pulse.x, pulse.y]);
     }
     camera.lookAt(math.target.copy(camera.position).add(look));
     desiredAim.set(selected.target[0], selected.target[1], selected.target[2]);
@@ -446,6 +475,8 @@ export default function Cinema({
   controlsOpen,
   zoom,
   reducedMotion,
+  motion = "off",
+  motionAt = 0,
   surface,
   dpr,
   onUnavailable,
@@ -460,6 +491,8 @@ export default function Cinema({
   controlsOpen: boolean;
   zoom: number;
   reducedMotion: boolean;
+  motion?: MotionMode;
+  motionAt?: number;
   surface: RefObject<HTMLDivElement | null>;
   room: Room;
   id: string;
@@ -543,6 +576,8 @@ export default function Cinema({
         controlsOpen={controlsOpen}
         zoom={zoom}
         reducedMotion={reducedMotion}
+        motion={motion}
+        motionAt={motionAt}
         surface={surface}
       />
     </Canvas>

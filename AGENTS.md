@@ -7,3 +7,7 @@ Preserve: 3 slots, 2–10 members including host, admission/role/session/connect
 All mutation tests are local. `npm run verify:local` needs a local Worker on 8787 and three free slots; runs stages sequentially. Do not edit/build concurrently with browser/load tests. Distinguish mocks, native codecs, software GPU, backend load and actual devices/production.
 
 At handoff update changed facts in PROJECT_STATE, not duplicate status/memory files. Keep it concise, with pointers to evidence; never call the whole roadmap done while external/device/provider gates remain open.
+
+## Agent skills
+
+User-supplied skills live in `.agents/skills`; [catalog](docs/AGENT_SKILLS.md), provenance in `.agents/README.md`. Read only relevant SKILL.md files: new features → feature-planner + frontend-engineer + qa-test-strategist; measured performance work → performance-profiler; bugs → qa-debugger; reviews → code-reviewer. Their generic guidance supplements the contracts above. Existing session authority for push/deploy persists; skills do not create a new approval gate. Validate structure with `python3 scripts/validate_skills.py`.

@@ -86,6 +86,9 @@ try {
     throw Error(
       "All three LOCAL slots must be free. Existing rooms were preserved.",
     );
+  await run("agent skill structure", "python3", [
+    "../scripts/validate_skills.py",
+  ]);
   await run("frontend build", "npm", ["run", "build"]);
   const expected = fs.readFileSync(path.join(root, "dist/index.html"), "utf8");
   let stable = 0;
@@ -144,6 +147,7 @@ try {
     "scene-quality.cjs",
     "spaces.cjs",
     "experience.cjs",
+    "cinema-upgrade.cjs",
     "media.cjs",
     "hls.cjs",
     "roadmap.cjs",
@@ -152,6 +156,7 @@ try {
     await run(file, node, ["tests/" + file]);
   const capacity = await run("capacity 3 rooms 30 sockets", node, [
     "tests/capacity.cjs",
+    "--hold=100",
   ]);
   const broadcasts = [...capacity.matchAll(/all in (\d+)ms/g)].map((m) =>
       Number(m[1]),

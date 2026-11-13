@@ -1,3 +1,10 @@
+import CinemaPreferences from "./CinemaPreferences";
+import { usePreference } from "./usePreference";
+import { AUDIO_PRIORITIES, audioMix } from "../shared/audioMix";
+import { MOTION_MODES } from "../shared/immersive";
+import { useWakeLock } from "./useWakeLock";
+import { useMediaSession } from "./useMediaSession";
+import { useLocalCaptions } from "./useLocalCaptions";
 import PlaybackReadiness from "./PlaybackReadiness";
 import RoomControls from "./RoomControls";
 import InvitationControls from "./InvitationControls";
@@ -8,7 +15,7 @@ import { CAMERA_PRESETS } from "../shared/experience";
 import { useSceneQuality } from "./useSceneQuality";
 import { useModalFocus } from "./useModalFocus";
 import { FileShare } from "./FileShare";
-import { mediaLabel, FILE_ACCEPT } from "../shared/media";
+import { mediaLabel, mediaSource, isAudio, FILE_ACCEPT } from "../shared/media";
 import { spaces, spaceInfo, type Space } from "../shared/spaces";
 import { heldLookStep } from "../shared/lookInput";
 import React, {
@@ -348,11 +355,42 @@ function App() {
     !!entry || quickActive || approvalActive,
     entry ? dismissEntry : approvalActive ? dismissApproval : undefined,
   );
-  const speech = useChatSpeech(room, tts);
-  const sounds = useRoomSounds(status === "joined" ? room?.session || "" : "");
-  const ambience = useAmbience(
-    status === "joined" ? room?.session || "" : "",
+  const activeSession = status === "joined" ? room?.session || "" : "";
+  const [priority, setPriority] = usePreference(
+    "cinema-audio-priority",
+    AUDIO_PRIORITIES,
+    "balanced",
+  );
+  const [motion, setMotion] = usePreference(
+    "cinema-motion",
+    MOTION_MODES,
+    "off",
+  );
+  const [motionAt, setMotionAt] = useState(0);
+  useEffect(() => setMotionAt(0), [activeSession]);
+  const sideGain = priority === "video" && !!room?.playing ? 0.25 : 1;
+  const speech = useChatSpeech(room, tts, sideGain);
+  const sounds = useRoomSounds(activeSession, sideGain);
+  const ambience = useAmbience(activeSession, speech.speaking, sideGain);
+  const mix = audioMix(
+    priority,
+    !!room?.playing,
     speech.speaking,
+    sounds.active,
+    ambience.mode !== "off",
+  );
+  const wake = useWakeLock(activeSession, !!room?.current && !!room?.playing);
+  const [previewMode, setPreviewMode] = useState(false);
+  const source = room?.current ? mediaSource(room.current) : undefined;
+  const captions = useLocalCaptions(
+    activeSession && room?.current ? activeSession + ":" + room.current.id : "",
+    !!source && source.kind !== "youtube" && !isAudio(source) && !previewMode,
+  );
+  useMediaSession(
+    activeSession ? room : null,
+    isHost,
+    command,
+    clock.serverNow,
   );
   const [lighting, setLighting] = useState<Lighting>("normal");
   const [busy, setBusy] = useState(false);
@@ -1931,7 +1969,9 @@ function App() {
                         files={files}
                         isHost={!!host}
                         onControl={(c) => command(c)}
-                        speaking={speech.speaking}
+                        duckAudio={mix.duckMedia}
+                        captions={captions}
+                        onPreviewModeChange={setPreviewMode}
                         room={room}
                         offset={offset}
                         onEnded={() => {
@@ -1973,6 +2013,8 @@ function App() {
                             id={id}
                             mode={camera}
                             reducedMotion={reducedMotion}
+                            motion={motion}
+                            motionAt={motionAt}
                             offset={offset}
                             yaw={yaw}
                             pitch={pitch}
@@ -2017,6 +2059,20 @@ function App() {
                   <div className="scene-controls">
                     {me && (
                       <RoomControls
+                        extras={
+                          <CinemaPreferences
+                            priority={priority}
+                            onPriority={setPriority}
+                            motion={motion}
+                            onMotion={setMotion}
+                            onTryMotion={() => setMotionAt(Date.now() + offset)}
+                            reduced={reducedMotion}
+                            light={light}
+                            wake={wake}
+                            captions={captions}
+                            soundWarning={sounds.warning}
+                          />
+                        }
                         ambience={ambience}
                         voiceWarning={speech.warning}
                         lighting={lighting}

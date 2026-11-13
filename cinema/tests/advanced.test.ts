@@ -45,8 +45,8 @@ test("effect quality respects reduced motion, quiet mode and compact/save-data b
     particleBudget("auto", true, false, false) <
       particleBudget("auto", false, false, false),
   );
-  assert.equal(particleBudget("auto", false, true, false), 8);
-  assert.equal(particleBudget("full", true, true, false), 18);
+  assert.equal(particleBudget("auto", false, true, false), 12);
+  assert.equal(particleBudget("full", true, true, false), 30);
 });
 test("camera quick presets preserve the two supported camera modes and bounded zoom", () => {
   for (const p of Object.values(CAMERA_PRESETS)) {

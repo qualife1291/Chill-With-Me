@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { RotateCcw, X, Leaf } from "lucide-react";
 import type { SceneQuality } from "./useSceneQuality";
 import {
@@ -22,8 +23,10 @@ export default function RoomControls({
   voiceWarning,
   effects,
   onPreset,
+  extras,
 }: {
   voiceWarning?: string;
+  extras?: ReactNode;
   effects: { mode: EffectsMode; change: (mode: EffectsMode) => void };
   onPreset: (preset: CameraPreset) => void;
   lighting: Lighting;
@@ -110,6 +113,7 @@ export default function RoomControls({
       <p className="control-hint">
         Chỉ chỉnh cảnh 3D; độ nét video giữ nguyên.
       </p>
+      {extras}
       <details className="control-section ambience-controls">
         <summary>Âm thanh & ánh sáng</summary>
         <p className="control-hint">Thiết lập riêng trên máy bạn.</p>
@@ -122,7 +126,7 @@ export default function RoomControls({
           >
             <option value="auto">Tự động theo thiết bị</option>
             <option value="full">Đầy đủ</option>
-            <option value="quiet">Yên tĩnh · chỉ thẻ cảm xúc</option>
+            <option value="quiet">Yên tĩnh · chỉ biểu tượng</option>
           </select>
         </label>
         <label>

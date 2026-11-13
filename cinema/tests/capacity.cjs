@@ -2,6 +2,13 @@
 const assert = require("node:assert/strict");
 const { chromium, executablePath } = require("./browser-runtime.cjs");
 const base = "http://localhost:8787";
+const holdSeconds = Number(
+  process.argv.find((a) => a.startsWith("--hold="))?.split("=")[1] || 0,
+);
+assert(
+  Number.isInteger(holdSeconds) && holdSeconds >= 0 && holdSeconds <= 180,
+  "--hold must be 0–180 seconds",
+);
 (async () => {
   const browser = await chromium.launch({
     executablePath,
@@ -137,6 +144,128 @@ const base = "http://localhost:8787";
       console.log(
         `PASS room ${host.slot}: 10 online members, chat received by all in ${Math.round(performance.now() - started)}ms`,
       );
+    }
+    if (holdSeconds) {
+      const started = performance.now(),
+        deadline = started + holdSeconds * 1000,
+        rtts = [];
+      const revisions = [];
+      for (const host of hosts)
+        revisions.push(
+          (await call(host, `/rooms/${host.slot}/state`)).body.room.revision,
+        );
+      let probes = 0;
+      while (performance.now() < deadline) {
+        const replies = await Promise.all(
+          clients.map((c) =>
+            c.page.evaluate(
+              () =>
+                new Promise((resolve, reject) => {
+                  const nonce = crypto.randomUUID(),
+                    start = performance.now();
+                  const cleanup = () => {
+                    clearTimeout(timer);
+                    socket.removeEventListener("message", message);
+                    socket.removeEventListener("close", closed);
+                  };
+                  const message = (e) => {
+                    const data = JSON.parse(e.data);
+                    if (data.type === "clock" && data.nonce === nonce) {
+                      cleanup();
+                      resolve({
+                        session: data.session,
+                        rtt: performance.now() - start,
+                      });
+                    }
+                  };
+                  const closed = () => {
+                    cleanup();
+                    reject(Error("socket closed during local soak"));
+                  };
+                  const timer = setTimeout(() => {
+                    cleanup();
+                    reject(Error("clock timeout during local soak"));
+                  }, 8000);
+                  socket.addEventListener("message", message);
+                  socket.addEventListener("close", closed);
+                  socket.send(JSON.stringify({ type: "clock", nonce }));
+                }),
+            ),
+          ),
+        );
+        replies.forEach((reply, i) => {
+          assert.equal(
+            reply.session,
+            hosts.find((h) => h.slot === clients[i].slot).epoch,
+          );
+          rtts.push(reply.rtt);
+        });
+        probes += replies.length;
+        console.log(
+          `PASS local soak probe ${probes}, elapsed ${Math.round((performance.now() - started) / 1000)}s`,
+        );
+        await new Promise((r) =>
+          setTimeout(
+            r,
+            Math.max(0, Math.min(10000, deadline - performance.now())),
+          ),
+        );
+      }
+      for (const [i, host] of hosts.entries()) {
+        const room = (await call(host, `/rooms/${host.slot}/state`)).body.room;
+        assert.equal(room.members.length, 10);
+        assert(room.members.every((m) => m.online));
+        assert.equal(
+          room.revision,
+          revisions[i],
+          "clock renewal must not broadcast room revisions",
+        );
+        const text = `after-soak-${host.slot}`;
+        await host.page.evaluate(
+          ({ session, text }) =>
+            socket.send(
+              JSON.stringify({
+                session,
+                commandId: crypto.randomUUID(),
+                command: { type: "chat", text },
+              }),
+            ),
+          { session: host.epoch, text },
+        );
+        await Promise.all(
+          clients
+            .filter((c) => c.slot === host.slot)
+            .map((c) =>
+              c.page.waitForFunction(
+                (text) =>
+                  received.some(
+                    (v) => v.type === "chat" && v.message.text === text,
+                  ),
+                text,
+              ),
+            ),
+        );
+      }
+      rtts.sort((a, b) => a - b);
+      const report = {
+        passed: true,
+        date: new Date().toISOString(),
+        seconds: (performance.now() - started) / 1000,
+        rooms: 3,
+        sockets: 30,
+        authenticatedClockReplies: probes,
+        clockRttP50: rtts[Math.floor(rtts.length * 0.5)],
+        clockRttP95: rtts[Math.floor(rtts.length * 0.95)],
+        renewalWithoutRevisionBroadcast: true,
+        postHoldChatAllMembers: true,
+        limitations:
+          "Local backend lease soak only; no rendered media/GPU/WAN/quota or production rollback certification.",
+      };
+      require("node:fs").writeFileSync(
+        "evidence/lease-soak.json",
+        JSON.stringify(report, null, 2) + "\n",
+      );
+      console.log(`PASS local lease soak ${holdSeconds}s / 30 sockets`);
     }
     const extra = { context: await browser.newContext() };
     try {

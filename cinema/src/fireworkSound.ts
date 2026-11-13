@@ -36,12 +36,18 @@ export function playFireworkSound(
   };
   const timer = setTimeout(stop, Math.max(0, 2800 - age));
   const noise = ctx.createBuffer(
-    1,
+    2,
     Math.ceil(ctx.sampleRate * 0.24),
     ctx.sampleRate,
   );
-  const samples = noise.getChannelData(0);
-  for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+  for (let channel = 0; channel < 2; channel++) {
+    const samples = noise.getChannelData(channel);
+    let previous = 0;
+    for (let i = 0; i < samples.length; i++) {
+      previous = previous * 0.18 + (Math.random() * 2 - 1) * 0.82;
+      samples[i] = previous;
+    }
+  }
   const own = (node: AudioScheduledSourceNode, nodes: AudioNode[]) => {
     active.add(node);
     node.onended = () => {

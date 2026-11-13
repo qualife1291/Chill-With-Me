@@ -282,7 +282,7 @@ const base = "http://localhost:8787",
             getComputedStyle(el).borderWidth === "0px",
         ),
     );
-    assert.equal(await h.locator(".firework-spark").count(), 54);
+    assert.equal(await h.locator(".firework-spark").count(), 90);
     assert(await h.locator(".fireworks-show").isVisible());
     assert(
       !(await g.locator(".fireworks-show").isVisible()),
@@ -324,7 +324,7 @@ const base = "http://localhost:8787",
     );
     await g.emulateMedia({ reducedMotion: "no-preference" });
     checks.push(
-      "three-burst fireworks and layered sound reach both members; 54 sparks bounded; reduced motion honored; mute cancels pending blasts; unmute and duplicate commands do not replay; room-wide cooldown, disabled controls, 3-second removal and DB cleanup",
+      "three-burst fireworks and layered sound reach both members; 90 sparks bounded; reduced motion honored; mute cancels pending blasts; unmute and duplicate commands do not replay; room-wide cooldown, disabled controls, 3-second removal and DB cleanup",
     );
     await g.bringToFront();
     await openActions(g);
@@ -417,7 +417,7 @@ const base = "http://localhost:8787",
     await g.getByRole("button", { name: "Trêu vui", exact: true }).click();
     await h.getByRole("status", { name: "Trêu vui", exact: true }).waitFor();
     await h.waitForFunction((n) => window.__sounds.length === n + 8, hn);
-    assert.equal(await h.locator(".reaction-floats i").count(), 9);
+    assert.equal(await h.locator(".reaction-floats i").count(), 24);
     assert.equal(
       await g.locator(".reaction-floats").count(),
       0,

@@ -283,14 +283,14 @@ fs.mkdirSync(shots, { recursive: true });
     await h.getByLabel("Mức hiệu ứng", { exact: true }).selectOption("auto");
     await cmd({ type: "reaction", kind: "flowers" });
     await h.waitForFunction(
-      () => document.querySelectorAll(".firework-spark").length === 54,
+      () => document.querySelectorAll(".firework-spark").length === 90,
     );
     await h.evaluate(() => {
       navigator.connection.saveData = true;
       navigator.connection.dispatchEvent(new Event("change"));
     });
     await h.waitForFunction(
-      () => document.querySelectorAll(".firework-spark").length === 24,
+      () => document.querySelectorAll(".firework-spark").length === 36,
     );
     await h.getByLabel("Mức hiệu ứng", { exact: true }).selectOption("quiet");
     assert.equal(await h.locator(".fireworks-show").count(), 0);
@@ -314,14 +314,14 @@ fs.mkdirSync(shots, { recursive: true });
     );
     await h.getByLabel("Mức hiệu ứng", { exact: true }).selectOption("full");
     await h.waitForFunction(
-      () => document.querySelectorAll(".firework-spark").length === 54,
+      () => document.querySelectorAll(".firework-spark").length === 90,
     );
     await h.evaluate(() => {
       navigator.connection.saveData = false;
       navigator.connection.dispatchEvent(new Event("change"));
     });
     checks.push(
-      "Save-Data Auto caps fireworks at 24 sparks; Quiet retains status without particles; explicit Full overrides hint and preferences persist",
+      "Save-Data Auto caps fireworks at 36 sparks; Quiet retains status without particles; explicit Full overrides hint and preferences persist",
     );
     await h.keyboard.press("Escape");
     assert.equal(await controls().getAttribute("aria-pressed"), "false");

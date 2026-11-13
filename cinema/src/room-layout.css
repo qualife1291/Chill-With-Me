@@ -422,27 +422,80 @@
 .scene.is-looking .scene-gesture-layer {
   cursor: grabbing;
 }
-/* TikTok-style stream: small glyphs emerge from one side lane, gently sway and
-   fade upward. Only transform/opacity animate; bounded count and 3s TTL. */
+/* Bounded central celebration: transform/opacity only, no frame loop. */
 .reaction-floats {
   position: fixed;
-  right: 12px;
-  bottom: 84px;
-  width: 116px;
-  height: min(55svh, 420px);
-  z-index: 25;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(82vw, 900px);
+  height: min(65svh, 560px);
+  z-index: 45;
   pointer-events: none;
   overflow: hidden;
   contain: layout style;
 }
 .reaction-floats i {
   position: absolute;
-  left: 40px;
-  bottom: -4px;
+  left: var(--origin);
+  bottom: 8%;
   font-style: normal;
   font-size: var(--size);
   opacity: 0;
   animation: reaction-rise 1850ms linear var(--delay) both;
+}
+.cinema-app .fireworks-show {
+  z-index: 45;
+}
+.cinema-preferences label {
+  margin: 12px 0 8px;
+}
+.cinema-preferences > button {
+  width: 100%;
+  margin-top: 8px;
+}
+.cinema-preferences input[type="file"] {
+  width: 100%;
+  max-width: 100%;
+  font-size: 12px;
+}
+/* Accessible native file input with a localized, full-size hit target. */
+.cinema-preferences .caption-upload {
+  position: relative;
+  display: grid;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px dashed #c5ad7c88;
+  border-radius: 12px;
+  background: #394238;
+  cursor: pointer;
+}
+.cinema-preferences .caption-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.caption-upload:focus-within {
+  outline: 2px solid #e3c293;
+  outline-offset: 2px;
+}
+.caption-upload:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.caption-choice {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.caption-choice span {
+  flex: 1;
+  min-width: 0;
 }
 @keyframes reaction-rise {
   0% {
@@ -471,11 +524,12 @@
 }
 .room-reaction {
   position: fixed;
-  left: auto;
-  top: auto;
-  right: 32px;
-  bottom: 100px;
-  transform: none;
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+
   background: none;
   border: 0;
   box-shadow: none;

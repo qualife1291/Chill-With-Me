@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "date": "2026-11-13T11:10:37.326Z",
+  "checks": [
+    "Media Session host seek uses authenticated generation commands; invalid seek ignored, viewer handlers cleared and server ACL retained; metadata set",
+    "Wake Lock opt-in: no request when paused; acquire while playing; release on pause/hidden/off, reacquire on visible; stale async request released; unsupported warning",
+    "corrupt personal preferences fall back safely; denied Wake Lock shows a bounded warning without retry loop",
+    "local UTF-8 WebVTT validates before mutation, real native text track decodes unicode; personal only; remove revokes Blob and preserves video identity",
+    "opt-in finite camera pulse preserves player, returns to zero idle frames, reduced motion disables it; mobile/landscape expanded preferences fit and close remains hit-testable",
+    "interaction priority ducks actual native volume for effects, mute restores without unmute replay; video priority attenuates actual effects GainNode without ducking media; manual volume changes preserved",
+    "24 anonymous central emoji stay pointer-transparent above open sheets; subtitles revoke on provider change, iframe captions disabled; YouTube fixture volume ducks/restores with same audio priority",
+    "Drive preview disables native caption upload; iframe and native capability changes retain single-sheet UX"
+  ],
+  "errors": [],
+  "limitations": "Native H.264/AAC decode, TextTrack, WebAudio and WebGL are real Chromium/SwiftShader. MediaSession/WakeLock/device speech/YouTube are fixtures; not OS keys, physical screen-lock, acoustic quality, Mac M1 or stereoscopic-video certification."
+}

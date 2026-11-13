@@ -7,7 +7,7 @@ export function particleBudget(
   reduced: boolean,
 ) {
   if (reduced || mode === "quiet") return 0;
-  return mode === "auto" && (compact || saveData) ? 8 : SPARKS_PER_BURST;
+  return mode === "auto" && (compact || saveData) ? 12 : SPARKS_PER_BURST;
 }
 export const CAMERA_PRESETS = {
   screen: { label: "Chính diện", mode: "orbit", zoom: 0 },
