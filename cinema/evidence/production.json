@@ -1,35 +1,35 @@
 {
   "passed": true,
-  "date": "2026-11-13T11:22:11.966286+00:00",
-  "source": "264dcf2",
-  "version": "fb20cc74-76f8-45dc-9fb7-63b0fbea508d",
+  "date": "2026-11-13T12:20:46.167733+00:00",
+  "source": "3ef2d9a",
+  "version": "664593be-acff-400f-ba11-c04a4bb11b6e",
   "base": "https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev",
   "checks": "Read-only GET; compare every dist asset; three room summaries; no production mutation",
   "assets": [
     {
-      "path": "assets/AvatarPreview-BsiHsFeF.js",
+      "path": "assets/AvatarPreview-Bvc_33Yg.js",
       "bytes": 877,
-      "sha256": "2de93e9b5257c401e9ac615f3320fbc4fb2758d20a7a57791a1f79e0bff82bf5"
+      "sha256": "33f5e61acc8fba2bb5cf896ced12a79891d78ced9937ec1210eb46c702173a73"
     },
     {
-      "path": "assets/Cinema-CY3B9f0b.js",
+      "path": "assets/Cinema-Dth3-xDp.js",
       "bytes": 18445,
-      "sha256": "2fa92edeeda82b7c1bd94a559ec5865df391fd9b0d8ce9c8778556d0e2b19bd1"
+      "sha256": "cbbc9c6bdb8d3a592690bd6ffeb91e580931a4381d35855c4924402532bbcec3"
     },
     {
-      "path": "assets/Lobby-BkEGdNcO.js",
+      "path": "assets/Lobby-wDKS8wHk.js",
       "bytes": 6956,
-      "sha256": "de25307327f13d6ec8c49db42d220064d401f4b4d1f7c9ded5cadd37de801ad8"
+      "sha256": "c71f80e8ca3a5c429e843a9db14cb695ece34eb70d464ebbf8ace2958feaf70a"
     },
     {
-      "path": "assets/ModelBoundary-CK4AgI1q.js",
+      "path": "assets/ModelBoundary-DiSrvorE.js",
       "bytes": 938302,
-      "sha256": "44c00ae47591f31bc4b7b28e2b629fd67cb054aa77e7c569b86c2152f097b5e4"
+      "sha256": "c532fb47271ed3c83e7ae21fd14441aaaa3531aa6c3e0da585bcb56bb0bfeabf"
     },
     {
-      "path": "assets/RoundedBoxGeometry-2oQ572Ve.js",
+      "path": "assets/RoundedBoxGeometry-znrFLYaA.js",
       "bytes": 1722,
-      "sha256": "989e35bb92979d5a206ee684d6278a9b827d653dae8499d5bfd5f67484a5aa41"
+      "sha256": "4f8b5252a52b95136e973872339c6a422058aae3ed1525e755b095346c4e90bd"
     },
     {
       "path": "assets/hls-BtDohxgG.js",
@@ -37,19 +37,19 @@
       "sha256": "b42f5b6c03cb1b323036bfa499035b637e3a2667c1d18047c117d43ded849507"
     },
     {
-      "path": "assets/index-BNjpuIkv.js",
-      "bytes": 432501,
-      "sha256": "33b59e5a63bada1b5de3a7c401dfc98857f61206a783acb7426c1a0d01dcc82f"
+      "path": "assets/index-BUZlBa2F.js",
+      "bytes": 435974,
+      "sha256": "df9aa60b00718c2b963884c637fa648ae5a55028929c1a75dca3d93510b2cc5a"
     },
     {
-      "path": "assets/index-DRC2DDib.css",
-      "bytes": 57970,
-      "sha256": "b9bbe9ee86313d0a6dac92422807a56b4f4effe028925fa0578054dbab2168b4"
+      "path": "assets/index-Bx1eHfwo.css",
+      "bytes": 59309,
+      "sha256": "29165d5fc89a73b93ec7b298fec695ec70c3beb116f249d80e416d8076e54bcf"
     },
     {
       "path": "index.html",
       "bytes": 444,
-      "sha256": "f4c36480c08987319914ec771a83590d90e31f8885621d7a3c1e0ba23b088afc"
+      "sha256": "d82f65577c3b60268b9e54c19a490f56102254e08f35f156426f8d71a6807ca1"
     },
     {
       "path": "licenses/hls.js.LICENSE.txt",
