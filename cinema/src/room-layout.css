@@ -1,6 +1,7 @@
 /* HUD geometry has one owner. Sheets never resize the world/video viewport. */
 .cinema-app {
   --hud-edge: 14px;
+  --active-sheet-width: 340px;
   --hud-top: calc(72px + env(safe-area-inset-top, 0px));
   --dock-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   --sheet-bottom: calc(
@@ -390,7 +391,7 @@
 }
 /* Notifications use the free lane while a sheet is open, never cover its controls. */
 .cinema-app.has-sheet .chat-toasts {
-  right: 370px;
+  right: calc(var(--active-sheet-width) + 30px);
 }
 .cinema-app .view-hint {
   bottom: calc(var(--dock-bottom) + 64px);
@@ -1019,4 +1020,20 @@
 }
 .cinema-app.has-presentation .transport {
   display: none;
+}
+
+.game-starter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-block: 12px;
+}
+.game-starter span {
+  width: 100%;
+  font-size: 13px;
+}
+.game-starter button {
+  flex: 1;
+  min-height: 44px;
 }

@@ -7,7 +7,6 @@ import {
   connectMember,
   sweep,
   view,
-  type Command,
 } from "../shared/model";
 const A = "https://youtu.be/jfKfPfyJRdk",
   B = "https://youtu.be/5qap5aO4i9A",

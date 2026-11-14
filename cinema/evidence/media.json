@@ -10,6 +10,7 @@
     "native host seek replicates",
     "native host play replicates",
     "native media ducks and restores device speech volume",
+    "on-demand eight-second real decoded video sample reports resolution/buffer/frame counters; cancel/disclosure cleanup preserves native element",
     "camera leaves native video mounted; closing tools restores access to the player",
     "guest cannot control room",
     "real ended advances mixed playlist exactly once",

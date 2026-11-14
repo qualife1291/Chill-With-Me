@@ -1,6 +1,7 @@
 import { DOCUMENT_ACCEPT } from "../shared/presentation";
 import { unpackFileChunk } from "../shared/fileRelay";
 import CinemaPreferences from "./CinemaPreferences";
+import PlaybackDiagnostics from "./PlaybackDiagnostics";
 import { usePreference } from "./usePreference";
 import { AUDIO_PRIORITIES, audioMix } from "../shared/audioMix";
 import { MOTION_MODES } from "../shared/immersive";
@@ -40,8 +41,6 @@ import {
   Play,
   Pause,
   Armchair,
-  Eye,
-  PersonStanding,
   LogOut,
   Check,
   X,
@@ -55,13 +54,7 @@ import {
   RotateCcw,
   MousePointer2,
 } from "lucide-react";
-import {
-  apply,
-  createRoom,
-  type Room,
-  type Command,
-  type Member,
-} from "../shared/model";
+import { apply, createRoom, type Room, type Command } from "../shared/model";
 import Player from "./Player";
 import RoomActivity from "./RoomActivity";
 import { useRoomSounds } from "./useRoomSounds";
@@ -74,6 +67,7 @@ import "./style.css";
 import "./room-layout.css";
 import { useRoomViewport } from "./useRoomViewport";
 import { useReducedMotion } from "./useReducedMotion";
+const GamePanel = lazy(() => import("./GamePanel"));
 const PresentationScreen = lazy(() => import("./PresentationScreen"));
 const PresentationControls = lazy(() => import("./PresentationControls"));
 const AvatarPreview = lazy(() => import("./AvatarPreview"));
@@ -101,6 +95,28 @@ type Summary = {
   count?: number;
 };
 const errors: Record<string, string> = {
+  STALE_GAME: "Ván vừa thay đổi. Kiểm tra trạng thái hiện tại rồi thử lại.",
+  NO_GAME: "Ván đã đóng. Mở bảng trò chơi để chọn ván mới.",
+  GAME_ACTIVE: "Phòng đang có một ván. Đóng ván hiện tại trước khi đổi trò.",
+  GAME_ALREADY_STARTED:
+    "Ván đã bắt đầu; bạn có thể xem hoặc chờ ván tiếp theo.",
+  GAME_ALREADY_JOINED: "Bạn đã có chỗ trong ván.",
+  GAME_FULL: "Ván đã đủ người; bạn vẫn có thể xem.",
+  GAME_NEED_PLAYERS: "Cần ít nhất hai người tham gia để bắt đầu.",
+  GAME_PLAYER_ONLY: "Thao tác này dành cho người tham gia ván.",
+  GAME_NOT_YOUR_TURN: "Chưa tới lượt bạn. Hãy chờ người đang đi.",
+  GAME_INVALID_PIT: "Chọn ô dân có quân ở phía mình.",
+  GAME_NOT_PLAYING: "Ván đang nghỉ hoặc đã kết thúc.",
+  GAME_CANNOT_PAUSE:
+    "Chỉ người chơi hoặc chủ phòng có thể xin nghỉ khi ván đang chạy.",
+  GAME_CANNOT_RESUME: "Người xin nghỉ hoặc chủ phòng sẽ tiếp tục ván.",
+  GAME_WRONG_KIND: "Thao tác không phù hợp với trò chơi hiện tại.",
+  GAME_DRAW_COOLDOWN: "Chờ 3 giây giữa hai lần gọi số.",
+  GAME_CLAIM_PENDING: "Đã có hàng đủ. Chờ Kinh hoặc công bố kết quả.",
+  GAME_NOT_WINNING: "Vé chưa có hàng đủ năm số đã gọi.",
+  GAME_DRAW_EMPTY: "Đã gọi hết bộ số.",
+  GAME_RANDOM_FAILURE: "Chưa tạo được bộ số an toàn. Hãy thử bắt đầu lại.",
+
   HOST_RECONNECTING:
     "Chủ phòng đang mất kết nối. Hãy đợi chủ quay lại trước khi xin vào.",
   NETWORK_ERROR: "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.",
@@ -210,6 +226,7 @@ function App() {
       | "actions"
       | "readiness"
       | "presentation"
+      | "games"
     >(""),
     [approvalDismissed, setApprovalDismissed] = useState(false),
     [light, setLight] = useState(false),
@@ -258,7 +275,8 @@ function App() {
     sheet === "view" ||
     sheet === "actions" ||
     sheet === "readiness" ||
-    sheet === "presentation"
+    sheet === "presentation" ||
+    sheet === "games"
       ? ""
       : sheet;
   const showControls = sheet === "view";
@@ -268,7 +286,8 @@ function App() {
         current === "view" ||
         current === "actions" ||
         current === "readiness" ||
-        current === "presentation"
+        current === "presentation" ||
+        current === "games"
           ? ""
           : current;
       const value = typeof next === "function" ? next(previous) : next;
@@ -376,6 +395,7 @@ function App() {
     isHost &&
     !room?.current &&
     !room?.presentation &&
+    !room?.game &&
     room?.queue.length === 0
   );
   const approvalActive = !!(
@@ -952,6 +972,7 @@ function App() {
         };
         if (
           [
+            "game",
             "present",
             "slide",
             "stop-presentation",
@@ -982,7 +1003,11 @@ function App() {
         finishRoom(e.message);
         return;
       }
-      if (e instanceof Error && e.message === "STALE_QUEUE" && !demo)
+      if (
+        e instanceof Error &&
+        ["STALE_QUEUE", "STALE_GAME"].includes(e.message) &&
+        !demo
+      )
         await api(`/rooms/${slot}/state`)
           .then(receive)
           .catch(() => {});
@@ -1313,7 +1338,7 @@ function App() {
         data-clock-calibrated={clock.calibrated}
         className={
           status === "joined" && room
-            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""} ${reactionsOpen ? "has-reactions" : ""} ${room.presentation ? "has-presentation" : ""}`
+            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""} ${sheet === "games" ? "has-games" : ""} ${reactionsOpen ? "has-reactions" : ""} ${room.presentation ? "has-presentation" : ""}`
             : undefined
         }
       >
@@ -1767,6 +1792,7 @@ function App() {
                 command={command}
                 soundsEnabled={sounds.enabled}
                 onToggleSounds={sounds.toggle}
+                onGames={() => setSheet("games")}
                 onPresentation={() => setSheet("presentation")}
                 reactionsOpen={reactionsOpen}
                 onReactionsChange={setReactionsOpen}
@@ -1777,6 +1803,36 @@ function App() {
                   )
                 }
               />
+            )}
+            {sheet === "games" && (
+              <Suspense
+                fallback={
+                  <section className="activity-sheet" role="status">
+                    Đang mở trò chơi…
+                    <button onClick={() => setSheet("")}>Đóng</button>
+                  </section>
+                }
+              >
+                <GamePanel
+                  room={room}
+                  id={id}
+                  command={command}
+                  onSound={() => sounds.play("game")}
+                  soundsEnabled={sounds.enabled}
+                  onEnableSounds={sounds.toggle}
+                  serverNow={clock.serverNow}
+                  onClose={() => {
+                    setSheet("");
+                    requestAnimationFrame(() =>
+                      document
+                        .querySelector<HTMLButtonElement>(
+                          ".interaction-trigger",
+                        )
+                        ?.focus({ preventScroll: true }),
+                    );
+                  }}
+                />
+              </Suspense>
             )}
             {sheet === "presentation" && (
               <Suspense
@@ -2221,6 +2277,7 @@ function App() {
                       >
                         <SceneBoundary onError={sceneUnavailable}>
                           <Cinema
+                            suspended={sheet === "games"}
                             room={room}
                             id={id}
                             mode={camera}
@@ -2272,18 +2329,28 @@ function App() {
                     {me && (
                       <RoomControls
                         extras={
-                          <CinemaPreferences
-                            priority={priority}
-                            onPriority={setPriority}
-                            motion={motion}
-                            onMotion={setMotion}
-                            onTryMotion={() => setMotionAt(Date.now() + offset)}
-                            reduced={reducedMotion}
-                            light={light}
-                            wake={wake}
-                            captions={captions}
-                            soundWarning={sounds.warning}
-                          />
+                          <>
+                            <CinemaPreferences
+                              priority={priority}
+                              onPriority={setPriority}
+                              motion={motion}
+                              onMotion={setMotion}
+                              onTryMotion={() =>
+                                setMotionAt(Date.now() + offset)
+                              }
+                              reduced={reducedMotion}
+                              light={light}
+                              wake={wake}
+                              captions={captions}
+                              soundWarning={sounds.warning}
+                            />
+                            {showControls && (
+                              <PlaybackDiagnostics
+                                key={`${room.session}:${room.generation}:${previewMode}`}
+                                rtt={clock.rtt}
+                              />
+                            )}
+                          </>
                         }
                         ambience={ambience}
                         voiceWarning={speech.warning}
@@ -2341,6 +2408,28 @@ function App() {
                         ? "Thêm link mới để mọi người xem tiếp."
                         : "Dán link YouTube, Drive, HLS VOD (.m3u8) hoặc video / nhạc HTTPS để phát ngay."}
                     </p>
+                    <div className="game-starter">
+                      <span>Hoặc chơi cùng nhau</span>
+                      {(["oaq", "loto"] as const).map((kind) => (
+                        <button
+                          type="button"
+                          key={kind}
+                          disabled={quickBusy || documentBusy}
+                          onClick={() =>
+                            void command(
+                              {
+                                type: "game",
+                                expectedRevision: room.gameRevision || 0,
+                                operation: { action: "open", kind },
+                              },
+                              () => setSheet("games"),
+                            )
+                          }
+                        >
+                          {kind === "oaq" ? "Ô ăn quan" : "Lô tô"}
+                        </button>
+                      ))}
+                    </div>
                     <label className="file-picker document-picker">
                       <span>
                         {documentBusy

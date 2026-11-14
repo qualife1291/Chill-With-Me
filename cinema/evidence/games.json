@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "date": "2026-11-14T18:11:05.018Z",
+  "checks": [
+    "game satisfies initial source; actual admission preempts game panel and pending DTO hides state; authoritative turns/host ACL/CAS synchronize two players with a spectator",
+    "four viewports fit, primary controls are >=44px and hit-testable, Escape/focus and one-sheet ownership work; native iframe identity and personal Hold survive game/chat toggles",
+    "host transfer keeps original player sides; original player can pause, new host resumes; actual reload/re-entry restores same board and game without resetting media",
+    "three real profiles receive distinct private tickets; host calls actual random numbers with 3s cooldown; first complete row freezes drawing and all simultaneous winners are server-validated"
+  ],
+  "screenshots": [
+    "games-oaq-320.png",
+    "games-oaq-390.png",
+    "games-oaq-844.png",
+    "games-oaq-1024.png",
+    "games-loto-320.png"
+  ],
+  "draws": 53,
+  "logic": "pure rules fixtures and seeded invariants in games.test.ts",
+  "limitations": "Real local Worker/WebSocket/DOM/CSS, actual 3s lottery cadence; YouTube API is a declared advancing-time fixture, software GPU and emulated viewports. No physical-device, WAN, cultural-rules pilot or battery certification."
+}

@@ -79,7 +79,7 @@ SQLite holds one room JSON row, bounded metadata/queue/chat, ≤200 command ID/t
 
 ## Shared presentation
 
-Choose **Tương tác → Trình chiếu PDF / ảnh**, or select a document as the initial room source. Only the host starts/stops or changes pages; approved viewers follow the current page, including after joining late. Password-protected, malformed and over-limit files reject before changing the room. SVG, animated WebP, PPTX and arbitrary HTML are unsupported.
+Choose **Tương tác → Trình chiếu PDF / ảnh**, or select a document as the initial room source. A folk game can also satisfy the initial activity choice. Only the host starts/stops or changes pages; approved viewers follow the current page, including after joining late. Password-protected, malformed and over-limit files reject before changing the room. SVG, animated WebP, PPTX and arbitrary HTML are unsupported.
 
 Starting a presentation pauses the current film without replacing its native element, source or generation. Movie transport/OS handlers are inactive during the deck; stop the presentation and explicitly press Play to continue. Personal Hold, chat, voice, approvals and reactions remain available. The canvas uses the same physical world screen; it does not create a second WebGL renderer or floating player.
 
@@ -116,6 +116,18 @@ Male scalp hair is derived from the pinned CC0 Rogue head mesh, follows the head
 
 KayKit GLB provenance/checksums/license: `public/models/manifest.json`. The offline preparation tool lives in `tools/prepare-avatars.mjs`; keep tools outside app dependencies and update hashes/tests intentionally.
 
+## Folk games and local playback diagnostics
+
+Choose **Tương tác → Trò chơi dân gian**, or Ô ăn quan / Lô tô as the initial room activity. Only the host opens/starts/closes a game. Approved members join before start; remaining members spectate. A game is independent of the mounted movie/presentation and personal Hold. The 2D sheet is lazy; world GPU work pauses while it is open, media/leases keep running.
+
+Rules: [GAME_RULES_V1](../docs/GAME_RULES_V1.md). Ô ăn quan has two players, 50 dân + two quan worth 10 points each, no quan-non rule; direction, relay/capture/refill/debt/end choices are versioned. Lô tô has 2–10 unique private 15-number tickets, server-crypto 1–90 draw without repetition, ≥3 seconds per draw. The first complete row freezes drawing; Kinh or the host's result action publishes all simultaneous winners. Host never receives another ticket or the secret deck. No money/prizes or game history.
+
+Host/players can pause; the pausing player or host resumes. Reconnect keeps the game through the normal 30-second grace. True departure cancels an active Ô game without a winner; lô tô continues if at least two players remain. Monotonic revision CAS rejects stale actions without automatic replay. Finished rounds stay bounded until close/replacement. Game sounds are opt-in and use existing audio priority/mute. Spoken-number TTS and rule/device usability pilots remain open.
+
+`node tests/games.cjs` exercises the actual local Worker, private DTOs, three profiles, four viewport/hitbox sweeps, real draw cadence, reload/host transfer and stable media/Hold. Pure rule/property cases are in `tests/games.test.ts`. CSS stones are original project graphics; no extra 3D/game engine or copied asset.
+
+**Góc nhìn → Kiểm tra phát video** provides one explicit eight-second native-video sample: resolution, buffer and decoded/dropped frame counters where supported, plus existing connection RTT. No background polling/telemetry upload or source URL display. Pause/seek/buffering interrupts the result; close/hidden/source change/exit cancels it. YouTube/Drive preview and audio do not expose these frame measurements. The real native-media test covers sample and cleanup, not certified device FPS.
+
 ## View and social controls
 
 Choose male/female and clothing/hair colors before creating/requesting entry to a room; a 3D preview shows the result. Appearance is retained through approval/reconnect and cannot be edited inside the room. Legacy profiles retain their original textures.
@@ -128,7 +140,7 @@ Compact screens keep one-hand −/+ zoom inside the view sheet, alongside pinch;
 
 “Cảm xúc” opens a compact, scrollable icon strip in the bottom dock, with a fixed close button; it remains separate from “Tương tác” (sit/wave/poke/presentation/sound toggle), replaces other dock controls while open, and leaves the current chat/view sheet accessible. Escape/outside tap/close dismiss it; a successful send closes and restores focus. The nine presets include fireworks, applause, sad, troll, love, laugh, surprise, celebration and thanks. Five new variants retain the four existing wire kinds and their cooldown/TTL, with synthesized cues and legacy fallback. Reduced motion and effect mute remain personal.
 
-Host approval opens immediately in the center, even before the first video; new requests reopen a deferred dialog. When chat is closed, the latest incoming message appears as one preview for 6 seconds; click to open chat. It sits above the action dock or in the free notification lane beside an open sheet. Poke sounds only on the recipient. Reactions are anonymous: fireworks use three timed bursts; other emoji rise through the center for 3 seconds without a central card or large glyph. Each sender waits 5 seconds, only one room effect runs at a time, and the event is deleted on expiry. Chat voice/reading-speed choices live behind “Giọng và tốc độ đọc” in a bounded scroll area. All screens share one active sheet (chat, playlist, people, info, view, quick actions or readiness); opening one replaces the previous sheet. Escape/focus restoration and required-dialog rules remain intact.
+Host approval opens immediately in the center, even before the first video; new requests reopen a deferred dialog. When chat is closed, the latest incoming message appears as one preview for 6 seconds; click to open chat. It sits above the action dock or in the free notification lane beside an open sheet. Poke sounds only on the recipient. Reactions are anonymous: fireworks use three timed bursts; other emoji rise through the center for 3 seconds without a central card or large glyph. Each sender waits 5 seconds, only one room effect runs at a time, and the event is deleted on expiry. Chat voice/reading-speed choices live behind “Giọng và tốc độ đọc” in a bounded scroll area. All screens share one active sheet (chat, playlist, people, info, view, quick actions, games, presentation or readiness); opening one replaces the previous sheet. Escape/focus restoration and required-dialog rules remain intact.
 
 Local ambience controls offer Normal/Dim/Warm scene lighting and optional quiet synthesized rain/wind, with a separate 0–50% slider. These are personal settings, not host playback commands. Lighting preserves native video brightness/resolution and player identity. Ambience starts only from selection, ducks to 25% during speech and disposes its source/context on Off, room exit or hidden-tab lifecycle; it never automatically restarts. The visibility handler is emulated in headless QA; physical background/audio behavior remains a device gate. No microphone, audio assets, API requests or recording.
 
@@ -185,3 +197,7 @@ Media Session registers host-only play/pause/seek and local metadata, removing h
 Personal subtitles accept basic UTF-8 `.vtt` only: ≤256 KiB, ≤2,000 cues, ordered finite timestamps within 24h, no STYLE/REGION or remote track import. Native TextTrack follows the media clock; invalid files preserve the last valid selection. Blob URLs revoke on removal, source/session change, preview mode or exit. Nothing is sent to the room/DB. YouTube and Drive preview disable this uploader and retain provider captions.
 
 After deploying the pinned Worker, verify public asset bytes and room summaries without mutations: `python3 tools/verify-production.py <source-commit> <version-uuid>`. Reports go to `evidence/production.json`; never use production for mutation tests.
+
+## Agent and styling maintenance
+
+[37 skills](../docs/AGENT_SKILLS.md): 29 user archive, three pinned official skills, five project-authored game skills. Preserve official contents/hashes/licenses. [Meta StyleX pilot](../docs/DESIGN_SYSTEM.md) compiles shared semantic tokens and game rules; runtime injection is disabled. Unused locals/parameters fail TypeScript. Read PROJECT_STATE → architecture/task owner; [read map](../docs/INDEX.md) keeps research/history out of routine context.

@@ -1,3 +1,5 @@
+> Implementation status: [PROJECT_STATE](../PROJECT_STATE.md). PDF/ảnh, reactions và Ô ăn quan/lô tô đã có source; [luật hiện hành](GAME_RULES_V1.md). Chẩn đoán native video là phép đo local 8 giây theo yêu cầu. Shared timer, TTS gọi số và các provider/theme dưới đây vẫn là đề xuất nếu roadmap chưa đánh dấu.
+
 # Advanced experience · implementation decisions
 
 Current facts: [state](../PROJECT_STATE.md). Commands/limits: [runtime](../cinema/README.md). This is a feature design and acceptance map; a proposed row is not a shipped feature.
@@ -102,3 +104,5 @@ All nine returned usable content on 13/11/2026. Reading documents is separate fr
 4. **Broader collaboration:** bounded notes/sketches and PWA static cache. Screen share/Vimeo/lyrics follow their separate permission, content, WAN and device gates. Stronger motion remains opt-in and off by default.
 
 Each release must ship a concrete, tested slice, keep existing room/media contracts, and leave unresolved provider/device gates visible in the roadmap. Do not enable all proposals at once or turn the home page into a grid of unfinished controls.
+
+Seasonal direction (14/11/2026, research only): [holidays and real-time day/night](SEASONAL_EXPERIENCE.md) defines source confidence, Vietnamese lunar-calendar gates, room timezone/clock, overlap policy, assets, quiet defaults and device budgets. No automatic themes are enabled by that research.

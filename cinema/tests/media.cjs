@@ -376,6 +376,41 @@ const base = "http://localhost:8787",
       .getByRole("button", { name: "Góc nhìn 🎮", exact: true })
       .click();
     assert.equal(await media(h).getAttribute("data-identity"), "stable");
+    await h.locator(".playback-diagnostics > summary").click();
+    await h
+      .getByRole("button", { name: "Đo video trong 8 giây", exact: true })
+      .click();
+    await h
+      .locator(".playback-diagnostics [role=status]")
+      .filter({ hasText: "320 × 180" })
+      .waitFor({ timeout: 15000 });
+    assert.match(
+      await h.locator(".playback-diagnostics [role=status]").innerText(),
+      /\d+ khung, bỏ \d+/,
+    );
+    assert.equal(await media(h).getAttribute("data-identity"), "stable");
+    await h
+      .getByRole("button", { name: "Đo video trong 8 giây", exact: true })
+      .click();
+    await h.getByRole("button", { name: "Dừng đo", exact: true }).click();
+    assert.match(
+      await h.locator(".playback-diagnostics [role=status]").innerText(),
+      /Đã dừng đo/,
+    );
+    await h
+      .getByRole("button", { name: "Đo video trong 8 giây", exact: true })
+      .click();
+    await h.locator(".playback-diagnostics > summary").click();
+    await h.waitForTimeout(8200);
+    await h.locator(".playback-diagnostics > summary").click();
+    assert.equal(
+      await h.locator(".playback-diagnostics [role=status]").count(),
+      0,
+      "closed disclosure cancels sample",
+    );
+    checks.push(
+      "on-demand eight-second real decoded video sample reports resolution/buffer/frame counters; cancel/disclosure cleanup preserves native element",
+    );
     await h
       .getByRole("button", { name: "Đóng điều khiển", exact: true })
       .click();

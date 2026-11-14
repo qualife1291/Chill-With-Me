@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@react-three/fiber": "^9.0.0",
+    "@stylexjs/stylex": "0.19.2",
     "hls.js": "1.7.4",
     "lucide-react": "^0.468.0",
     "pdfjs-dist": "6.5.438",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "latest",
+    "@stylexjs/unplugin": "0.19.2",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -33,6 +35,7 @@
     "prettier": "^3.9.10",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
+    "unplugin": "2.3.11",
     "vite": "^6.0.0",
     "wrangler": "^4.0.0"
   }

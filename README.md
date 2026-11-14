@@ -6,7 +6,8 @@ Rạp xem phim/nghe nhạc cùng bạn bè: 3 phòng, mỗi phòng 2–10 ngư�
 
 - Host phát ngay, duyệt/kick thành viên, quản lý playlist. Có phòng riêng và link mời thu hồi được.
 - YouTube, link media HTTPS và file local; MP3/M4A/WAV, MP4/WebM/MOV tùy codec. File phát xong được bỏ metadata khỏi DB và giải phóng tài nguyên client. Drive preview có giới hạn không đồng bộ.
-- Sảnh 3D, model KayKit CC0, bốn góc nhìn, walk/sit/wave và xoay đầu; chế độ nhẹ và giảm chuyển động. Native player giữ nguyên khi đổi camera.
+- Sảnh 3D, model KayKit CC0, hai chế độ góc nhìn, walk/sit/wave và xoay đầu; chế độ nhẹ và giảm chuyển động. Native player giữ nguyên khi đổi camera.
+- Trình chiếu PDF/ảnh đồng bộ, Hold riêng, cảm xúc, Ô ăn quan và lô tô trong cùng phòng. Luật có phiên bản, server kiểm quyền và giữ kín vé lô tô của người khác.
 - Playlist import nhiều link/TXT/M3U, kéo thả hoặc nút bàn phím/chạm; xử lý chỉnh sửa đồng thời. Đồng hồ dùng RTT và thời gian monotonic.
 
 ```bash
@@ -20,4 +21,4 @@ npm run verify:local
 
 Lệnh nghiệm thu tổng hợp cần Playwright/Chromium và ffmpeg; xem [runtime README](cinema/README.md). Không chạy test thay đổi phòng trên production.
 
-Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/?v=cinema6. Push GitHub không deploy. Bản fd6b209 đã deploy và kiểm tra asset/API; R2 chưa được bật trong tài khoản. Thiết bị thật, tải dài hạn/quota và full voice vẫn có cổng nghiệm thu riêng; không cam kết mọi codec/Drive link, 60 FPS, drift dưới một giây hoặc free tier vô hạn.
+Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/ . Source/version và kết quả deploy hiện hành chỉ ghi tại [PROJECT_STATE](PROJECT_STATE.md). Push GitHub không tự deploy. [Mục lục theo task](docs/INDEX.md) giúp đọc chọn lọc; roadmap giữ các gate thiết bị thật, WAN/quota, R2 và full voice còn mở.

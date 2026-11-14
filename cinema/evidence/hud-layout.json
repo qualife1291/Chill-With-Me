@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "date": "2026-11-13T19:03:43.338Z",
+  "date": "2026-11-14T18:01:54.396Z",
   "checks": [
     "phone320 info exclusive, in bounds, hit-testable, stable context/player",
     "phone320 chat exclusive, in bounds, hit-testable, stable context/player",
@@ -181,6 +181,6 @@
     "hud-stream-450.png",
     "hud-stream-650.png"
   ],
-  "directory": "/tmp/cinema-verify-l2AvsR/evidence",
+  "directory": "/tmp/cinema-verify-3wbtPK/evidence",
   "limitations": "Chromium/Linux SwiftShader at DPR2; YouTube fixture; not physical Chrome/macOS/M1 certification"
 }

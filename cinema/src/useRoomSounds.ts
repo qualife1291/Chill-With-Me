@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { playFireworkSound } from "./fireworkSound";
 import type { ReactionKind } from "../shared/model";
 import type { ReactionVariant } from "../shared/reactions";
-export type RoomSound = ReactionKind | ReactionVariant | "poke";
+export type RoomSound = ReactionKind | ReactionVariant | "poke" | "game";
 /** Short, locally synthesized cues. Never queue audio behind an autoplay block. */
 export function useRoomSounds(session = "", sideGain = 1) {
   const [enabled, setEnabled] = useState(() => {

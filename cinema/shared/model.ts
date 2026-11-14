@@ -1,5 +1,12 @@
 import { documentMetadataSchema, type Presentation } from "./presentation";
 import {
+  applyGame,
+  gameCommandSchema,
+  gameView,
+  pruneGame,
+  type Game,
+} from "./games";
+import {
   REACTION_VARIANTS,
   reactionVariants,
   type ReactionVariant,
@@ -37,6 +44,7 @@ export const CONNECTION_LEASE_MS = 90000;
 export const LEASE_RENEW_MS = 30000;
 export const RECONNECT_GRACE_MS = 30000;
 export const commandSchema = z.discriminatedUnion("type", [
+  gameCommandSchema,
   z.object({
     type: z.literal("chat"),
     text: z
@@ -179,6 +187,8 @@ export type Suggestion = {
   at: number;
 };
 export type Room = {
+  game?: Game;
+  gameRevision?: number;
   presentation?: Presentation;
   presentationRevision?: number;
   space?: Space;
@@ -385,10 +395,16 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       "suggest",
       "wait",
       "ready",
+      "game",
     ].includes(c.type) &&
     actor !== r.host
   )
     throw Error("HOST_ONLY");
+  if (c.type === "game") {
+    applyGame(r, actor, c, now);
+    r.revision++;
+    return;
+  }
   if (
     r.presentation &&
     ["next", "play", "pause", "seek", "resume", "wait"].includes(c.type)
@@ -738,6 +754,7 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
     !r.members.some((m) => m.id === r.presentation!.source.ownerId)
   )
     clearPresentation(r);
+  pruneGame(r);
   if (r.waiting)
     r.waiting = r.waiting.filter((id) => r.members.some((m) => m.id === id));
   r.revision++;
@@ -776,6 +793,7 @@ export function view(r: Room, id: string) {
     status: "joined",
     room: {
       ...publicRoom,
+      ...(r.game ? { game: gameView(r.game, id) } : {}),
       ...(r.reaction
         ? {
             reaction: {
@@ -919,6 +937,8 @@ export function sweep(r: Room, now: number) {
     delete r.emptySince;
     r.revision++;
   }
+  // Game membership follows the same durable leave/lease decisions as room seats.
+  if (pruneGame(r)) r.revision++;
   return {
     changed: r.revision !== before,
     closed:

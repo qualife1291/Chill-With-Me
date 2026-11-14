@@ -465,6 +465,7 @@ function Camera({
   return null;
 }
 export default function Cinema({
+  suspended = false,
   room,
   id,
   mode,
@@ -482,6 +483,7 @@ export default function Cinema({
   onUnavailable,
   lighting = "normal",
 }: {
+  suspended?: boolean;
   lighting?: Lighting;
   dpr: number;
   onUnavailable: () => void;
@@ -517,7 +519,7 @@ export default function Cinema({
         pointerEvents: "none",
       }}
     >
-      <SceneVisibility />
+      <SceneVisibility suspended={suspended} />
       <SceneRecovery onUnavailable={onUnavailable} />
       <SceneEnvironment
         space={spaceInfo(room.space).id}

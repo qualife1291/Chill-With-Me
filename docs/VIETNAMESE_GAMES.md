@@ -1,6 +1,6 @@
 # Trò chơi Việt Nam · nghiên cứu và thiết kế
 
-Ngày đọc nguồn: 13/11/2026. Đây là phương án, **chưa có game được triển khai**. Trạng thái phát hành ở [PROJECT_STATE](../PROJECT_STATE.md); ưu tiên sản phẩm rộng hơn ở [Advanced experience](ADVANCED_EXPERIENCE.md#chill-with-me-product-direction--researched-2026-11-13).
+Ngày đọc nguồn: 13/11/2026. Đây là nguồn/nghiên cứu gốc; Ô ăn quan và lô tô hiện có engine/UI, nghiệm thu/phát hành xem PROJECT_STATE. Quy tắc sản phẩm đã chốt tại [GAME_RULES_V1](GAME_RULES_V1.md); các đề xuất bên dưới ghi nhận lý do/biến thể và không thay thế rule pack. Trạng thái phát hành ở [PROJECT_STATE](../PROJECT_STATE.md); ưu tiên sản phẩm rộng hơn ở [Advanced experience](ADVANCED_EXPERIENCE.md#chill-with-me-product-direction--researched-2026-11-13).
 
 ## Nguồn và độ tin cậy
 
@@ -19,7 +19,7 @@ UNESCO Bài chòi trả CAPTCHA; bảo tàng dân tộc học và một số tra
 
 Hai người chơi, các thành viên khác xem; vẫn nằm trong sức chứa 2–10 của phòng. Chọn người chơi ở sảnh hoạt động, bắt đầu khi cả hai sẵn sàng. Host quản lý hoạt động, không được sửa kết quả lượt đi.
 
-**Bộ luật đề xuất `oaq-v1`**, cần xác nhận bằng bảng tình huống và pilot trước implementation:
+**Bối cảnh luật dùng để thiết kế:** lựa chọn chính xác của `oaq-cwm-1` thuộc GAME_RULES_V1; pilot người biết luật vẫn mở.
 
 - Bàn vòng 12 ô: 10 ô dân, hai ô quan; mỗi bên có 5 ô dân. Khởi đầu mỗi ô dân 5 dân, mỗi ô quan 1 quan. Tổng 50 dân + 2 quan = 52 quân vật lý; điểm quy đổi 70 nếu quan = 10 dân, 60 nếu quan = 5 dân. Giữ riêng loại quân và giá trị, không biến quan thành 10 viên dân.
 - Người tới lượt chọn ô dân không rỗng thuộc phía mình và một chiều rải; rải từng quân vào ô kế tiếp quanh vòng, kể cả ô quan. Hướng giữ nguyên trong cả lượt.
@@ -28,7 +28,7 @@ Hai người chơi, các thành viên khác xem; vẫn nằm trong sức chứa 
 - Khi cả 5 ô dân phía mình trống trước lượt, rải lại mỗi ô 1 dân từ phần đã ăn. Quy tắc vay và trả nợ phải nằm trong state/bộ luật, không suy ra từ số quân hiển thị.
 - Khi ván kết thúc, thu quân còn lại theo luật đã chọn rồi so điểm đã trừ nợ; cho phép hòa. Chốt riêng thời điểm kết thúc và xử lý quân rải lại vào ô quan sau khi quan đã bị ăn.
 
-Các quyết định phải khóa trước viết reducer: quan 5 hay 10; có “quan non” và ngưỡng dân bảo vệ quan hay không; vay đúng phần thiếu hay luôn 5; nếu hai bên không đủ cho vay; kết thúc khi hai quân quan đã bị ăn hay khi hai ô quan rỗng. Đây là biến thể, không có cơ sở trong lần nghiên cứu này để gọi một lựa chọn là luật chuẩn duy nhất. MVP đề xuất quan 10, không quan non; các quyết định còn lại cần bộ ví dụ thống nhất, không tự ghép từ nhiều nguồn.
+Các điểm khác biệt đã được xử lý bằng lựa chọn công bố trong rule pack: quan 5 hay 10; có “quan non” và ngưỡng dân bảo vệ quan hay không; vay đúng phần thiếu hay luôn 5; nếu hai bên không đủ cho vay; kết thúc khi hai quân quan đã bị ăn hay khi hai ô quan rỗng. Đây là biến thể, không có cơ sở trong lần nghiên cứu này để gọi một lựa chọn là luật chuẩn duy nhất. MVP đề xuất quan 10, không quan non; đặc tả hiện hành có ví dụ/fixture cho vay, nợ, kết thúc và giới hạn lượt; không tự ghép luật khi nâng phiên bản.
 
 Kiểm thử luật: rải qua quan và qua ô xuất phát, relay nhiều vòng, chuỗi ăn, ô quan chặn lượt, hai ô trống, vay/nợ, kết thúc/hòa. Bảo toàn 50 dân + 2 quan qua bàn/kho/tay đang rải; nợ là sổ điểm riêng. Reducer hoàn tất lượt nguyên tử, client chỉ diễn hoạt lại chuỗi sự kiện; không lưu DB sau từng viên rải.
 

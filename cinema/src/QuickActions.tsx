@@ -13,6 +13,7 @@ export default function QuickActions({
   reactionsOpen,
   onReactionsChange,
   onPresentation,
+  onGames,
 }: {
   room: Room;
   me: Member;
@@ -22,6 +23,7 @@ export default function QuickActions({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPresentation: () => void;
+  onGames: () => void;
   reactionsOpen: boolean;
   onReactionsChange: (open: boolean) => void;
 }) {
@@ -207,6 +209,13 @@ export default function QuickActions({
           onClick={onPresentation}
         >
           ▧ Trình chiếu PDF / ảnh
+        </button>
+        <button
+          type="button"
+          className="presentation-launcher"
+          onClick={onGames}
+        >
+          Trò chơi dân gian
         </button>
         <div className="action-row">
           <button

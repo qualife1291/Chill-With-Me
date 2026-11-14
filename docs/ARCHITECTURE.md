@@ -4,10 +4,13 @@ Current behavior and open gates: [PROJECT_STATE](../PROJECT_STATE.md). Commands 
 
 | Change | Entry points | Preserve |
 | --- | --- | --- |
+| StyleX / semantic tokens | `designTokens.stylex.ts`, `games/GameRules.tsx`, `vite.config.ts` | Pinned Meta StyleX pilot, compiled CSS with runtime injection off; stable tokens shared with legacy CSS; no renderer/player remount; [decision](DESIGN_SYSTEM.md) |
+| Folk games | `shared/games.ts`, `shared/games/oaq.ts`, `shared/games/loto.ts`, model apply/view, `GamePanel.tsx`, `games/OaqBoard.tsx`, `games.css` | Versioned rules, host/player roles, monotonic CAS; lottery secrets/other tickets never in DTO; bounded current state, no media mutations; single sheet/lazy 2D and suspended scene rendering |
 | Room/admission/roles | `shared/model.ts`, `worker/index.ts` | 3 fixed slots; host included in 2–10 capacity; approved-cookie membership; epoch/connection checks |
 | Home / seating | main entry dialog, `shared/model.ts`, `worker/index.ts`, `Cinema.tsx` | No profile before intent; create-only seating choice; legacy cinema default; optional appearance chosen before admission, retained on reconnect; no in-room editor/command; shared sofa geometry retains seat anchors/capacity |
 | Private invitations | `shared/model.ts` view/summary/requestJoin, `InvitationControls.tsx` | Redacted public summary; capability only in host DTO; invite token in URL fragment; rotation clears pending, keeps members |
 | Playlist | `shared/playlist.ts`, model apply, `PlaylistImport.tsx` | Parse the whole batch before mutation; max 20/16 KiB; queue max 50; expected revision; no automatic stale-command replay |
+| Local playback diagnostics | `PlaybackDiagnostics.tsx`, main view extras; `tests/media.cjs` | Explicit local 8s sample only, feature detection; close/hidden/source/exit cancel; no source URL/telemetry/iframe counter claims |
 | Playback | `Player.tsx`, `NativePlayer.tsx` | Native YouTube iframe remains interactive; changing camera never remounts media; only host mutates play/pause/seek/Next; generation rejects stale ended |
 | Clock | `shared/clock.ts`, `useRoomClock.ts` | Nonce/socket/session-bound probes; monotonic midpoint/min-RTT estimate; bounded fresh samples; unpaired snapshots only bootstrap |
 | HLS VOD | `useHls.ts`, `NativePlayer.tsx`, `shared/media.ts` | Native first; lazy MSE; finite VOD only; local quality; public HTTPS JS resource guard; bounded retry; destroy old Worker/buffers; no live/DRM or proxy |

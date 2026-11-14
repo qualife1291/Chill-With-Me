@@ -1,8 +1,15 @@
 import { defineConfig } from "vite";
+import stylex from "@stylexjs/unplugin";
 import { cpSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 export default defineConfig({
   plugins: [
+    stylex.vite({
+      useCSSLayers: false,
+      dev: process.env.NODE_ENV === "development",
+      runtimeInjection: false,
+      unstable_moduleResolution: { type: "commonJS", rootDir: process.cwd() },
+    }),
     {
       name: "pdf-resources",
       apply: "build",

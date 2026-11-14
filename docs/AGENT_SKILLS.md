@@ -39,3 +39,13 @@ Official supplemental skills (pinned provenance/license: [.agents/official-skill
 | [frontend-design](../.agents/skills/frontend-design/SKILL.md) | Intentional Chill With Me visual hierarchy, concise copy, screenshot critique; preserve the established product palette |
 | [webapp-testing](../.agents/skills/webapp-testing/SKILL.md) | Inspect actual DOM, use semantic selectors, screenshots and console diagnostics; retain the Node Playwright suite |
 | [security-best-practices](../.agents/skills/security-best-practices/SKILL.md) | React/browser threat review and evidence-based findings; local api-security complements Cloudflare backend checks |
+
+Game development skills (project-authored, 14/11/2026):
+
+| Skill | Purpose |
+|---|---|
+| [game-feature-planning](../.agents/skills/game-feature-planning/SKILL.md) | Plan bounded multiplayer game slices for Chill With Me, including dependencies, rollout and acceptance. |
+| [game-rules-specification](../.agents/skills/game-rules-specification/SKILL.md) | Specify Vietnamese game rules as versioned deterministic contracts with sourced facts and explicit house variants. |
+| [game-visual-design](../.agents/skills/game-visual-design/SKILL.md) | Design original lightweight Vietnamese board-game graphics with responsive touch and accessible motion. |
+| [game-state-testing](../.agents/skills/game-state-testing/SKILL.md) | Test deterministic game invariants, authoritative multiplayer boundaries and lifecycle recovery. |
+| [game-documentation](../.agents/skills/game-documentation/SKILL.md) | Maintain concise game rulebooks, source provenance and an implementation-linked QA plan. |
