@@ -18,7 +18,7 @@ Release đúng Worker/account/binding trong PROJECT_STATE, không reset phòng, 
 - [x] Tìm đúng Meta StyleX, pin compiler/runtime/peer, áp dụng [pilot tokens/luật game](DESIGN_SYSTEM.md), CSS biên dịch và runtime injection tắt; giữ MIT notices.
 - [x] Thêm chẩn đoán native video theo yêu cầu, một mẫu 8 giây, không telemetry nền; dừng khi đóng/hidden/đổi nguồn/rời.
 - [x] Nghiệm thu bản cuối nhiều profile, mobile/landscape/keyboard/reduced motion, chat/admission, reload/transfer, player/Hold, actual native diagnostics và toàn bộ hồi quy local.
-- [ ] Review diff/license/security, docs links/skill hashes, push, CI Node 22/24, deploy đúng Worker và GET verification.
+- [x] Review diff/license/security, docs links/skill hashes, push, CI Node 22/24, deploy đúng Worker và GET verification.
 - [ ] Pilot luật với người chơi quen Ô ăn quan/lô tô; usability và pin/thermal trên thiết bị thật. Không gọi game là đã được chuyên gia văn hóa chứng nhận.
 
 ## Khả năng đã có source và test local

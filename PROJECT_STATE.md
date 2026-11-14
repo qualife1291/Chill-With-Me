@@ -27,7 +27,7 @@ Boundaries: software GPU/emulated viewports and declared YouTube/speech/OS fixtu
 
 ## Release and next work
 
-Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/ . Previous verified source `92c30f9`, version `6831cc53-d4e6-4fe4-a652-cb6509bc8f59`; current increment awaits push/CI/deploy. [Production evidence](cinema/evidence/production.json), [release metadata](cinema/evidence/deployment-attempt.json) remain authoritative for the actual public version until updated. Push alone does not deploy.
+Public: https://cung-xem-cinema-alpha.hoanglonglea1mtl.workers.dev/ . Deployed source `168931f`, version `28a4a2fc-00a2-4e91-931f-2ae5bb585a03`; all 225 public assets match tested bytes, four security headers/three summaries pass. Source CI Node 22/24 passed [run](https://github.com/qualife1291/Chill-With-Me/actions/runs/43625797753). [Production](cinema/evidence/production.json), [release metadata](cinema/evidence/deployment-attempt.json). Previous verified version `6831cc53-d4e6-4fe4-a652-cb6509bc8f59` retained; rollback drill not performed. Metadata-only follow-up commits do not change the deployed runtime. Push alone does not deploy.
 
 Deploy only Worker `cung-xem-cinema-alpha`, account `966c7ceee358485648b935a07877ec45`, ROOMS/RoomSlot, SQLite migration v1; normal `wrangler.jsonc` Static Assets. Embedded PDF build exceeds conservative 3 MiB free-code gzip guard: local tests only, retain `encodeBody:"manual"`. Preserve room data/bindings/billing/unrelated Workers. Verify all public bytes/four static headers/three summaries with read-only GET after deploy.
 

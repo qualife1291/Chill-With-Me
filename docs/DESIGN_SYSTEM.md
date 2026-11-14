@@ -14,7 +14,7 @@ Quyết định ngày 14/11/2026, sau khi người dùng yêu cầu tìm design 
 
 ## Bằng chứng và mở rộng
 
-Build trước pilot có entry JS khoảng 493.08 kB / 154.55 gzip; sau pilot khoảng 493.11 kB / 154.55 gzip. CSS entry tăng khoảng 0.3 kB gzip, lazy game JS/CSS còn dưới 10 kB gzip. Các số này bao gồm refactor/layout cùng đợt, **không phải benchmark A/B tách riêng StyleX**, không suy ra FPS/pin. Kết quả cuối theo evidence/PROJECT_STATE sau nghiệm thu.
+Build trước pilot có entry JS khoảng 493.08 kB / 154.55 gzip; sau pilot khoảng 493.11 kB / 154.55 gzip. CSS entry tăng khoảng 0.3 kB gzip, lazy game JS/CSS còn dưới 10 kB gzip. Các số này bao gồm refactor/layout cùng đợt, **không phải benchmark A/B tách riêng StyleX**, không suy ra FPS/pin. Build release (bao gồm chẩn đoán mới): entry JS 495.96 kB / 155.44 gzip; lazy game 4.52 kB JS + 2.10 kB CSS gzip. Nghiệm thu 48/48 và public byte comparison xem PROJECT_STATE/evidence; không suy ra benchmark phần cứng.
 
 Bước tiếp theo: chỉ chuyển component có lợi ích rõ về variants/theming, không tạo wrapper chỉ để đổi cú pháp. Theme lễ/ngày-đêm có thể cung cấp token values theo subtree sau khi qua [calendar/device gates](SEASONAL_EXPERIENCE.md); chưa bật theme tự động. Giữ CSS entry cho variables hoạt động ngay cả trước khi lazy game chunk tải. Kiểm cold-load token, UI screenshot/hitbox, reduced motion, bundle và CI Node 22/24 trước release. Rollback pilot bằng component/CSS cũ và lockfile khỏe, không reset dữ liệu phòng.
 

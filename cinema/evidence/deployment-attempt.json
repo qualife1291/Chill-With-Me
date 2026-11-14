@@ -1,12 +1,12 @@
 {
-  "date": "2026-11-13T19:24:05.900779+00:00",
-  "source": "92c30f9",
-  "sourceFull": "92c30f9f6d13856e4e4c6e66584a372acd7c5f3b",
+  "date": "2026-11-14T18:20:35.414616+00:00",
+  "source": "168931f",
+  "sourceFull": "168931f885a022ef294649908f5bb14fad435488",
   "deployed": true,
-  "version": "6831cc53-d4e6-4fe4-a652-cb6509bc8f59",
+  "version": "28a4a2fc-00a2-4e91-931f-2ae5bb585a03",
   "worker": "cung-xem-cinema-alpha",
   "mode": "regular Static Assets + Worker",
-  "publicAssetsMatched": 221,
+  "publicAssetsMatched": 225,
   "publicSecurityHeaders": {
     "x-content-type-options": "nosniff",
     "x-frame-options": "DENY",
@@ -14,21 +14,16 @@
     "permissions-policy": "camera=(), microphone=(), geolocation=()"
   },
   "roomSummaries": 3,
-  "localStages": 46,
-  "logicCases": 114,
-  "verificationRecovery": {
-    "reason": "Managed environment restart interrupted the runner during experience.cjs; processes ended, source and build were preserved without edits.",
-    "testSynchronizationFix": "presentation.cjs waits for both profile canvases to detach after Stop before setting the next file; stale rejection was correct. Runtime source/build unchanged.",
-    "completedJournal": "/tmp/chill-pre-restart-journal.log",
-    "recoveredStages": 37,
-    "semantics": "Completed exit-zero stages reused from the parent journal; interrupted and remaining stages rerun sequentially against the unchanged build. Not an uninterrupted soak.",
-    "additionalCompletedJournal": "/tmp/chill-after-restart-first-attempt.log"
-  },
-  "agentSkillsValidated": 32,
+  "localStages": 48,
+  "logicCases": 130,
+  "verificationRun": "one uninterrupted sequential local run",
+  "agentSkillsValidated": 37,
   "presentationGroups": 8,
   "hudChecks": 87,
   "hudScreenshots": 89,
-  "leaseSoakSeconds": 100.43559921,
+  "gameGroups": 4,
+  "lotteryDraws": 53,
+  "leaseSoakSeconds": 100.451119852,
   "leaseSoakSockets": 30,
   "sourceCI": {
     "passed": true,
@@ -36,14 +31,14 @@
       22,
       24
     ],
-    "run": "https://github.com/qualife1291/Chill-With-Me/actions/runs/43491343876"
+    "run": "https://github.com/qualife1291/Chill-With-Me/actions/runs/43625797753"
   },
-  "previousVerifiedVersion": "664593be-acff-400f-ba11-c04a4bb11b6e",
+  "previousVerifiedVersion": "6831cc53-d4e6-4fe4-a652-cb6509bc8f59",
   "preserved": [
     "ROOMS/RoomSlot SQLite migration v1",
     "room data",
     "ASSETS delivery",
     "billing"
   ],
-  "limitations": "Local aggregate recovered completed stages after managed environment restart; not one uninterrupted soak. Real native codecs/PDF/bitmap/canvas/WebAudio, declared provider/OS fixtures and software GPU. No physical-device, Mac M1, acoustic/battery/thermal, WAN/quota or rollback certification. Full voice/R2/TURN/provider/CSP gates remain open."
+  "limitations": "Real local Worker/WebSocket/native codecs/HLS/PDF/WebAudio, declared YouTube/speech/OS fixtures and software GPU. No physical-device/M1, battery/thermal/acoustic, cultural-rule, WAN/quota or rollback certification. Theme Core/lunar verification, timer, full voice/R2/TURN/provider/CSP gates remain open."
 }
