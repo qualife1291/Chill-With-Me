@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -123,7 +123,7 @@ function Ticket({ game }: { game: Game }) {
     </mesh>
   );
 }
-export default function GameStage({
+export default memo(function GameStage({
   game,
   id,
   selectedPit,
@@ -146,15 +146,31 @@ export default function GameStage({
     root = useRef<THREE.Group>(null),
     cage = useRef<THREE.Group>(null),
     ball = useRef<THREE.Group>(null);
-  const started = useRef(0);
+  const started = useRef(-Infinity),
+    previousDraw = useRef(game.lastDrawAt);
   const player = game.players.indexOf(id);
   const width = game.kind === "oaq" ? layout.width : 8.7,
     depth = game.kind === "oaq" ? layout.depth : 7.1;
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => {
-    started.current = performance.now();
+    if (
+      game.kind === "loto" &&
+      game.phase === "playing" &&
+      game.lastDrawAt !== previousDraw.current
+    )
+      started.current = performance.now();
+    if (game.phase !== "playing") started.current = -Infinity;
+    previousDraw.current = game.lastDrawAt;
     invalidate();
-  }, [game.id, game.revision, selectedPit, angle, reducedMotion, invalidate]);
+  }, [
+    game.kind,
+    game.phase,
+    game.lastDrawAt,
+    selectedPit,
+    angle,
+    reducedMotion,
+    invalidate,
+  ]);
   useEffect(() => {
     if (!stones.current || !game.oaq) return;
     const temp = new THREE.Object3D();
@@ -188,7 +204,10 @@ export default function GameStage({
   }, [gl, game.kind]);
   useFrame(() => {
     const elapsed = performance.now() - started.current,
-      progress = reducedMotion ? 1 : Math.min(1, elapsed / 850);
+      progress =
+        reducedMotion || game.kind !== "loto" || game.phase !== "playing"
+          ? 1
+          : Math.min(1, elapsed / 850);
     const aspect = size.width / Math.max(1, size.height),
       fov = 38;
     const distance = gameCameraDistance(
@@ -411,4 +430,4 @@ export default function GameStage({
       </group>
     </>
   );
-}
+});

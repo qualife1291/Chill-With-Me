@@ -141,7 +141,10 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.getByLabel("Tên phòng mới").fill(testTitle);
   await host.getByLabel("Số ghế", { exact: true }).selectOption("5");
   await host.getByLabel("Kiểu chỗ ngồi", { exact: true }).selectOption("sofa");
-  await host.getByRole("button", { name: "Tạo phòng" }).first().click();
+  await host
+    .getByRole("dialog", { name: "Tạo phòng mới", exact: true })
+    .getByRole("button", { name: "Tạo phòng", exact: true })
+    .click();
   const quick = host.getByRole("dialog", { name: "Thêm video để bắt đầu" });
   await quick.waitFor();
   await quick.press("Escape");
@@ -884,9 +887,19 @@ if (!["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname))
   await host.waitForFunction(
     () => document.querySelectorAll(".queue-item").length === 2,
   );
-  await host
-    .getByRole("button", { name: "Đưa video 2 lên", exact: true })
-    .focus();
+  // The WS snapshot can arrive before the HTTP command finishes and clears queueBusy.
+  // focus() does not wait for disabled buttons, unlike click(). Check real keyboard focus.
+  await host.waitForFunction(() => {
+    const button = document.querySelector('[aria-label="Đưa video 2 lên"]');
+    return button && !button.disabled;
+  });
+  const moveUp = host.getByRole("button", {
+    name: "Đưa video 2 lên",
+    exact: true,
+  });
+  await moveUp.focus();
+  if (!(await moveUp.evaluate((button) => document.activeElement === button)))
+    throw Error("Keyboard reorder button did not receive focus");
   await host.keyboard.press("Enter");
   await host.waitForFunction(() =>
     document.querySelector(".queue-item")?.textContent.includes("dQw4w9WgXcQ"),

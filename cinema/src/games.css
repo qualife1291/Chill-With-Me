@@ -694,3 +694,22 @@
   min-width: 88px;
   white-space: nowrap;
 }
+.game-music {
+  border-top: 1px solid var(--cw-line);
+  padding-block: 6px;
+}
+.game-music summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  font-size: 13px;
+}
+.game-music label {
+  display: block;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.game-music :is(select, input) {
+  width: 100%;
+  min-height: 44px;
+}

@@ -1,4 +1,5 @@
 import { documentMetadataSchema, type Presentation } from "./presentation";
+import { activitySchema, type Activity } from "./activities";
 import {
   applyGame,
   gameCommandSchema,
@@ -309,9 +310,11 @@ export function createRoom(
   seating: z.infer<typeof seatingSchema> = "cinema",
   appearance?: Appearance,
   space: Space = "cinema",
+  activity: Activity = "watch",
 ): Room {
+  const selectedActivity = activitySchema.parse(activity);
   seats(capacity);
-  return {
+  const room: Room = {
     session: crypto.randomUUID(),
     visibility: visibilitySchema.parse(visibility),
     seating: seatingSchema.parse(seating),
@@ -346,6 +349,18 @@ export function createRoom(
     revision: 0,
     expires: now + 86400000,
   };
+  if (selectedActivity !== "watch")
+    applyGame(
+      room,
+      id,
+      {
+        type: "game",
+        expectedRevision: 0,
+        operation: { action: "open", kind: selectedActivity },
+      },
+      now,
+    );
+  return room;
 }
 export function requestJoin(
   r: Room,
@@ -771,6 +786,7 @@ export function roomSummary(r: Room | null) {
     title: r.title,
     capacity: r.capacity,
     count: r.members.length,
+    ...(r.game ? { activity: r.game.kind } : {}),
     ...(r.space && r.space !== "cinema" ? { space: r.space } : {}),
     ...(hostRecovering(r) ? { recovering: true } : {}),
   };

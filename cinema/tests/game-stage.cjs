@@ -237,6 +237,66 @@ fs.mkdirSync(shots, { recursive: true });
             window.__originalFrame,
       ),
     );
+    const frames = () =>
+      h.evaluate(() =>
+        Number(document.querySelector(".scene canvas").dataset.gameFrame),
+      );
+    let start = await frames(),
+      at = Date.now();
+    await h.getByLabel("Ô muốn rải").selectOption("2");
+    await h.waitForTimeout(1200);
+    const selection = {
+      frames: (await frames()) - start,
+      windowMs: Date.now() - at,
+    };
+    assert(selection.frames <= 3, JSON.stringify(selection));
+    start = await frames();
+    at = Date.now();
+    await g.evaluate(async (session) => {
+      for (let i = 0; i < 16; i++) {
+        window.__sockets
+          .at(-1)
+          .send(
+            JSON.stringify({
+              type: "look",
+              session,
+              yaw: i % 2 ? 35 : -35,
+              pitch: 0,
+              bodyYaw: 0,
+            }),
+          );
+        await new Promise((r) => setTimeout(r, 125));
+      }
+    }, session);
+    await h.waitForTimeout(1200);
+    const peerLook = {
+      frames: (await frames()) - start,
+      windowMs: Date.now() - at,
+    };
+    assert(peerLook.frames <= 2, JSON.stringify(peerLook));
+    fs.writeFileSync(
+      "evidence/game-performance.json",
+      JSON.stringify(
+        {
+          passed: true,
+          date: new Date().toISOString(),
+          baseline: {
+            selection: { frames: 22, windowMs: 1219 },
+            peerLook: { frames: 65, windowMs: 3389 },
+          },
+          after: { selection, peerLook },
+          scenario:
+            "Two real profiles; selected Oaq pit; 16 peer WS gaze updates at 125ms, 1200ms settle. Reproduce: tests/game-stage.cjs.",
+          limitations:
+            "Local SwiftShader frame counter, not physical FPS, battery, thermal or M1 certification. Baseline captured before optimization on 15 November 2026.",
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    record(
+      "pit selection is static; 16 live peer gaze updates do not animate the hidden cinema or game GPU",
+    );
     const revision = (await state()).gameRevision;
     const pick = await h.evaluate(() =>
       JSON.parse(
@@ -428,13 +488,22 @@ fs.mkdirSync(shots, { recursive: true });
         window.__spoken.some((t) => t.includes("Lời chat chờ")),
       )),
     );
+    const queuedAt = await h.evaluate(() => window.__spoken.length);
+    await h.waitForTimeout(3100);
+    await game(h, { action: "draw" });
+    await h.waitForFunction((n) => window.__spoken.length > n, queuedAt);
+    assert(
+      !(await h.evaluate(() =>
+        window.__spoken.some((t) => t.includes("Lời chat chờ")),
+      )),
+    );
     await h.evaluate(() => window.__finishVoice());
     await h.waitForFunction(() =>
       window.__voice?.text.includes("Lời chat chờ"),
     );
     await h.evaluate(() => window.__finishVoice());
     record(
-      "lottery voice preempts active chat safely; one deferred chat resumes after call, no stale callback cancellation",
+      "lottery voice preempts active chat safely; replacement draw preserves deferred chat without briefly starting it; resumes after final call, no stale cancellation",
     );
     const beforeSnapshot = await h.evaluate(() => window.__spoken.length);
     const socketCount = await h.evaluate(() => window.__sockets.length);

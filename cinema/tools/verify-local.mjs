@@ -152,6 +152,7 @@ try {
     "presentation.cjs",
     "games.cjs",
     "game-stage.cjs",
+    "lobby-game-audio.cjs",
     "media.cjs",
     "hls.cjs",
     "roadmap.cjs",

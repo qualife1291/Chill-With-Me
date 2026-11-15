@@ -1,4 +1,5 @@
 import { sharedFile } from "../shared/presentation";
+import { activitySchema } from "../shared/activities";
 import {
   unpackFileChunk,
   packFileChunk,
@@ -40,6 +41,7 @@ const createSchema = joinSchema.extend({
   visibility: visibilitySchema.default("public"),
   seating: seatingSchema.default("cinema"),
   space: spaceSchema.default("cinema"),
+  activity: activitySchema.default("watch"),
 });
 const error = (code: string, status = 400) =>
   Response.json(
@@ -217,6 +219,7 @@ export class RoomSlot extends DurableObject<Env> {
             c.seating,
             c.appearance,
             c.space,
+            c.activity,
           );
           this.save(r);
           this.schedule();

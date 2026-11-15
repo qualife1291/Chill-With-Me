@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "date": "2026-11-15T08:08:37.543Z",
+  "checks": [
+    "responsive lobby selection defers identity; invalid activity creates nothing; one create request opens host game lobby; approval/spectator joining preserved",
+    "game start/selection/capture use real WebAudio; personal music shares one context and one mono 12s loop; volume does not restart; Hold preserves music; pause/hidden stop and resume cleanly",
+    "new game resets music off; fresh lottery call ducks/restores native loop; master mute and room close stop all sources; zero page errors"
+  ],
+  "screenshots": [
+    "lobby-activity-1280.png",
+    "lobby-activity-320.png",
+    "lobby-activity-844.png",
+    "lobby-create-game-320.png",
+    "game-music-desktop.png",
+    "game-music-320.png"
+  ],
+  "audio": {
+    "contexts": 1,
+    "buffers": 1,
+    "rate": 24000,
+    "length": 288000,
+    "channels": 1
+  },
+  "limitations": "Real local Worker/WebAudio, software GPU and emulated viewports; Vietnamese synthesis/visibility are lifecycle fixtures, not acoustic quality, physical battery or hardware certification."
+}

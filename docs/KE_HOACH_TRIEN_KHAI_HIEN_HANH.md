@@ -73,3 +73,11 @@ Nguồn nghiên cứu ngoài game và acceptance: [ADVANCED_EXPERIENCE](ADVANCED
 - [x] Hô số hoặc hô vui opt-in, lời gốc/nhạc tổng hợp hữu hạn; chỉ số mới nhất, không đọc lại snapshot/hidden/reconnect. Shared speech ownership để hô/chat không hủy nhầm nhau; mute/priority/pause/leave cleanup.
 - [x] Fixture lời hô 1–90/variants và speech ownership/race; multi-profile privacy/ACL, 3D picking/rotation, desktop/320px/landscape, idle/resources/player identity, âm thanh thật với voice fixture được khai báo.
 - [x] Hồi quy local, review UI/security/code/docs, push/CI và deploy/GET đúng Worker. Gói hát thu âm và pilot giọng/thiết bị thật vẫn cần bằng chứng riêng.
+
+## Sảnh chọn game, âm nhạc và hiệu suất · 15/11/2026
+
+- [x] Đo trước/sau cùng workload: chọn ô và 16 pose của người khác khi game 3D mở; giữ snapshot cảnh rạp ẩn, chỉ animate lô tô khi có số mới, không GPU loop cho thay đổi tĩnh.
+- [x] Sảnh chọn Xem chung / Ô ăn quan / Lô tô; chọn slot rồi mới nhập profile; tạo room + game lobby nguyên tử, legacy watch mặc định, public badge đúng game và private không lộ hoạt động.
+- [x] Nhạc nền gốc opt-in, buffer mono 12s/24kHz ≤1.2MB steady, loop native không timer từng nhịp; cùng AudioContext, mute/voice duck/priority/hidden/pause/session cleanup; không provider/billing.
+- [x] Âm chọn ô/rải/ăn/gọi số/kết quả hữu hạn, toggle cá nhân; gọi số mới không làm chat chờ bị khởi động rồi hủy nhầm.
+- [ ] Unit/schema/privacy/atomic create; browser nhiều profile, mobile/keyboard/hitbox, nhạc/voice/cleanup/context/player identity và phép đo lặp lại. Hồi quy đầy đủ đạt 52/52 bước, 147 ca logic; review docs/code đã xong, push/CI/deploy/GET đang chờ.

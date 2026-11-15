@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "date": "2026-11-15T08:07:34.964Z",
+  "baseline": {
+    "selection": {
+      "frames": 22,
+      "windowMs": 1219
+    },
+    "peerLook": {
+      "frames": 65,
+      "windowMs": 3389
+    }
+  },
+  "after": {
+    "selection": {
+      "frames": 1,
+      "windowMs": 1220
+    },
+    "peerLook": {
+      "frames": 0,
+      "windowMs": 3218
+    }
+  },
+  "scenario": "Two real profiles; selected Oaq pit; 16 peer WS gaze updates at 125ms, 1200ms settle. Reproduce: tests/game-stage.cjs.",
+  "limitations": "Local SwiftShader frame counter, not physical FPS, battery, thermal or M1 certification. Baseline captured before optimization on 15 November 2026."
+}

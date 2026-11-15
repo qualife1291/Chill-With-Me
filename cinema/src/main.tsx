@@ -2,6 +2,11 @@ import { DOCUMENT_ACCEPT } from "../shared/presentation";
 import { unpackFileChunk } from "../shared/fileRelay";
 import CinemaPreferences from "./CinemaPreferences";
 import PlaybackDiagnostics from "./PlaybackDiagnostics";
+import LobbyActivities, { ActivityPicker } from "./LobbyActivities";
+import { type Activity, activityLabel } from "../shared/activities";
+import { useGameMusic } from "./useGameMusic";
+import { useGameFeedback } from "./useGameFeedback";
+import { type GameMusicMode } from "../shared/gameAudio";
 import { usePreference } from "./usePreference";
 import { CALLER_MODES, useLotoCaller } from "./useLotoCaller";
 import { AUDIO_PRIORITIES, audioMix } from "../shared/audioMix";
@@ -87,6 +92,7 @@ type Snapshot = {
 };
 type Summary = {
   space?: Space;
+  activity?: Activity;
   recovering?: boolean;
   private?: boolean;
   slot: number;
@@ -207,6 +213,7 @@ function App() {
     [name, setName] = useState(""),
     [title, setTitle] = useState("Tối cùng chúng mình"),
     [capacity, setCapacity] = useState(6),
+    [activity, setActivity] = useState<Activity>("watch"),
     [visibility, setVisibility] = useState<"public" | "private">("public"),
     [error, setError] = useState(""),
     [tab, setTab] = useState("chat"),
@@ -450,6 +457,29 @@ function App() {
     onMusic: sounds.playLoto,
     stopMusic: sounds.stopLoto,
   });
+  const [gameEffects, setGameEffects] = useState(false);
+  useEffect(() => setGameEffects(false), [activeSession]);
+  const feedbackBaseline = useGameFeedback(
+    room?.game,
+    gameEffects && sounds.enabled,
+    sounds.play,
+  );
+  const gameMusic = useGameMusic(
+    activeSession && room?.game ? `${activeSession}:${room.game.id}` : "",
+    !!room?.game &&
+      room.game.phase !== "paused" &&
+      room.game.phase !== "finished",
+    sounds.enabled,
+    speech.speaking || caller.speaking,
+    sounds.audioBus,
+  );
+  const selectGamePit = React.useCallback(
+    (pit: number | null) => {
+      setGamePit(pit);
+      if (pit !== null && gameEffects) sounds.play("game-select");
+    },
+    [gameEffects, sounds.play],
+  );
   const [gameView, setGameView] = usePreference(
     "cinema-game-view",
     ["flat", "table"] as const,
@@ -475,7 +505,7 @@ function App() {
     !!room?.playing,
     speech.speaking || caller.speaking,
     sounds.active,
-    ambience.mode !== "off",
+    ambience.mode !== "off" || gameMusic.playing,
   );
   const wake = useWakeLock(
     activeSession,
@@ -563,6 +593,7 @@ function App() {
     )
       return;
     if (v.room) {
+      if (current?.session !== v.room.session && v.room.game) setSheet("games");
       latestRoom.current = v.room;
       const ids = new Set(v.room.messages.map((m) => m.clientMessageId));
       setPendingMessages((p) => p.filter((m) => !ids.has(m.id)));
@@ -632,6 +663,7 @@ function App() {
         AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]),
       ).then((v) => {
         caller.baseline(v.room?.game, v.room?.session || "");
+        feedbackBaseline(v.room?.game);
         return v;
       });
     const recover = async (force = false) => {
@@ -780,6 +812,7 @@ function App() {
           if (firstGameSnapshot) {
             firstGameSnapshot = false;
             caller.baseline(v.room?.game, v.room?.session || "");
+            feedbackBaseline(v.room?.game);
           }
           receive(v);
         }
@@ -888,9 +921,11 @@ function App() {
           seating,
           appearance,
           space,
+          activity,
         );
         apply(r, id, { type: "sit" }, Date.now());
         setRoom(r);
+        if (r.game) setSheet("games");
         setStatus("joined");
         setEntry(null);
         setSlot(n);
@@ -907,6 +942,7 @@ function App() {
                 seating,
                 appearance,
                 space,
+                activity,
               }
             : {
                 name,
@@ -1437,7 +1473,7 @@ function App() {
                   Hẹn nhau ở <em>Cùng Xem.</em>
                 </h1>
                 <p>
-                  Chọn cửa phòng, mang theo một bộ phim.
+                  Chọn một bộ phim, hay rủ nhau một ván chơi.
                   <br />
                   Phần còn lại là khoảng thời gian bên nhau.
                 </p>
@@ -1479,6 +1515,22 @@ function App() {
                 })}
               </div>
             </section>
+            <LobbyActivities
+              value={activity}
+              onChange={setActivity}
+              available={summaries.filter((s) => !s.open).length}
+              busy={busy || !id}
+              onCreate={() => {
+                const free =
+                  summaries.find((s) => s.slot === previewSlot && !s.open) ||
+                  summaries.find((s) => !s.open);
+                if (free) {
+                  setPreviewSlot(free.slot);
+                  setError("");
+                  setEntry({ slot: free.slot, create: true });
+                }
+              }}
+            />
             <p className="lobby-instruction">
               Bạn đang khám phá phòng 0{previewSlot}. Chọn một phòng để tiếp
               tục; thông tin được nhập ở bước sau.
@@ -1497,14 +1549,23 @@ function App() {
                 >
                   <h2>
                     {entry.create
-                      ? "Tạo góc xem của bạn"
+                      ? activity === "watch"
+                        ? "Tạo góc xem của bạn"
+                        : "Tạo góc chơi của bạn"
                       : "Vào phòng 0" + entry.slot}
                   </h2>
                   <p>
                     {entry.create
-                      ? "Chọn nhân vật và bố cục cho buổi xem."
+                      ? "Chọn nhân vật và chỗ ngồi cho buổi hẹn."
                       : "Chỉ cần tên và nhân vật. Chủ phòng sẽ duyệt yêu cầu của bạn."}
                   </p>
+                  {entry.create && (
+                    <ActivityPicker
+                      value={activity}
+                      onChange={setActivity}
+                      compact
+                    />
+                  )}
                   <fieldset className="avatar-choice">
                     <legend>Chọn nhân vật của bạn</legend>
                     <label>
@@ -1760,6 +1821,11 @@ function App() {
                             : `${s.count || 0}/${s.capacity || capacity} ghế`}
                         </span>
                       </div>
+                      {s.open && !s.private && (
+                        <span className="room-activity-badge">
+                          {activityLabel(s.activity)}
+                        </span>
+                      )}
                       <h3>
                         {(s.private ? "Phòng riêng tư" : s.title) ||
                           [
@@ -1775,7 +1841,7 @@ function App() {
                             : s.recovering
                               ? "Chủ phòng đang mất kết nối. Chỉ thành viên đã duyệt có thể trở lại trong thời gian giữ chỗ."
                               : "Gửi yêu cầu để chủ phòng duyệt bạn vào."
-                          : "Tạo phòng và phát ngay, không cần đợi đủ người."}
+                          : "Chọn xem chung hoặc một ván chơi, rồi tạo phòng của bạn."}
                       </p>
                       <button
                         className="primary wide"
@@ -1810,7 +1876,8 @@ function App() {
             <Users size={44} />
             <h1>Chờ một lời chào từ chủ phòng.</h1>
             <p>
-              Yêu cầu đã gửi. Khi được duyệt, bạn sẽ xem tiếp video đang chiếu.
+              Yêu cầu đã gửi. Khi được duyệt, bạn sẽ vào hoạt động đang diễn ra
+              trong phòng.
             </p>
             <button
               onClick={async () => {
@@ -1869,7 +1936,15 @@ function App() {
                   room={room}
                   id={id}
                   command={command}
-                  onSound={() => sounds.play("game")}
+                  effectsEnabled={gameEffects}
+                  onEffectsChange={setGameEffects}
+                  music={{
+                    ...gameMusic,
+                    change: (mode: GameMusicMode) => {
+                      if (mode !== "off" && !sounds.enabled) sounds.toggle();
+                      gameMusic.change(mode);
+                    },
+                  }}
                   soundsEnabled={sounds.enabled}
                   onEnableSounds={sounds.toggle}
                   serverNow={clock.serverNow}
@@ -1885,7 +1960,7 @@ function App() {
                     setGameView(v);
                   }}
                   selectedPit={gamePit}
-                  onSelectPit={setGamePit}
+                  onSelectPit={selectGamePit}
                   angle={gameAngle}
                   onAngle={setGameAngle}
                   caller={caller}
@@ -2358,7 +2433,7 @@ function App() {
                             suspended={sheet === "games" && !game3d}
                             game={game3d ? room.game : undefined}
                             selectedPit={gamePit}
-                            onSelectPit={setGamePit}
+                            onSelectPit={selectGamePit}
                             gameAngle={gameAngle}
                             room={room}
                             id={id}

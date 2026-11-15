@@ -3,7 +3,8 @@ import { playFireworkSound } from "./fireworkSound";
 import { playLotoMusic } from "./games/lotoMusic";
 import type { ReactionKind } from "../shared/model";
 import type { ReactionVariant } from "../shared/reactions";
-export type RoomSound = ReactionKind | ReactionVariant | "poke" | "game";
+import type { GameCue } from "../shared/gameAudio";
+export type RoomSound = ReactionKind | ReactionVariant | GameCue | "poke";
 /** Short, locally synthesized cues. Never queue audio behind an autoplay block. */
 export function useRoomSounds(session = "", sideGain = 1) {
   const [enabled, setEnabled] = useState(() => {
@@ -176,19 +177,27 @@ export function useRoomSounds(session = "", sideGain = 1) {
       if ((kind === "flowers" || kind === "celebrate") && ageMs >= 2200) return;
       if (kind === "flowers" || kind === "celebrate") stopCues();
       const length =
-        kind === "flowers" || kind === "celebrate"
-          ? 2800 - ageMs
-          : kind === "love" || kind === "wow"
-            ? 750
-            : kind === "thanks" || kind === "laugh"
-              ? 900
-              : kind === "troll"
-                ? 1050
-                : kind === "applause"
-                  ? 1000
-                  : kind === "sad"
+        kind === "game-win" || kind === "game-start"
+          ? 750
+          : kind === "game-capture"
+            ? 500
+            : kind === "game-draw"
+              ? 450
+              : kind === "game-select"
+                ? 100
+                : kind === "flowers" || kind === "celebrate"
+                  ? 2800 - ageMs
+                  : kind === "love" || kind === "wow"
                     ? 750
-                    : 350;
+                    : kind === "thanks" || kind === "laugh"
+                      ? 900
+                      : kind === "troll"
+                        ? 1050
+                        : kind === "applause"
+                          ? 1000
+                          : kind === "sad"
+                            ? 750
+                            : 350;
       activeUntil.current = Math.max(activeUntil.current, Date.now() + length);
       clearTimeout(activeTimer.current);
       setActive(true);
@@ -290,6 +299,18 @@ export function useRoomSounds(session = "", sideGain = 1) {
         }
         tone(170, 0.45, 0.22, 620, "triangle");
         tone(620, 0.67, 0.35, 110, "triangle");
+      } else if (kind.startsWith("game-")) {
+        if (kind === "game-select") tone(460, 0, 0.065, 310, "triangle");
+        else if (kind === "game-sow")
+          [620, 550, 490, 440].forEach((n, i) =>
+            tone(n, i * 0.065, 0.07, n * 0.8, "triangle"),
+          );
+        else if (kind === "game-capture")
+          [392, 523, 659].forEach((n, i) => tone(n, i * 0.09, 0.18, n, "sine"));
+        else if (kind === "game-draw") {
+          tone(310, 0, 0.08, 220, "triangle");
+          tone(740, 0.12, 0.18);
+        } else [392, 494, 587, 784].forEach((n, i) => tone(n, i * 0.11, 0.24));
       } else {
         tone(740, 0, 0.12);
         tone(980, 0.13, 0.18);
@@ -321,5 +342,21 @@ export function useRoomSounds(session = "", sideGain = 1) {
     },
     [stopLoto],
   );
-  return { enabled, toggle, play, active, warning, playLoto, stopLoto };
+  const audioBus = useCallback(
+    () =>
+      context.current && output.current
+        ? { context: context.current, output: output.current }
+        : undefined,
+    [],
+  );
+  return {
+    enabled,
+    toggle,
+    play,
+    active,
+    warning,
+    playLoto,
+    stopLoto,
+    audioBus,
+  };
 }

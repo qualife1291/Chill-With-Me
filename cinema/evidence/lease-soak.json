@@ -1,12 +1,12 @@
 {
   "passed": true,
-  "date": "2026-11-15T04:58:25.782Z",
-  "seconds": 100.424302541,
+  "date": "2026-11-15T08:13:37.229Z",
+  "seconds": 100.51652162500001,
   "rooms": 3,
   "sockets": 30,
   "authenticatedClockReplies": 300,
-  "clockRttP50": 38.1999999997206,
-  "clockRttP95": 70,
+  "clockRttP50": 40.59999999962747,
+  "clockRttP95": 94,
   "renewalWithoutRevisionBroadcast": true,
   "postHoldChatAllMembers": true,
   "limitations": "Local backend lease soak only; no rendered media/GPU/WAN/quota or production rollback certification."

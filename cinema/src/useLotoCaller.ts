@@ -42,13 +42,16 @@ export function useLotoCaller({
   settings.current = { mode, enabled, volume, voiceURI, rate, onMusic };
   const say = useCallback(
     (number: number, variant: number) => {
-      stop();
       const p = settings.current;
-      if (!p.enabled || p.mode === "off" || document.hidden) return;
+      if (!p.enabled || p.mode === "off" || document.hidden) {
+        stop();
+        return;
+      }
       if (
         !("speechSynthesis" in window) ||
         !("SpeechSynthesisUtterance" in window)
       ) {
+        stop();
         setWarning(
           "Trình duyệt chưa có giọng đọc; số và lời hô vẫn hiện trên màn hình.",
         );
@@ -62,11 +65,17 @@ export function useLotoCaller({
           voices.find((v) => v.default) ||
           voices[0];
       if (!voice) {
+        stop();
         setWarning(
           "Chưa có giọng tiếng Việt. Cài giọng trong thiết bị hoặc chọn giọng ở phần Chat, rồi thử lại.",
         );
         return;
       }
+      // Replace in the broker atomically; stop() here would briefly start and discard deferred chat.
+      generation.current++;
+      clearTimeout(timer.current);
+      stopMusic();
+      setSpeaking(false);
       const call = lotoCall(number, variant),
         u = new SpeechSynthesisUtterance(
           p.mode === "number" ? `Số ${call.number}.` : call.text,
@@ -108,7 +117,7 @@ export function useLotoCaller({
         stop();
       }
     },
-    [stop],
+    [stop, stopMusic],
   );
   const currentKey = `${session}:${game?.id || ""}:${game?.drawn?.length || 0}`;
   const seen = useRef(currentKey);

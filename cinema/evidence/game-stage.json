@@ -1,11 +1,12 @@
 {
   "passed": true,
-  "date": "2026-11-15T04:53:57.685Z",
+  "date": "2026-11-15T08:08:14.426Z",
   "checks": [
+    "pit selection is static; 16 live peer gaze updates do not animate the hidden cinema or game GPU",
     "actual shared-context 3D picking issues a valid server move; second profile receives turn; native iframe/renderer identity preserved",
     "320px/landscape/desktop fit; finite motion and reduced motion settle to zero idle frames; two 3D/flat cycles release resources and preserve Hold/context",
     "loto 3D shows only own ticket; opt-in voice/finite real WebAudio cue; latest draw speaks once on both profiles, chat revisions and pause/resume never replay",
-    "lottery voice preempts active chat safely; one deferred chat resumes after call, no stale callback cancellation",
+    "lottery voice preempts active chat safely; replacement draw preserves deferred chat without briefly starting it; resumes after final call, no stale cancellation",
     "reconnect baseline and hidden/visible updates do not replay missed calls; pause/close ownership cleanup has zero page errors"
   ],
   "screenshots": [

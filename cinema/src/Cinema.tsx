@@ -513,7 +513,32 @@ export default function Cinema({
   offset: number;
 }) {
   const gpuOptions = useInitialGPUOptions();
-  const occupied = room.members
+  // The hidden cinema keeps its last pose; live peer gaze must not wake the game GPU.
+  const savedWorld = useRef<
+    Pick<Room, "members" | "capacity" | "seating" | "space">
+  >({
+    members: room.members,
+    capacity: room.capacity,
+    seating: room.seating,
+    space: room.space,
+  });
+  if (!game)
+    savedWorld.current = {
+      members: room.members,
+      capacity: room.capacity,
+      seating: room.seating,
+      space: room.space,
+    };
+  const world = savedWorld.current;
+  const ownLook = useMemo(
+    () => ({
+      yaw: THREE.MathUtils.clamp(yaw, -75, 75),
+      pitch: THREE.MathUtils.clamp(pitch, -45, 35),
+      bodyYaw,
+    }),
+    [yaw, pitch, bodyYaw],
+  );
+  const occupied = world.members
     .map((m) => m.seat)
     .sort((a, b) => a - b)
     .join(",");
@@ -541,8 +566,8 @@ export default function Cinema({
       <SceneRecovery onUnavailable={onUnavailable} />
       <SceneEnvironment
         hidden={!!game}
-        space={spaceInfo(room.space).id}
-        capacity={room.capacity}
+        space={spaceInfo(world.space).id}
+        capacity={world.capacity}
         lighting={lighting}
       />
       <group visible={!game}>
@@ -561,28 +586,24 @@ export default function Cinema({
             fog={false}
           />
         </mesh>
-        <Walkways capacity={room.capacity} />
+        <Walkways capacity={world.capacity} />
         <Seating
-          capacity={room.capacity}
-          sofa={room.seating === "sofa"}
+          capacity={world.capacity}
+          sofa={world.seating === "sofa"}
           occupied={occupied}
         />
-        {room.members
+        {world.members
           .filter((m) => mode !== "first" || m.id !== id)
           .map((m) => (
             <Avatar
               key={m.id}
               m={m}
-              capacity={room.capacity}
+              capacity={world.capacity}
               offset={offset}
               reducedMotion={reducedMotion}
               look={
                 m.id === id
-                  ? {
-                      yaw: THREE.MathUtils.clamp(yaw, -75, 75),
-                      pitch: THREE.MathUtils.clamp(pitch, -45, 35),
-                      bodyYaw,
-                    }
+                  ? ownLook
                   : m.look || { yaw: 0, pitch: 0, bodyYaw: 0 }
               }
             />

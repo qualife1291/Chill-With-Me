@@ -6,6 +6,8 @@ import type { Room, Command } from "../shared/model";
 import { completeTicket, type GameCommand } from "../shared/games";
 import "./games.css";
 import { callVariant, lotoCall } from "../shared/lotoCalls";
+import type { useGameMusic } from "./useGameMusic";
+import type { GameMusicMode } from "../shared/gameAudio";
 import type { CallerMode, useLotoCaller } from "./useLotoCaller";
 const title = (kind: string) => (kind === "oaq" ? "Ô ăn quan" : "Lô tô");
 const reasons: Record<string, string> = {
@@ -21,7 +23,9 @@ export default function GamePanel({
   id,
   command,
   onClose,
-  onSound,
+  effectsEnabled,
+  onEffectsChange,
+  music,
   soundsEnabled,
   onEnableSounds,
   serverNow,
@@ -39,7 +43,9 @@ export default function GamePanel({
   id: string;
   command: (c: Command, onSuccess?: () => void) => Promise<unknown>;
   onClose: () => void;
-  onSound: () => void;
+  effectsEnabled: boolean;
+  onEffectsChange: (enabled: boolean) => void;
+  music: ReturnType<typeof useGameMusic>;
   soundsEnabled: boolean;
   onEnableSounds: () => void;
   serverNow: () => number;
@@ -57,10 +63,8 @@ export default function GamePanel({
     host = room.host === id,
     player = g?.players.indexOf(id) ?? -1;
   const [busy, setBusy] = useState(false),
-    [sound, setSound] = useState(false),
     [cooldown, setCooldown] = useState(false);
-  const root = useRef<HTMLElement>(null),
-    seen = useRef(g ? `${g.id}:${g.revision}` : "");
+  const root = useRef<HTMLElement>(null);
   useEffect(() => {
     root.current
       ?.querySelector<HTMLButtonElement>(
@@ -68,12 +72,6 @@ export default function GamePanel({
       )
       ?.focus({ preventScroll: true });
   }, [view, g?.phase === "lobby"]);
-  useEffect(() => {
-    const rev = g ? `${g.id}:${g.revision}` : "",
-      changed = !!seen.current && seen.current !== rev;
-    seen.current = rev;
-    if (changed && sound && g?.phase !== "lobby" && !document.hidden) onSound();
-  }, [g?.id, g?.revision, sound, onSound]);
   useEffect(() => {
     const delay =
       g?.lastDrawAt === undefined
@@ -420,18 +418,59 @@ export default function GamePanel({
               </label>
             </details>
           )}
+          <details className="game-music" data-playing={music.playing}>
+            <summary>
+              Nhạc nền ·{" "}
+              {music.mode === "off"
+                ? "tắt"
+                : music.playing
+                  ? "đang phát"
+                  : "tạm dừng"}
+            </summary>
+            <label>
+              Nhạc nền trò chơi
+              <select
+                aria-label="Nhạc nền trò chơi"
+                value={music.mode}
+                onChange={(e) => music.change(e.target.value as GameMusicMode)}
+              >
+                <option value="off">Tắt nhạc nền</option>
+                <option value="garden">Vườn chiều · nhẹ nhàng</option>
+                <option value="festival">Hội bạn · vui tươi</option>
+              </select>
+            </label>
+            {music.mode !== "off" && (
+              <label>
+                Âm lượng nhạc · {music.volume}%
+                <input
+                  type="range"
+                  aria-label="Âm lượng nhạc game"
+                  min="0"
+                  max="50"
+                  step="2"
+                  value={music.volume}
+                  onChange={(e) => music.setVolume(Number(e.target.value))}
+                />
+              </label>
+            )}
+            <p className="small">
+              Nhạc gốc riêng trên máy bạn; nhỏ lại khi đọc chat/hô số, dừng khi
+              ván nghỉ hoặc tab ẩn. Hold chỉ tắt video.
+            </p>
+            {music.warning && <p role="status">{music.warning}</p>}
+          </details>
           <GameRules kind={g.kind} />
           <footer className="game-footer">
             <button
               type="button"
-              aria-pressed={sound}
+              aria-pressed={effectsEnabled}
               onClick={() => {
-                if (!sound && !soundsEnabled) onEnableSounds();
-                setSound((v) => !v);
+                if (!effectsEnabled && !soundsEnabled) onEnableSounds();
+                onEffectsChange(!effectsEnabled);
               }}
             >
-              {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}Âm ván:{" "}
-              {sound ? "bật" : "tắt"}
+              {effectsEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}Âm
+              ván: {effectsEnabled ? "bật" : "tắt"}
             </button>
             {host && (
               <button
