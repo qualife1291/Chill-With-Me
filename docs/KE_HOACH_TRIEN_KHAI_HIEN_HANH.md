@@ -80,4 +80,4 @@ Nguồn nghiên cứu ngoài game và acceptance: [ADVANCED_EXPERIENCE](ADVANCED
 - [x] Sảnh chọn Xem chung / Ô ăn quan / Lô tô; chọn slot rồi mới nhập profile; tạo room + game lobby nguyên tử, legacy watch mặc định, public badge đúng game và private không lộ hoạt động.
 - [x] Nhạc nền gốc opt-in, buffer mono 12s/24kHz ≤1.2MB steady, loop native không timer từng nhịp; cùng AudioContext, mute/voice duck/priority/hidden/pause/session cleanup; không provider/billing.
 - [x] Âm chọn ô/rải/ăn/gọi số/kết quả hữu hạn, toggle cá nhân; gọi số mới không làm chat chờ bị khởi động rồi hủy nhầm.
-- [ ] Unit/schema/privacy/atomic create; browser nhiều profile, mobile/keyboard/hitbox, nhạc/voice/cleanup/context/player identity và phép đo lặp lại. Hồi quy đầy đủ đạt 52/52 bước, 147 ca logic; review docs/code đã xong, push/CI/deploy/GET đang chờ.
+- [x] Unit/schema/privacy/atomic create; browser nhiều profile, mobile/keyboard/hitbox, nhạc/voice/cleanup/context/player identity và phép đo lặp lại. Hồi quy đầy đủ đạt 52/52 bước, 147 ca logic; review docs/code, push/CI Node 22/24, deploy đúng Worker và GET 226 public assets đều đạt.
