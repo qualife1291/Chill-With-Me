@@ -163,3 +163,203 @@
     padding: 7px;
   }
 }
+.lobby-activities h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+  color: #f7edda;
+}
+.activity-launchers button {
+  text-align: left;
+  width: 100%;
+  white-space: normal;
+}
+.activity-launchers button:hover {
+  background: #355047;
+  border-color: #edc37e;
+}
+.activity-launchers button:focus-visible {
+  outline: 2px solid #f3c983;
+  outline-offset: 3px;
+}
+.activity-launch-label {
+  margin-top: auto;
+  padding-top: 12px;
+  color: #f4d197;
+  font-size: 13px;
+}
+.activity-availability {
+  margin: 16px 0 0;
+  color: #d8d0be;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.quick-game-entry {
+  max-width: 470px;
+}
+.quick-game-entry .quick-entry-name {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+}
+.entry-modal.quick-game-entry .setup {
+  display: block;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+  margin: 0;
+}
+.entry-disclosure {
+  grid-column: 1/-1;
+  min-width: 0;
+  margin: 10px 0;
+  border: 1px solid #ffffff25;
+  border-radius: 12px;
+}
+.entry-disclosure > summary {
+  min-height: 48px;
+  padding: 13px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #e8dfcf;
+}
+.entry-disclosure-body {
+  padding: 0 13px 13px;
+  display: grid;
+  gap: 12px;
+}
+.entry-disclosure-body label {
+  min-width: 0;
+}
+.entry-play-intent {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.entry-play-intent input {
+  width: 20px;
+  height: 20px;
+}
+.room-watch-game {
+  margin-top: 8px;
+  min-height: 44px;
+  width: 100%;
+  background: transparent;
+}
+.game-lobby-guidance {
+  padding: 12px;
+  background: #ffffff0a;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .lobby-activities h2 {
+    font-size: 19px;
+  }
+  .activity-launch-label {
+    font-size: 11px;
+  }
+}
+.entry-modal .actions button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.entry-modal
+  input:not([type="radio"]):not([type="checkbox"]):not([type="color"]),
+.entry-modal select {
+  min-height: 44px;
+  font-size: 16px;
+}
+.entry-modal .quick-entry-name input {
+  min-height: 48px;
+}
+@media (pointer: coarse) {
+  .composer #message {
+    font-size: 16px;
+  }
+}
+.entry-modal.quick-game-entry {
+  max-height: calc(100dvh - 24px);
+}
+.entry-modal {
+  scroll-padding-block: 16px 88px;
+}
+@media (max-height: 500px) and (min-width: 600px) {
+  .entry-modal.quick-game-entry {
+    width: min(680px, calc(100vw - 24px));
+    max-width: 680px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 20px;
+  }
+  .quick-game-entry > h2,
+  .quick-game-entry > p,
+  .quick-game-entry > .actions {
+    grid-column: 1/-1;
+    margin: 0;
+  }
+  .quick-game-entry > .quick-entry-name {
+    grid-column: 1;
+    grid-row: 3 / span 2;
+    margin: 0;
+  }
+  .quick-game-entry > .entry-disclosure {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 0;
+  }
+  .entry-modal.quick-game-entry > .setup {
+    grid-column: 2;
+    grid-row: 4;
+  }
+  .quick-game-entry > .setup .entry-disclosure {
+    margin: 0;
+  }
+  .entry-modal.quick-game-entry > .actions {
+    position: static;
+    padding-top: 0;
+  }
+}
+.game-return {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  left: calc(env(safe-area-inset-left, 0px) + 120px);
+  z-index: 32;
+  min-height: 44px;
+  min-width: 44px;
+  gap: 6px;
+  padding: 10px 12px;
+  border-color: #d6b47780;
+  background: #293d34;
+  color: #f2e4c8;
+}
+.queue-start {
+  width: 100%;
+  min-height: 44px;
+  margin: 8px 0;
+}
+@media (max-width: 600px) {
+  .game-return {
+    left: calc(env(safe-area-inset-left, 0px) + 64px);
+    max-width: calc(100vw - 218px);
+    font-size: 12px;
+    padding: 10px 8px;
+  }
+  .game-return svg {
+    width: 16px;
+    flex: none;
+  }
+}
+@media (max-height: 500px) and (min-width: 600px) {
+  .quick-game-entry > .quick-entry-name {
+    align-content: start;
+  }
+}
+
+.room-controls .gesture-toggle {
+  width: 100%;
+  min-height: 44px;
+  margin-block: 8px;
+}

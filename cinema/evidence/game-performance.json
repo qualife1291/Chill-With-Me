@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "date": "2026-11-15T08:07:34.964Z",
+  "date": "2026-11-15T12:20:50.319Z",
   "baseline": {
     "selection": {
       "frames": 22,
@@ -14,11 +14,11 @@
   "after": {
     "selection": {
       "frames": 1,
-      "windowMs": 1220
+      "windowMs": 1249
     },
     "peerLook": {
       "frames": 0,
-      "windowMs": 3218
+      "windowMs": 3242
     }
   },
   "scenario": "Two real profiles; selected Oaq pit; 16 peer WS gaze updates at 125ms, 1200ms settle. Reproduce: tests/game-stage.cjs.",

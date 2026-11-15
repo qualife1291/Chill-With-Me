@@ -4,7 +4,7 @@
 
 ## Chung
 
-Một ván/phòng. Chỉ thành viên đã duyệt được tham gia. Host mở/bắt đầu/đóng, người chơi điều khiển lượt của mình; chuyển chủ không đổi chỗ chơi. Tham gia ở lobby, sau bắt đầu chỉ xem. Mỗi thao tác có revision CAS và dedupe của phòng; close/open vẫn tăng revision. Người chơi/host xin nghỉ; người xin hoặc host tiếp tục. Hidden/reload không tự xử thua, dùng giữ chỗ 30s hiện có. Ô dừng không xử thắng nếu người chơi thực sự rời; lô tô bỏ vé người rời, tiếp tục nếu còn ≥2, nếu ít hơn thì dừng. Đóng ván xóa state/secret, không lưu lịch sử hoặc xếp hạng. Không tiền/cược/đổi thưởng.
+Một ván/phòng. Chỉ thành viên đã duyệt được tham gia. Host mở/bắt đầu/đóng, người chơi điều khiển lượt của mình; chuyển chủ không đổi chỗ chơi. Tham gia ở lobby, sau bắt đầu chỉ xem. Chọn Chơi cùng khi xin vào là consent tham gia ván hiện tại; server gắn ID ván lúc xin, duyệt nguyên tử chỉ join nếu vẫn ở lobby/còn chỗ. Chọn Vào xem, client cũ hoặc ván đổi/bắt đầu/hết chỗ vẫn là khán giả; không tự bắt đầu ván. Mỗi thao tác có revision CAS và dedupe của phòng; close/open vẫn tăng revision. Người chơi/host xin nghỉ; người xin hoặc host tiếp tục. Hidden/reload không tự xử thua, dùng giữ chỗ 30s hiện có. Ô dừng không xử thắng nếu người chơi thực sự rời; lô tô bỏ vé người rời, tiếp tục nếu còn ≥2, nếu ít hơn thì dừng. Đóng ván xóa state/secret, không lưu lịch sử hoặc xếp hạng. Không tiền/cược/đổi thưởng.
 
 Mở/chơi/đóng không thay đổi timeline/nguồn video/Hold/admission. UI dùng sheet hiện có, bàn phẳng hoặc 3D chung renderer, hiệu ứng hữu hạn/reduced motion. Hô số opt-in và nhạc dùng tài nguyên hiện có; speech broker giữ quyền chat/lô tô, không đổi luật rút số. [Thiết kế render/audio](GAME_3D_AUDIO.md).
 

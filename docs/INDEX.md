@@ -20,3 +20,5 @@ Bắt đầu ở [PROJECT_STATE](../PROJECT_STATE.md): source/version, bằng ch
 Test results thuộc `cinema/evidence/`, không chép toàn bộ log vào Markdown. Source fixtures/generated/build giữ ngoài docs. Mốc đã đóng có trong Git history; archive/V2/V3 là thiết kế lịch sử, không phải source status. Chỉnh code thì cập nhật đúng owner; tại handoff chỉ đổi facts trong PROJECT_STATE. Validate: `npm run check:docs`, `python3 scripts/validate_skills.py`.
 
 Research only: [3D product V3](THIET_KE_RAP_3D_V3.md), [asset sources/licenses](NGUON_FILE_DO_HOA.md), [YouTube Premium](YOUTUBE_PREMIUM.md), [operating security](BAO_MAT_VA_VAN_HANH.md), [free-tier budget](NGAN_SACH_FREE_TIER.md), [voice providers](NVIDIA_NIM_NGHIEN_CUU_VA_KE_HOACH_KIEM_THU.md). `archive/` preserves superseded proposals; open it only for historical rationale.
+
+Cross-browser/device QA: [DEVICE_TESTING](DEVICE_TESTING.md) owns the 37-profile reproduction and physical-pilot boundary; current evidence remains in PROJECT_STATE.

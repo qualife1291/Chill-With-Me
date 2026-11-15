@@ -13,6 +13,8 @@ export default function RoomControls({
   onCamera,
   onReset,
   onZoom,
+  gestureMode,
+  onGesture,
   light,
   onLight,
   onClose,
@@ -39,6 +41,8 @@ export default function RoomControls({
   onCamera: (mode: string) => void;
   onReset: () => void;
   onZoom: (delta: number) => void;
+  gestureMode: boolean;
+  onGesture: () => void;
   light: boolean;
   onLight: () => void;
   onClose: () => void;
@@ -116,6 +120,15 @@ export default function RoomControls({
             + Phóng gần
           </button>
         </div>
+      )}
+      {!light && (
+        <button
+          className="gesture-toggle"
+          aria-pressed={gestureMode}
+          onClick={onGesture}
+        >
+          {gestureMode ? "Trở lại bấm video" : "Chạm để nhìn quanh"}
+        </button>
       )}
       <p className="control-hint">Kéo để nhìn · Cuộn/pinch để thu/phóng</p>
       <label className="scene-quality">

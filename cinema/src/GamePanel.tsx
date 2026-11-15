@@ -1,4 +1,5 @@
 import GameRules from "./games/GameRules";
+import InvitationControls from "./InvitationControls";
 import OaqBoard from "./games/OaqBoard";
 import { useEffect, useRef, useState } from "react";
 import { X, Sprout, Dices, Pause, Play, Volume2, VolumeX } from "lucide-react";
@@ -20,6 +21,7 @@ const reasons: Record<string, string> = {
 };
 export default function GamePanel({
   room,
+  slot,
   id,
   command,
   onClose,
@@ -40,6 +42,7 @@ export default function GamePanel({
   caller,
 }: {
   room: Room;
+  slot: number;
   id: string;
   command: (c: Command, onSuccess?: () => void) => Promise<unknown>;
   onClose: () => void;
@@ -136,7 +139,7 @@ export default function GamePanel({
           <X size={18} />
         </button>
       </header>
-      {g && !table && (
+      {g && g.phase !== "lobby" && !table && (
         <div
           className="game-view-options"
           role="group"
@@ -187,6 +190,26 @@ export default function GamePanel({
         <>
           {g.phase === "lobby" && (
             <>
+              <p className="game-lobby-guidance" role="status">
+                {host
+                  ? g.players.length < 2
+                    ? "Mời thêm một người bạn để bắt đầu."
+                    : "Đủ người rồi. Bắt đầu khi cả nhóm sẵn sàng nhé!"
+                  : player >= 0
+                    ? "Bạn đã vào ván. Chờ chủ phòng bắt đầu nhé."
+                    : "Bạn đang xem phòng. Tham gia nếu muốn chơi cùng."}
+              </p>
+              {host && (
+                <InvitationControls
+                  room={room}
+                  slot={slot}
+                  host={host}
+                  compact
+                  onCommand={async (c, done) => {
+                    await command(c, done);
+                  }}
+                />
+              )}
               <p className="small">
                 {g.kind === "oaq"
                   ? "Quan = 10 dân · không quan non · 2 người"
@@ -213,6 +236,7 @@ export default function GamePanel({
                 )}
                 {host && (
                   <button
+                    className="primary"
                     disabled={busy || g.players.length < 2}
                     onClick={() => void send({ action: "start" })}
                   >
@@ -457,7 +481,12 @@ export default function GamePanel({
               Nhạc gốc riêng trên máy bạn; nhỏ lại khi đọc chat/hô số, dừng khi
               ván nghỉ hoặc tab ẩn. Hold chỉ tắt video.
             </p>
-            {music.warning && <p role="status">{music.warning}</p>}
+            {music.warning && (
+              <div className="game-music-warning" role="status">
+                <p>{music.warning}</p>
+                <button onClick={music.retry}>Thử bật nhạc lại</button>
+              </div>
+            )}
           </details>
           <GameRules kind={g.kind} />
           <footer className="game-footer">

@@ -123,6 +123,7 @@ try {
   await run("Worker dry run", "npm", ["run", "worker:check"]);
   for (const file of [
     "api.integration.mjs",
+    "game-entry.integration.mjs",
     "playlist.integration.mjs",
     "roadmap.integration.mjs",
     "relay-security.cjs",
@@ -153,6 +154,7 @@ try {
     "games.cjs",
     "game-stage.cjs",
     "lobby-game-audio.cjs",
+    "device-matrix.cjs",
     "media.cjs",
     "hls.cjs",
     "roadmap.cjs",

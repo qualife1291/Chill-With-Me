@@ -31,11 +31,13 @@ function ProceduralAvatar({
   capacity,
   offset,
   look,
+  active = true,
 }: {
   m: Member;
   capacity: number;
   offset: number;
   look: { yaw: number; pitch: number; bodyYaw: number };
+  active?: boolean;
 }) {
   const group = useRef<THREE.Group>(null),
     torso = useRef<THREE.Group>(null),
@@ -52,10 +54,12 @@ function ProceduralAvatar({
     m.waveAt,
     m.pokedAt,
     m.seated,
+    active,
     invalidate,
   ]);
   const shirt = m.appearance?.clothing || "#6f9fc3";
   useFrame((_, dt) => {
+    if (!active) return;
     const now = Date.now() + offset,
       pose = avatarMotion(m, now);
     const root = group.current,
@@ -598,6 +602,7 @@ export default function Cinema({
             <Avatar
               key={m.id}
               m={m}
+              active={!game}
               capacity={world.capacity}
               offset={offset}
               reducedMotion={reducedMotion}

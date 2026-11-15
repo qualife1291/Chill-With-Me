@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playFireworkSound } from "./fireworkSound";
+import { resumeAudio } from "./audioResume";
 import { playLotoMusic } from "./games/lotoMusic";
 import type { ReactionKind } from "../shared/model";
 import type { ReactionVariant } from "../shared/reactions";
@@ -51,6 +52,7 @@ export function useRoomSounds(session = "", sideGain = 1) {
     stopCues();
     return stopCues;
   }, [session, stopCues]);
+  const resuming = useRef<AbortController | undefined>(undefined);
   const context = useRef<AudioContext | null>(null);
   const output = useRef<GainNode | null>(null);
   const unlock = useCallback(() => {
@@ -76,22 +78,21 @@ export function useRoomSounds(session = "", sideGain = 1) {
         output.current.connect(compressor);
         compressor.connect(ctx.destination);
       }
-      if (ctx.state === "suspended")
-        void ctx
-          .resume()
-          .then(() => {
-            setWarning(
-              ctx.state === "running"
-                ? ""
-                : "Hãy bấm bật âm tương tác để cho phép phát tiếng.",
-            );
+      if (ctx.state === "suspended" && !resuming.current) {
+        const controller = new AbortController();
+        resuming.current = controller;
+        void resumeAudio(ctx, controller.signal)
+          .then(() => setWarning(""))
+          .catch(() => {
+            if (!controller.signal.aborted)
+              setWarning(
+                "Chưa bật được âm tương tác. Hãy thử lại từ menu cảm xúc hoặc kiểm tra đầu ra âm thanh.",
+              );
           })
-          .catch(() =>
-            setWarning(
-              "Chưa bật được âm tương tác. Hãy thử lại từ menu cảm xúc.",
-            ),
-          );
-      else setWarning("");
+          .finally(() => {
+            if (resuming.current === controller) resuming.current = undefined;
+          });
+      } else if (ctx.state === "running") setWarning("");
     } catch {
       setWarning(
         "Chưa khởi tạo được âm tương tác. Bạn vẫn có thể dùng hiệu ứng hình ảnh.",
@@ -117,6 +118,8 @@ export function useRoomSounds(session = "", sideGain = 1) {
       document.removeEventListener("touchend", unlock, true);
       document.removeEventListener("keydown", key, true);
       stopCues();
+      resuming.current?.abort();
+      resuming.current = undefined;
       const ctx = context.current;
       context.current = null;
       output.current?.disconnect();
@@ -157,6 +160,8 @@ export function useRoomSounds(session = "", sideGain = 1) {
           0.04,
         );
     } else {
+      resuming.current?.abort();
+      resuming.current = undefined;
       stopCues();
       if (output.current) output.current.gain.value = 0;
     }

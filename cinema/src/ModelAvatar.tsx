@@ -17,6 +17,7 @@ export default function ModelAvatar({
   look,
   reducedMotion = false,
   preview = false,
+  active = true,
 }: {
   m: Member;
   capacity: number;
@@ -24,6 +25,7 @@ export default function ModelAvatar({
   look: { yaw: number; pitch: number; bodyYaw: number };
   reducedMotion?: boolean;
   preview?: boolean;
+  active?: boolean;
 }) {
   const style = m.avatar || "male";
   const gltf = useLoader(GLTFLoader, `/models/${style}.glb`);
@@ -175,6 +177,7 @@ export default function ModelAvatar({
     capacity,
     m.seat,
     preview,
+    active,
     m.sitAt,
     m.waveAt,
     m.pokedAt,
@@ -214,7 +217,7 @@ export default function ModelAvatar({
     }
   };
   useFrame((_, dt) => {
-    if (settled.current) return;
+    if (!active || settled.current) return;
     const root = group.current;
     if (!root) return;
     if (sceneDiagnostics)

@@ -164,18 +164,6 @@ fs.mkdirSync(shots, { recursive: true });
     });
     assert.equal(invalid.status(), 400);
     assert((await api(h, "/rooms")).every((r) => !r.open));
-    await h
-      .locator(".lobby-activities .activity-option")
-      .filter({ has: h.locator('input[value="oaq"]') })
-      .click();
-    const choice = h.locator('.lobby-activities input[value="oaq"]');
-    await choice.focus();
-    await choice.press("ArrowRight");
-    assert(
-      await h.locator('.lobby-activities input[value="loto"]').isChecked(),
-    );
-    await h.locator('.lobby-activities input[value="loto"]').press("ArrowLeft");
-    assert(await choice.isChecked());
     assert.equal(await h.getByRole("dialog").count(), 0);
     for (const v of [
       { width: 1280, height: 900 },
@@ -199,19 +187,29 @@ fs.mkdirSync(shots, { recursive: true });
       .getByRole("button", { name: "Khám phá phòng 03", exact: true })
       .click();
     await h
-      .getByRole("button", { name: "Tạo phòng Ô ăn quan", exact: true })
+      .getByRole("button", { name: "Chơi Ô ăn quan", exact: true })
       .click();
     const dialog = h.getByRole("dialog", {
       name: "Tạo phòng mới",
       exact: true,
     });
     assert.equal(
-      await dialog.locator('input[name="entry-activity"]:checked').inputValue(),
-      "oaq",
+      await dialog.locator("input").count(),
+      1,
+      "quick entry mounts only the name input",
+    );
+    assert.equal(
+      await dialog.locator("canvas").count(),
+      0,
+      "optional avatar renderer stays unmounted",
     );
     await h.setViewportSize({ width: 320, height: 640 });
     await shot("lobby-create-game-320.png");
     await h.getByPlaceholder("Mọi người gọi bạn là…").fill("Lobby host");
+    await dialog
+      .locator("summary")
+      .filter({ hasText: "Tùy chọn phòng" })
+      .click();
     await h.getByLabel("Tên phòng mới").fill("Game night");
     await dialog
       .getByRole("button", { name: "Tạo phòng", exact: true })
@@ -228,7 +226,7 @@ fs.mkdirSync(shots, { recursive: true });
     await g
       .locator(".room-card")
       .nth(2)
-      .getByRole("button", { name: "Xin vào phòng", exact: true })
+      .getByRole("button", { name: "Chơi cùng", exact: true })
       .click();
     assert.equal(await g.locator('input[name="entry-activity"]').count(), 0);
     await g.getByPlaceholder("Mọi người gọi bạn là…").fill("Lobby guest");
@@ -244,11 +242,19 @@ fs.mkdirSync(shots, { recursive: true });
       .getByRole("button", { name: "Cho vào", exact: true })
       .click();
     await panel(g).waitFor();
-    await panel(g)
-      .getByRole("button", { name: "Tham gia ván", exact: true })
-      .click();
+    assert.equal(
+      (await state(g)).game.players.length,
+      2,
+      "approval atomically joins the chosen game",
+    );
+    assert.equal(
+      await panel(g)
+        .getByRole("button", { name: "Tham gia ván", exact: true })
+        .count(),
+      0,
+    );
     record(
-      "responsive lobby selection defers identity; invalid activity creates nothing; one create request opens host game lobby; approval/spectator joining preserved",
+      "one-click lobby game creation, compact optional setup; invalid activity creates nothing; one create request opens host game lobby; approval atomically enrolls play intent",
     );
     await h.setViewportSize({ width: 1280, height: 900 });
     await panel(h)
@@ -361,6 +367,36 @@ fs.mkdirSync(shots, { recursive: true });
       .getByRole("button", { name: "Âm thanh tương tác: Tắt", exact: true })
       .click();
     await playing();
+    await open(h);
+    if (!(await h.getByLabel("Nhạc nền trò chơi").isVisible()))
+      await panel(h).locator(".game-music>summary").click();
+    await h.evaluate(async () => {
+      const ctx = window.__contexts[0];
+      window.__realResume = ctx.resume.bind(ctx);
+      await ctx.suspend();
+      ctx.resume = () => new Promise(() => {});
+    });
+    await h.getByLabel("Nhạc nền trò chơi").selectOption("garden");
+    await h
+      .getByRole("button", { name: "Thử bật nhạc lại", exact: true })
+      .waitFor();
+    assert(
+      await h
+        .getByRole("status")
+        .filter({ hasText: "Thiết bị chưa bật được âm thanh" })
+        .isVisible(),
+    );
+    await stopped();
+    await h.evaluate(() => {
+      window.__contexts[0].resume = window.__realResume;
+    });
+    await h
+      .getByRole("button", { name: "Thử bật nhạc lại", exact: true })
+      .click();
+    await playing();
+    record(
+      "pending audio resume is bounded; explicit retry recovers on the same context without queued or duplicated music",
+    );
     await cmd(h, { type: "close" });
     session = undefined;
     await stopped();

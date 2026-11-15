@@ -209,6 +209,7 @@ export type Room = {
     at: number;
     avatar?: AvatarStyle;
     appearance?: Appearance;
+    playGameId?: string;
   }[];
   banned: string[];
   queue: Item[];
@@ -370,6 +371,7 @@ export function requestJoin(
   avatar: AvatarStyle = "male",
   inviteKey?: string,
   appearance?: Appearance,
+  playGame = false,
 ) {
   if (r.banned.includes(id)) throw Error("BANNED");
   if (r.members.some((m) => m.id === id)) return;
@@ -385,6 +387,9 @@ export function requestJoin(
     at: now,
     avatar: avatarSchema.parse(avatar),
     appearance: appearanceSchema.optional().parse(appearance),
+    ...(playGame === true && r.game?.phase === "lobby"
+      ? { playGameId: r.game.id }
+      : {}),
   });
   r.revision++;
 }
@@ -676,6 +681,25 @@ export function apply(r: Room, actor: string, c: Command, now: number) {
       joinedAt: now,
       deadline: now + 20000,
     });
+    // The applicant explicitly chose to play. Bind that choice to the round
+    // observed at request time; a replaced/full/started round remains spectatable.
+    if (
+      p.playGameId &&
+      r.game?.id === p.playGameId &&
+      r.game.phase === "lobby" &&
+      !r.game.players.includes(p.id) &&
+      r.game.players.length < (r.game.kind === "oaq" ? 2 : 10)
+    )
+      applyGame(
+        r,
+        p.id,
+        {
+          type: "game",
+          expectedRevision: r.gameRevision || 0,
+          operation: { action: "join" },
+        },
+        now,
+      );
     r.pending = r.pending.filter((p) => p.id !== c.id);
   } else if (c.type === "reject")
     r.pending = r.pending.filter((p) => p.id !== c.id);
@@ -786,7 +810,7 @@ export function roomSummary(r: Room | null) {
     title: r.title,
     capacity: r.capacity,
     count: r.members.length,
-    ...(r.game ? { activity: r.game.kind } : {}),
+    ...(r.game ? { activity: r.game.kind, gamePhase: r.game.phase } : {}),
     ...(r.space && r.space !== "cinema" ? { space: r.space } : {}),
     ...(hostRecovering(r) ? { recovering: true } : {}),
   };

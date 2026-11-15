@@ -54,6 +54,7 @@ execFileSync("ffmpeg", [
   let session;
   const errors = [],
     commands = [],
+    initialLooks = new Set(),
     checks = [];
   const api = async (p, route, data) => {
     const r = await p.request.fetch(base + "/api" + route, {
@@ -106,6 +107,14 @@ execFileSync("ffmpeg", [
     for (const p of [h, g]) {
       p.setDefaultTimeout(20000);
       p.on("pageerror", (e) => errors.push(e.message));
+      p.on("response", (r) => {
+        if (
+          r.url().endsWith("/command") &&
+          r.ok() &&
+          r.request().postDataJSON()?.command?.type === "look"
+        )
+          initialLooks.add(p);
+      });
       p.on("request", (r) => {
         if (r.url().endsWith("/command"))
           commands.push(r.postDataJSON()?.command);
@@ -217,6 +226,19 @@ execFileSync("ffmpeg", [
       window.__video = document.querySelector("video");
       window.__video.volume = 0.47;
     });
+    // Admission schedules each profile's initial persisted gaze after 600ms.
+    // Await both responses before measuring Hold; keep all command/revision checks strict.
+    await Promise.all(
+      [h, g].map(async (p) => {
+        if (!initialLooks.has(p))
+          await p.waitForResponse(
+            (r) =>
+              r.url().endsWith("/command") &&
+              r.ok() &&
+              r.request().postDataJSON()?.command?.type === "look",
+          );
+      }),
+    );
     const before = (await state()).revision,
       count = commands.length;
     await hold(h, true);
@@ -226,7 +248,11 @@ execFileSync("ffmpeg", [
     await h.waitForTimeout(650);
     assert((await media(h)).time > at + 0.25, "host Hold paused media");
     assert.equal((await media(h)).paused, false);
-    assert.equal(commands.length, count, "Hold sent a room command");
+    assert.equal(
+      commands.length,
+      count,
+      "Hold sent a room command: " + JSON.stringify(commands.slice(count)),
+    );
     assert.equal((await state()).revision, before, "Hold changed room state");
     assert(
       await h.evaluate(

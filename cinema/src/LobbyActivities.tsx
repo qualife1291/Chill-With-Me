@@ -1,4 +1,4 @@
-import { activities, activityLabel, type Activity } from "../shared/activities";
+import { activities, type Activity } from "../shared/activities";
 import "./lobby-activities.css";
 function ActivityArt({ kind }: { kind: Activity }) {
   return (
@@ -122,15 +122,11 @@ export function ActivityPicker({
   );
 }
 export default function LobbyActivities({
-  value,
-  onChange,
   onCreate,
   available,
   busy,
 }: {
-  value: Activity;
-  onChange: (a: Activity) => void;
-  onCreate: () => void;
+  onCreate: (activity: Activity) => void;
   available: number;
   busy: boolean;
 }) {
@@ -139,21 +135,33 @@ export default function LobbyActivities({
       className="lobby-activities"
       aria-label="Chọn hoạt động và tạo phòng"
     >
-      <ActivityPicker value={value} onChange={onChange} />
-      <div className="activity-create">
-        <p>
-          {available
-            ? `${available}/3 phòng đang trống · Chọn phòng rồi mới nhập thông tin của bạn.`
-            : "Cả ba phòng đang có người. Bạn có thể xin vào một phòng bên dưới."}
-        </p>
-        <button
-          className="primary"
-          disabled={busy || !available}
-          onClick={onCreate}
-        >
-          Tạo phòng {activityLabel(value)}
-        </button>
+      <h2>Hôm nay mình làm gì?</h2>
+      <div className="activity-options activity-launchers">
+        {activities.map((a) => (
+          <button
+            key={a.id}
+            className="activity-option"
+            disabled={busy || !available}
+            aria-label={
+              a.id === "watch" ? "Tạo phòng Xem chung" : `Chơi ${a.label}`
+            }
+            onClick={() => onCreate(a.id)}
+          >
+            <ActivityArt kind={a.id} />
+            <strong>{a.label}</strong>
+            <span>{a.description}</span>
+            <small>{a.detail}</small>
+            <b className="activity-launch-label">
+              {a.id === "watch" ? "Tạo phòng xem" : "Tạo bàn chơi"}
+            </b>
+          </button>
+        ))}
       </div>
+      <p className="activity-availability">
+        {available
+          ? `${available}/3 phòng trống · Chọn một hoạt động để bắt đầu.`
+          : "Cả ba phòng đang có người. Chọn phòng bên dưới để vào cùng bạn bè."}
+      </p>
     </section>
   );
 }

@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "date": "2026-11-15T08:08:14.426Z",
+  "date": "2026-11-15T12:21:29.031Z",
   "checks": [
     "pit selection is static; 16 live peer gaze updates do not animate the hidden cinema or game GPU",
     "actual shared-context 3D picking issues a valid server move; second profile receives turn; native iframe/renderer identity preserved",

@@ -138,7 +138,7 @@ export default memo(function GameStage({
   angle: number;
   reducedMotion: boolean;
 }) {
-  const { camera, size, invalidate, gl } = useThree();
+  const { camera, size, invalidate, gl, get } = useThree();
   const portrait = size.width < 600 && size.height > size.width / 1.4;
   const layout = useMemo(() => oaqStage(portrait), [portrait]);
   const geometry = useMemo(() => new RoundedBoxGeometry(1, 1, 1, 2, 0.14), []);
@@ -231,6 +231,7 @@ export default memo(function GameStage({
       ball.current.position.y = 1.05 + Math.sin(progress * Math.PI) * 0.75;
     if (progress < 1) invalidate();
     if (sceneDiagnostics) {
+      gl.domElement.dataset.gameLoop = get().frameloop;
       gl.domElement.dataset.gameFrame = String(gl.info.render.frame);
       gl.domElement.dataset.gameResources = JSON.stringify({
         ...gl.info.memory,

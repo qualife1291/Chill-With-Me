@@ -3,6 +3,7 @@ import { unpackFileChunk } from "../shared/fileRelay";
 import CinemaPreferences from "./CinemaPreferences";
 import PlaybackDiagnostics from "./PlaybackDiagnostics";
 import LobbyActivities, { ActivityPicker } from "./LobbyActivities";
+import EntryDisclosure from "./EntryDisclosure";
 import { type Activity, activityLabel } from "../shared/activities";
 import { useGameMusic } from "./useGameMusic";
 import { useGameFeedback } from "./useGameFeedback";
@@ -93,6 +94,7 @@ type Snapshot = {
 type Summary = {
   space?: Space;
   activity?: Activity;
+  gamePhase?: NonNullable<Room["game"]>["phase"];
   recovering?: boolean;
   private?: boolean;
   slot: number;
@@ -258,9 +260,15 @@ function App() {
   useEffect(() => setSceneNotice(""), [room?.session]);
   const [queueBusy, setQueueBusy] = useState(false);
   const [queueNotice, setQueueNotice] = useState("");
-  const [entry, setEntry] = useState<{ slot: number; create: boolean } | null>(
-    null,
-  );
+  const [entry, setEntry] = useState<{
+    slot: number;
+    create: boolean;
+    activity?: Activity;
+    play?: boolean;
+    private?: boolean;
+  } | null>(null);
+  const entryActivity = entry?.create ? activity : entry?.activity || "watch";
+  const quickEntry = entryActivity !== "watch";
   const entryModal = useRef<HTMLElement>(null),
     entryBusy = useRef(false);
   const [seating, setSeating] = useState<"cinema" | "sofa">("cinema");
@@ -457,6 +465,7 @@ function App() {
     onMusic: sounds.playLoto,
     stopMusic: sounds.stopLoto,
   });
+  const gameFromShortcut = useRef(false);
   const [gameEffects, setGameEffects] = useState(false);
   useEffect(() => setGameEffects(false), [activeSession]);
   const feedbackBaseline = useGameFeedback(
@@ -948,6 +957,7 @@ function App() {
                 name,
                 avatar,
                 appearance,
+                playGame: entry?.play === true,
                 ...(n === invitedSlot && invitedKey
                   ? { inviteKey: invitedKey }
                   : {}),
@@ -1516,15 +1526,24 @@ function App() {
               </div>
             </section>
             <LobbyActivities
-              value={activity}
-              onChange={setActivity}
               available={summaries.filter((s) => !s.open).length}
               busy={busy || !id}
-              onCreate={() => {
+              onCreate={(chosen) => {
                 const free =
                   summaries.find((s) => s.slot === previewSlot && !s.open) ||
                   summaries.find((s) => !s.open);
                 if (free) {
+                  setActivity(chosen);
+                  if (
+                    title === "Tối cùng chúng mình" ||
+                    title === "Ô ăn quan cùng bạn" ||
+                    title === "Lô tô cùng bạn"
+                  )
+                    setTitle(
+                      chosen === "watch"
+                        ? "Tối cùng chúng mình"
+                        : `${activityLabel(chosen)} cùng bạn`,
+                    );
                   setPreviewSlot(free.slot);
                   setError("");
                   setEntry({ slot: free.slot, create: true });
@@ -1540,7 +1559,7 @@ function App() {
                 <section
                   ref={entryModal}
                   tabIndex={-1}
-                  className="approval-modal entry-modal panel"
+                  className={`approval-modal entry-modal panel${quickEntry ? " quick-game-entry" : ""}`}
                   role="dialog"
                   aria-modal="true"
                   aria-label={
@@ -1548,124 +1567,170 @@ function App() {
                   }
                 >
                   <h2>
-                    {entry.create
-                      ? activity === "watch"
-                        ? "Tạo góc xem của bạn"
-                        : "Tạo góc chơi của bạn"
-                      : "Vào phòng 0" + entry.slot}
+                    {quickEntry
+                      ? `${entry.create ? "Tạo bàn" : entry.play ? "Chơi cùng" : "Vào xem"} ${activityLabel(entryActivity)}`
+                      : entry.create
+                        ? activity === "watch"
+                          ? "Tạo góc xem của bạn"
+                          : "Tạo góc chơi của bạn"
+                        : "Vào phòng 0" + entry.slot}
                   </h2>
                   <p>
-                    {entry.create
-                      ? "Chọn nhân vật và chỗ ngồi cho buổi hẹn."
-                      : "Chỉ cần tên và nhân vật. Chủ phòng sẽ duyệt yêu cầu của bạn."}
+                    {quickEntry
+                      ? entry.create
+                        ? "Đặt tên, mời bạn vào và bắt đầu."
+                        : entry.play
+                          ? "Chủ phòng duyệt xong, bạn sẽ vào ván đang chờ nếu còn chỗ."
+                          : "Vào phòng để xem và trò chuyện cùng bạn bè."
+                      : entry.create
+                        ? "Chọn nhân vật và chỗ ngồi cho buổi hẹn."
+                        : "Chỉ cần tên và nhân vật. Chủ phòng sẽ duyệt yêu cầu của bạn."}
                   </p>
-                  {entry.create && (
-                    <ActivityPicker
-                      value={activity}
-                      onChange={setActivity}
-                      compact
-                    />
-                  )}
-                  <fieldset className="avatar-choice">
-                    <legend>Chọn nhân vật của bạn</legend>
-                    <label>
-                      <input
-                        type="radio"
-                        name="avatar"
-                        value="male"
-                        checked={avatar === "male"}
-                        onChange={() => {
-                          setAvatar("male");
-                          setAppearance({
-                            clothing: "#4d6c82",
-                            hair: "#51372b",
-                          });
-                        }}
-                      />{" "}
-                      Nam · Barbarian
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="avatar"
-                        value="female"
-                        checked={avatar === "female"}
-                        onChange={() => {
-                          setAvatar("female");
-                          setAppearance({
-                            clothing: "#008353",
-                            hair: "#9b5a45",
-                          });
-                        }}
-                      />{" "}
-                      Nữ · Rogue
-                    </label>
-                    <small>Bạn bè sẽ thấy nhân vật này trong phòng.</small>
-                  </fieldset>
-                  <div className="entry-appearance">
-                    <div
-                      className="entry-avatar-preview"
-                      aria-label="Xem trước nhân vật"
-                    >
-                      <Suspense fallback={<p>Đang tải nhân vật…</p>}>
-                        <SceneBoundary onError={() => {}}>
-                          <AvatarPreview
-                            avatar={avatar}
-                            appearance={appearance}
-                          />
-                        </SceneBoundary>
-                      </Suspense>
-                    </div>
-                    <fieldset>
-                      <legend>Màu sắc của bạn</legend>
-                      <div className="color-row">
-                        <label>
-                          Màu quần áo
-                          <input
-                            type="color"
-                            aria-label="Màu quần áo"
-                            value={appearance.clothing}
-                            onChange={(e) =>
-                              setAppearance((v) => ({
-                                ...v,
-                                clothing: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          Màu tóc
-                          <input
-                            type="color"
-                            aria-label="Màu tóc"
-                            value={appearance.hair}
-                            onChange={(e) =>
-                              setAppearance((v) => ({
-                                ...v,
-                                hair: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                      </div>
-                      <small>
-                        Chọn trước khi vào phòng. Ngoại hình được giữ trong suốt
-                        phiên phòng.
-                      </small>
-                    </fieldset>
-                  </div>
-                  <section className="setup panel">
-                    <label>
+                  {quickEntry && (
+                    <label className="quick-entry-name">
                       Tên của bạn
                       <input
                         maxLength={32}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Mọi người gọi bạn là…"
+                        onKeyDown={(e) => {
+                          if (
+                            e.key === "Enter" &&
+                            !e.nativeEvent.isComposing &&
+                            !busy
+                          ) {
+                            e.preventDefault();
+                            void enter(entry.slot, entry.create);
+                          }
+                        }}
                       />
                     </label>
+                  )}
+                  {entry.create && !quickEntry && (
+                    <ActivityPicker
+                      value={activity}
+                      onChange={setActivity}
+                      compact
+                    />
+                  )}
+                  <EntryDisclosure
+                    compact={quickEntry}
+                    title={`Nhân vật: ${avatar === "male" ? "Nam" : "Nữ"} · Tùy chỉnh`}
+                  >
+                    <fieldset className="avatar-choice">
+                      <legend>Chọn nhân vật của bạn</legend>
+                      <label>
+                        <input
+                          type="radio"
+                          name="avatar"
+                          value="male"
+                          checked={avatar === "male"}
+                          onChange={() => {
+                            setAvatar("male");
+                            setAppearance({
+                              clothing: "#4d6c82",
+                              hair: "#51372b",
+                            });
+                          }}
+                        />{" "}
+                        Nam · Barbarian
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          name="avatar"
+                          value="female"
+                          checked={avatar === "female"}
+                          onChange={() => {
+                            setAvatar("female");
+                            setAppearance({
+                              clothing: "#008353",
+                              hair: "#9b5a45",
+                            });
+                          }}
+                        />{" "}
+                        Nữ · Rogue
+                      </label>
+                      <small>Bạn bè sẽ thấy nhân vật này trong phòng.</small>
+                    </fieldset>
+                    <div className="entry-appearance">
+                      <div
+                        className="entry-avatar-preview"
+                        aria-label="Xem trước nhân vật"
+                      >
+                        <Suspense fallback={<p>Đang tải nhân vật…</p>}>
+                          <SceneBoundary onError={() => {}}>
+                            <AvatarPreview
+                              avatar={avatar}
+                              appearance={appearance}
+                            />
+                          </SceneBoundary>
+                        </Suspense>
+                      </div>
+                      <fieldset>
+                        <legend>Màu sắc của bạn</legend>
+                        <div className="color-row">
+                          <label>
+                            Màu quần áo
+                            <input
+                              type="color"
+                              aria-label="Màu quần áo"
+                              value={appearance.clothing}
+                              onChange={(e) =>
+                                setAppearance((v) => ({
+                                  ...v,
+                                  clothing: e.target.value,
+                                }))
+                              }
+                            />
+                          </label>
+                          <label>
+                            Màu tóc
+                            <input
+                              type="color"
+                              aria-label="Màu tóc"
+                              value={appearance.hair}
+                              onChange={(e) =>
+                                setAppearance((v) => ({
+                                  ...v,
+                                  hair: e.target.value,
+                                }))
+                              }
+                            />
+                          </label>
+                        </div>
+                        <small>
+                          Chọn trước khi vào phòng. Ngoại hình được giữ trong
+                          suốt phiên phòng.
+                        </small>
+                      </fieldset>
+                    </div>
+                  </EntryDisclosure>
+                  <section className="setup panel">
+                    {!quickEntry && (
+                      <label>
+                        Tên của bạn
+                        <input
+                          maxLength={32}
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Mọi người gọi bạn là…"
+                        />
+                      </label>
+                    )}
                     {entry.create && (
-                      <>
+                      <EntryDisclosure
+                        compact={quickEntry}
+                        title={`Tùy chọn phòng · ${visibility === "private" ? "Riêng tư" : "Công khai"} · ${capacity} chỗ`}
+                      >
+                        {quickEntry && (
+                          <ActivityPicker
+                            value={activity}
+                            onChange={setActivity}
+                            compact
+                          />
+                        )}
                         <fieldset className="space-picker">
                           <legend>Không gian chiếu</legend>
                           <div className="space-options">
@@ -1744,7 +1809,19 @@ function App() {
                             <option value="sofa">Sofa ngồi chung</option>
                           </select>
                         </label>
-                      </>
+                      </EntryDisclosure>
+                    )}
+                    {!entry.create && entry.private && (
+                      <label className="entry-play-intent">
+                        <input
+                          type="checkbox"
+                          checked={entry.play === true}
+                          onChange={(e) =>
+                            setEntry({ ...entry, play: e.target.checked })
+                          }
+                        />
+                        Tham gia game nếu phòng đang chờ
+                      </label>
                     )}
                   </section>
                   {error && <p role="alert">{error}</p>}
@@ -1849,7 +1926,13 @@ function App() {
                         onClick={() => {
                           setPreviewSlot(s.slot);
                           setError("");
-                          setEntry({ slot: s.slot, create: !s.open });
+                          setEntry({
+                            slot: s.slot,
+                            create: !s.open,
+                            activity: s.private ? undefined : s.activity,
+                            private: s.private === true,
+                            play: !s.private && s.gamePhase === "lobby",
+                          });
                         }}
                       >
                         {s.open
@@ -1857,10 +1940,31 @@ function App() {
                             ? "Vào phòng riêng"
                             : s.slot === invitedSlot
                               ? "Vào phòng được mời"
-                              : "Xin vào phòng"
+                              : s.gamePhase === "lobby"
+                                ? "Chơi cùng"
+                                : s.activity && s.activity !== "watch"
+                                  ? "Vào xem ván"
+                                  : "Xin vào phòng"
                           : "Tạo phòng"}
                         <ArrowRight size={17} />
                       </button>
+                      {s.open && !s.private && s.gamePhase === "lobby" && (
+                        <button
+                          className="room-watch-game"
+                          onClick={() => {
+                            setPreviewSlot(s.slot);
+                            setError("");
+                            setEntry({
+                              slot: s.slot,
+                              create: false,
+                              activity: s.activity,
+                              play: false,
+                            });
+                          }}
+                        >
+                          Vào xem
+                        </button>
+                      )}
                     </div>
                   </article>
                 ))}
@@ -1911,7 +2015,10 @@ function App() {
                 command={command}
                 soundsEnabled={sounds.enabled}
                 onToggleSounds={sounds.toggle}
-                onGames={() => setSheet("games")}
+                onGames={() => {
+                  gameFromShortcut.current = false;
+                  setSheet("games");
+                }}
                 onPresentation={() => setSheet("presentation")}
                 reactionsOpen={reactionsOpen}
                 onReactionsChange={setReactionsOpen}
@@ -1934,12 +2041,17 @@ function App() {
               >
                 <GamePanel
                   room={room}
+                  slot={slot!}
                   id={id}
                   command={command}
                   effectsEnabled={gameEffects}
                   onEffectsChange={setGameEffects}
                   music={{
                     ...gameMusic,
+                    retry: () => {
+                      if (!sounds.enabled) sounds.toggle();
+                      gameMusic.retry();
+                    },
                     change: (mode: GameMusicMode) => {
                       if (mode !== "off" && !sounds.enabled) sounds.toggle();
                       gameMusic.change(mode);
@@ -1976,7 +2088,9 @@ function App() {
                     requestAnimationFrame(() =>
                       document
                         .querySelector<HTMLButtonElement>(
-                          ".interaction-trigger",
+                          gameFromShortcut.current
+                            ? ".game-return"
+                            : ".interaction-trigger",
                         )
                         ?.focus({ preventScroll: true }),
                     );
@@ -2015,6 +2129,26 @@ function App() {
                 />
               </Suspense>
             )}
+            {room.game &&
+              sheet !== "games" &&
+              sheet !== "view" &&
+              sheet !== "presentation" &&
+              !reactionsOpen &&
+              !approvalActive &&
+              !quickActive && (
+                <button
+                  className="game-return"
+                  aria-label="Về bàn chơi"
+                  type="button"
+                  onClick={() => {
+                    gameFromShortcut.current = true;
+                    setSheet("games");
+                  }}
+                >
+                  <Gamepad2 size={18} aria-hidden="true" />
+                  <span>Về bàn</span>
+                </button>
+              )}
             <button
               className="personal-hold"
               type="button"
@@ -2033,7 +2167,7 @@ function App() {
               {held ? <VolumeX size={19} /> : <Volume2 size={19} />}
               <span>{held ? "Bỏ Hold" : "Hold"}</span>
             </button>
-            {!light && (
+            {!light && !room.game && (
               <div className="touch-navigation" aria-label="Di chuyển góc nhìn">
                 <button
                   type="button"
@@ -2520,6 +2654,8 @@ function App() {
                         }}
                         onReset={resetView}
                         onZoom={zoomBy}
+                        gestureMode={gestureMode}
+                        onGesture={() => setGestureMode((v) => !v)}
                         light={light}
                         quality={sceneQuality.quality}
                         onQuality={sceneQuality.change}
@@ -2994,6 +3130,23 @@ function App() {
                         quyết định video nào được thêm.
                       </p>
                     )}
+                    {host &&
+                      !room.current &&
+                      !room.presentation &&
+                      room.queue.length > 0 && (
+                        <button
+                          className="primary queue-start"
+                          disabled={queueBusy}
+                          onClick={() =>
+                            void queueAction({
+                              type: "next",
+                              generation: room.generation,
+                            })
+                          }
+                        >
+                          Phát playlist
+                        </button>
+                      )}
                     {room.queue.length === 0 ? (
                       <div className="empty">
                         <Film size={32} />

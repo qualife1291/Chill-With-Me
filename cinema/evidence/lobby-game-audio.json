@@ -1,9 +1,10 @@
 {
   "passed": true,
-  "date": "2026-11-15T08:08:37.543Z",
+  "date": "2026-11-15T12:21:54.173Z",
   "checks": [
-    "responsive lobby selection defers identity; invalid activity creates nothing; one create request opens host game lobby; approval/spectator joining preserved",
+    "one-click lobby game creation, compact optional setup; invalid activity creates nothing; one create request opens host game lobby; approval atomically enrolls play intent",
     "game start/selection/capture use real WebAudio; personal music shares one context and one mono 12s loop; volume does not restart; Hold preserves music; pause/hidden stop and resume cleanly",
+    "pending audio resume is bounded; explicit retry recovers on the same context without queued or duplicated music",
     "new game resets music off; fresh lottery call ducks/restores native loop; master mute and room close stop all sources; zero page errors"
   ],
   "screenshots": [

@@ -23,7 +23,12 @@ if (!playwright)
 const executablePath =
   process.env.CHROMIUM_EXECUTABLE_PATH ||
   (fs.existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined);
-module.exports = { chromium: playwright.chromium, executablePath };
+module.exports = {
+  chromium: playwright.chromium,
+  firefox: playwright.firefox,
+  webkit: playwright.webkit,
+  executablePath,
+};
 
 module.exports.openActions = async (page) => {
   const trigger = page.getByRole("button", {

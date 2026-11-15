@@ -6,10 +6,12 @@ export default function InvitationControls({
   slot,
   host,
   onCommand,
+  compact = false,
 }: {
   room: Room;
   slot: number;
   host: boolean;
+  compact?: boolean;
   onCommand: (c: Command, onSuccess?: () => void) => Promise<void>;
 }) {
   const [manual, setManual] = useState(false),
@@ -36,7 +38,7 @@ export default function InvitationControls({
         <Link size={16} />
         Mời bạn
       </button>
-      {privateRoom && host && (
+      {privateRoom && host && !compact && (
         <button
           title="Thu hồi link cũ và yêu cầu đang chờ; giữ thành viên hiện tại"
           onClick={() => {

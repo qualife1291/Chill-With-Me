@@ -34,6 +34,7 @@ const joinSchema = z.object({
   appearance: appearanceSchema.optional(),
   session: z.string().optional(),
   inviteKey: z.string().uuid().optional(),
+  playGame: z.boolean().default(false),
 });
 const createSchema = joinSchema.extend({
   title: z.string().trim().min(1).max(32),
@@ -237,6 +238,7 @@ export class RoomSlot extends DurableObject<Env> {
               c.avatar,
               c.inviteKey,
               c.appearance,
+              c.playGame,
             );
             this.save(r);
           } else if (action === "cancel") {

@@ -1,0 +1,303 @@
+{
+  "passed": true,
+  "date": "2026-11-15T12:44:55.057Z",
+  "worktreeDirty": true,
+  "buildIndexSha256": "40ffa90042e8bba0ff0fef8e7e0078f561bbbb00c78c645cdea83ef1a029cd3b",
+  "sourceBase": "bcee8df08f0e64f8dcc957d3d2236d7e54deaa75",
+  "target": "http://localhost:8787",
+  "extended": false,
+  "environment": {
+    "audioOutput": "configured virtual PulseAudio sink",
+    "softwareRenderingRequested": false,
+    "os": "linux",
+    "arch": "x64",
+    "cpuCount": 5,
+    "memoryGiB": 33.3,
+    "node": "v24.22.1"
+  },
+  "engines": [
+    {
+      "engine": "chromium",
+      "version": "155.0.8059.79",
+      "headedFirefox": false
+    }
+  ],
+  "summary": {
+    "profiles": 3,
+    "passed": 3,
+    "checks": 14,
+    "screenshots": 14,
+    "createWallMs": {
+      "p50": 320.5,
+      "p95": 438.9
+    }
+  },
+  "rows": [
+    {
+      "engine": "chromium",
+      "profile": "phone320",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "dpr": 2,
+      "input": "emulated touch",
+      "passed": true,
+      "screenshots": [
+        "device-chromium-phone320-lobby.png",
+        "device-chromium-phone320-entry.png",
+        "device-chromium-phone320-3d.png",
+        "device-chromium-phone320-chat-reactions.png",
+        "device-chromium-phone320-keyboard.png"
+      ],
+      "checks": [
+        "single game click + compact name/submit; no media dialog or optional preview renderer",
+        "two real profiles, explicit play intent auto-enrolls after host approval; one start button",
+        "same renderer, fitted non-overlapping 3D viewport, finite/static demand rendering",
+        "native Chromium CDP two-finger pinch/one-finger drag change camera without page zoom",
+        "sheet exclusivity/hit targets, chat send/receive and reaction lane without overlap"
+      ],
+      "navigation": {
+        "ttfbMs": 39.599999997764826,
+        "domContentLoadedMs": 339.0999999977648,
+        "fcpMs": 500,
+        "resourceBytes": 750036
+      },
+      "createToGameMs": 238.6,
+      "hostCreateActions": 2,
+      "guestJoinActions": 2,
+      "scene": {
+        "sameCanvas": true,
+        "bufferWidth": 226,
+        "bufferHeight": 144,
+        "cssWidth": 302,
+        "cssHeight": 192,
+        "nonOverlapping": true,
+        "msaa": false,
+        "gpuObjects": {
+          "geometries": 20,
+          "textures": 0,
+          "calls": 0
+        },
+        "contextCount": 1,
+        "effectiveDpr": 0.748
+      },
+      "deviceHints": {
+        "pointerCoarse": true,
+        "dpr": 2,
+        "cores": 5,
+        "memoryGB": 32
+      },
+      "idleFrames": 0,
+      "idleDiagnostics": {
+        "loop": "demand",
+        "rigUpdates": 1
+      },
+      "hiddenRigIdleUpdates": 0,
+      "selectionFrames": 1,
+      "peerPoseFrames": 0,
+      "oneHandZoom": true,
+      "nativeTouch": {
+        "zoom": -16.635532333438686,
+        "yaw": 8.81,
+        "scale": 1
+      },
+      "keyboardResize": {
+        "initial": {
+          "height": 390,
+          "visualHeight": 390,
+          "appliedHeight": 568,
+          "panelTop": 64.203125,
+          "panelBottom": 306
+        },
+        "settled": {
+          "height": 390,
+          "visualHeight": 390,
+          "appliedHeight": 390,
+          "panelTop": 144,
+          "panelBottom": 306
+        },
+        "waitMs": 44.9
+      },
+      "chromiumMetrics": {
+        "jsHeapMiB": 13.1,
+        "nodes": 877,
+        "taskDurationSeconds": 12.9,
+        "layoutDurationSeconds": 0.2
+      },
+      "longTasks": {
+        "supported": true,
+        "count": 31,
+        "blockingMs": 2988
+      }
+    },
+    {
+      "engine": "chromium",
+      "profile": "landscape",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "dpr": 2,
+      "input": "emulated touch",
+      "passed": true,
+      "screenshots": [
+        "device-chromium-landscape-lobby.png",
+        "device-chromium-landscape-entry.png",
+        "device-chromium-landscape-3d.png",
+        "device-chromium-landscape-chat-reactions.png"
+      ],
+      "checks": [
+        "single game click + compact name/submit; no media dialog or optional preview renderer",
+        "two real profiles, explicit play intent auto-enrolls after host approval; one start button",
+        "same renderer, fitted non-overlapping 3D viewport, finite/static demand rendering",
+        "sheet exclusivity/hit targets, chat send/receive and reaction lane without overlap"
+      ],
+      "navigation": {
+        "ttfbMs": 34.399999998509884,
+        "domContentLoadedMs": 182.89999999850988,
+        "fcpMs": 312,
+        "resourceBytes": 750037
+      },
+      "createToGameMs": 438.9,
+      "hostCreateActions": 2,
+      "guestJoinActions": 2,
+      "scene": {
+        "sameCanvas": true,
+        "bufferWidth": 406,
+        "bufferHeight": 184,
+        "cssWidth": 542,
+        "cssHeight": 246,
+        "nonOverlapping": true,
+        "msaa": false,
+        "gpuObjects": {
+          "geometries": 27,
+          "textures": 2,
+          "calls": 0
+        },
+        "contextCount": 1,
+        "effectiveDpr": 0.749
+      },
+      "deviceHints": {
+        "pointerCoarse": true,
+        "dpr": 2,
+        "cores": 5,
+        "memoryGB": 32
+      },
+      "idleFrames": 0,
+      "idleDiagnostics": {
+        "loop": "demand",
+        "rigUpdates": 1
+      },
+      "hiddenRigIdleUpdates": 0,
+      "selectionFrames": 1,
+      "peerPoseFrames": 0,
+      "oneHandZoom": true,
+      "chromiumMetrics": {
+        "jsHeapMiB": 12.3,
+        "nodes": 870,
+        "taskDurationSeconds": 7.8,
+        "layoutDurationSeconds": 0.1
+      },
+      "longTasks": {
+        "supported": true,
+        "count": 23,
+        "blockingMs": 2198
+      }
+    },
+    {
+      "engine": "chromium",
+      "profile": "laptop",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "dpr": 1,
+      "input": "mouse/keyboard",
+      "passed": true,
+      "screenshots": [
+        "device-chromium-laptop-lobby.png",
+        "device-chromium-laptop-entry.png",
+        "device-chromium-laptop-3d.png",
+        "device-chromium-laptop-chat-reactions.png",
+        "device-chromium-laptop-loto-native.png"
+      ],
+      "checks": [
+        "single game click + compact name/submit; no media dialog or optional preview renderer",
+        "two real profiles, explicit play intent auto-enrolls after host approval; one start button",
+        "same renderer, fitted non-overlapping 3D viewport, finite/static demand rendering",
+        "sheet exclusivity/hit targets, chat send/receive and reaction lane without overlap",
+        "actual 1280x720 H264/AAC app upload/decode, mounted player/Hold, shared-context music/pause/hidden, new-round reset and loto 3D"
+      ],
+      "navigation": {
+        "ttfbMs": 70.70000000298023,
+        "domContentLoadedMs": 352.30000000074506,
+        "fcpMs": 660,
+        "resourceBytes": 750037
+      },
+      "createToGameMs": 320.5,
+      "hostCreateActions": 2,
+      "guestJoinActions": 2,
+      "scene": {
+        "sameCanvas": true,
+        "bufferWidth": 968,
+        "bufferHeight": 598,
+        "cssWidth": 968,
+        "cssHeight": 598,
+        "nonOverlapping": true,
+        "msaa": false,
+        "gpuObjects": {
+          "geometries": 27,
+          "textures": 2,
+          "calls": 0
+        },
+        "contextCount": 1,
+        "effectiveDpr": 1
+      },
+      "deviceHints": {
+        "pointerCoarse": false,
+        "dpr": 1,
+        "cores": 5,
+        "memoryGB": 32
+      },
+      "idleFrames": 0,
+      "idleDiagnostics": {
+        "loop": "demand",
+        "rigUpdates": 1
+      },
+      "hiddenRigIdleUpdates": 0,
+      "selectionFrames": 1,
+      "peerPoseFrames": 0,
+      "mouseWheelZoom": true,
+      "nativeMedia": {
+        "width": 1280,
+        "height": 720,
+        "currentTime": 2.644086,
+        "readyState": 4,
+        "totalFrames": 65,
+        "droppedFrames": 0,
+        "muted": true
+      },
+      "visiblePlayback": {
+        "windowMs": 2005.7,
+        "mediaSeconds": 2,
+        "frames": 48,
+        "dropped": 0
+      },
+      "audioContexts": 1,
+      "chromiumMetrics": {
+        "jsHeapMiB": 20.8,
+        "nodes": 1640,
+        "taskDurationSeconds": 13.9,
+        "layoutDurationSeconds": 0.3
+      },
+      "longTasks": {
+        "supported": true,
+        "count": 66,
+        "blockingMs": 7427
+      }
+    }
+  ],
+  "errors": [],
+  "limitations": "Real Linux engines and local Worker/WebGL/WebAudio/native H264/AAC, software renderers; reported GPU strings may be privacy-masked, not proof of Apple hardware. Viewport/DPR/touch/reduced-motion/resource hints and hidden events are emulation/fixtures. CPU/network constraint is Chromium CDP simulation, not physical mobile speed/WAN/battery/thermal. Diagnostics enabled. Keyboard-sized viewport is not OS keyboard/IME; 640x450/DPR2 approximates zoomed layout, not browser/OS zoom. Timing includes automation/software GPU and is not field CWV or FPS certification; no real iOS/Android/macOS/M1 device connected."
+}

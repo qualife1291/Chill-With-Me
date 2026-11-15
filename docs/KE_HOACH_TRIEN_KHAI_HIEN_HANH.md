@@ -81,3 +81,17 @@ Nguồn nghiên cứu ngoài game và acceptance: [ADVANCED_EXPERIENCE](ADVANCED
 - [x] Nhạc nền gốc opt-in, buffer mono 12s/24kHz ≤1.2MB steady, loop native không timer từng nhịp; cùng AudioContext, mute/voice duck/priority/hidden/pause/session cleanup; không provider/billing.
 - [x] Âm chọn ô/rải/ăn/gọi số/kết quả hữu hạn, toggle cá nhân; gọi số mới không làm chat chờ bị khởi động rồi hủy nhầm.
 - [x] Unit/schema/privacy/atomic create; browser nhiều profile, mobile/keyboard/hitbox, nhạc/voice/cleanup/context/player identity và phép đo lặp lại. Hồi quy đầy đủ đạt 52/52 bước, 147 ca logic; review docs/code, push/CI Node 22/24, deploy đúng Worker và GET 226 public assets đều đạt.
+
+## Ma trận trình duyệt/thiết bị · 15/11/2026
+
+- [x] Khảo sát engine và phần cứng thực có; chạy Chromium/Firefox/WebKit Linux nếu khởi động được. Không gắn UA/viewport giả lập thành Safari/iPhone/Mac thật; không provision dịch vụ thiết bị trả phí.
+- [x] Ma trận phone hẹp/phone lớn/ngang/tablet/laptop/desktop/DPR 1–3, pointer chạm/chuột/bàn phím; sảnh, tạo/phê duyệt phòng, từng sheet/cảm xúc, game phẳng/3D, chat/composer khi viewport thấp, reduced motion/layout tương đương zoom (không giả là OS/browser zoom thật). Chụp ảnh, đo hitbox/overflow/overlap và giữ player/context.
+- [x] Đo có lặp lại: navigation/resource timing, frame thừa khi idle/đổi sheet/chọn ô, CPU/heap/DOM khi có API, buffer/decoder native, nhạc/hidden/resume. Chromium có workload CPU/network hạn chế được ghi rõ mô phỏng; không suy ra pin/FPS phần cứng.
+- [ ] Tái hiện và sửa lỗi có bằng chứng, kiểm tra trước/sau và hồi quy liên quan; cập nhật evidence/tài liệu/runner ngắn gọn. Nếu có runtime fix thì chạy đủ release gate, push/CI/deploy/GET Worker hiện có.
+- [ ] Pilot vật lý iOS Safari, Android Chrome và macOS M1: FPS/pin/thermal/acoustics, keyboard/IME/safe area/OS autoplay. Chưa có thiết bị kết nối thì giữ gate mở và cung cấp cách đo tái lập.
+
+### Rút ngắn vào game (ưu tiên theo góp ý)
+
+- [x] Một nút trên thẻ hoạt động mở tạo phòng ngay; form game hiển thị tên và CTA trước, nhân vật/cấu hình phòng trong disclosure, chỉ tải preview khi mở. Watch giữ tương thích; ngoại hình vẫn chốt trước admission.
+- [x] Public game card có Chơi cùng / Vào xem. Intent chơi rõ ràng gắn với game ID ở server lúc xin vào; duyệt thì join ván lobby nguyên tử nếu còn chỗ. Không tự join sau khi đổi ván hoặc ván bắt đầu; không bỏ duyệt khách, không tự start. Lời mời/private không lộ game trong summary.
+- [x] Giao diện lobby ván có một CTA chính Bắt đầu, thông báo chờ bạn rõ; các lựa chọn nâng cao không tranh chỗ CTA. Test đếm bước/không cần mở menu, spectator/round-race/capacity/ACL + ma trận trình duyệt bên trên.

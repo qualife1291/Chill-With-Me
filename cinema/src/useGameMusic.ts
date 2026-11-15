@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { resumeAudio } from "./audioResume";
 import {
   gameMusicGain,
   gameMusicSamples,
@@ -20,11 +21,13 @@ export function useGameMusic(
       mode: "off" as GameMusicMode,
       volume: 18,
     }),
+    [attempt, setAttempt] = useState(0),
     [playing, setPlaying] = useState(false),
     [warning, setWarning] = useState(""),
     [visible, setVisible] = useState(!document.hidden);
   const mode = selection.session === session ? selection.mode : "off",
     volume = selection.session === session ? selection.volume : 18;
+  const pending = useRef<AbortController | undefined>(undefined);
   const serial = useRef(0),
     nodes = useRef<
       | {
@@ -42,6 +45,8 @@ export function useGameMusic(
   desired.current = { volume, speaking };
   const stop = useCallback(() => {
     serial.current++;
+    pending.current?.abort();
+    pending.current = undefined;
     const old = nodes.current;
     nodes.current = undefined;
     if (old) {
@@ -78,15 +83,18 @@ export function useGameMusic(
       buffer.current = undefined;
       return;
     }
+    setWarning("");
     const bus = audio(),
       token = serial.current;
     if (!bus) {
       setWarning("Bấm bật âm tương tác, rồi chọn lại nhạc để cho phép phát.");
       return;
     }
+    const controller = new AbortController();
+    pending.current = controller;
     void (async () => {
       try {
-        if (bus.context.state === "suspended") await bus.context.resume();
+        await resumeAudio(bus.context, controller.signal);
         if (
           token !== serial.current ||
           document.hidden ||
@@ -121,13 +129,13 @@ export function useGameMusic(
         if (token === serial.current) {
           stop();
           setWarning(
-            "Chưa phát được nhạc nền. Bạn vẫn chơi và dùng giọng hô bình thường.",
+            "Thiết bị chưa bật được âm thanh. Bấm thử lại hoặc kiểm tra đầu ra âm thanh của máy.",
           );
         }
       }
     })();
     return stop;
-  }, [session, active, enabled, visible, mode, audio, stop]);
+  }, [session, active, enabled, visible, mode, audio, stop, attempt]);
   useEffect(() => {
     const n = nodes.current;
     if (n && n.context.state !== "closed")
@@ -138,6 +146,7 @@ export function useGameMusic(
       );
   }, [volume, speaking]);
   const change = (value: GameMusicMode) => {
+    setWarning("");
     if (MUSIC_MODES.includes(value))
       setSelection((old) => ({
         session,
@@ -148,6 +157,15 @@ export function useGameMusic(
   return {
     mode,
     change,
+    retry: () => {
+      // Resume directly inside the user's click, then restart the bounded attempt.
+      try {
+        void audio()
+          ?.context.resume()
+          .catch(() => {});
+      } catch {}
+      setAttempt((n) => n + 1);
+    },
     volume,
     setVolume: (n: number) => {
       if (Number.isFinite(n))

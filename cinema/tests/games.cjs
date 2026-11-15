@@ -92,10 +92,13 @@ fs.mkdirSync(shots, { recursive: true });
   };
   const join = async (p, name) => {
     await p.reload();
-    await p
-      .locator(".room-card")
-      .filter({ hasText: "Games QA" })
-      .getByRole("button", { name: "Xin vào phòng", exact: true })
+    const card = p.locator(".room-card").filter({ hasText: "Games QA" });
+    // Summaries arrive after reload; wait for an allowed spectator CTA rather
+    // than branching on a one-time count before the card has loaded.
+    await card
+      .getByRole("button", {
+        name: /^(Vào xem|Xin vào phòng|Vào xem ván)$/,
+      })
       .click();
     await p.getByPlaceholder("Mọi người gọi bạn là…").fill(name);
     await p
