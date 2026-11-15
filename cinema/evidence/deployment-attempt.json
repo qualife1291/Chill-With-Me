@@ -1,12 +1,12 @@
 {
-  "date": "2026-11-14T18:20:35.414616+00:00",
-  "source": "168931f",
-  "sourceFull": "168931f885a022ef294649908f5bb14fad435488",
+  "date": "2026-11-15T05:06:02.974498+00:00",
+  "source": "c91b59c",
+  "sourceFull": "c91b59c4b1a33fd9184881fd9e0d9ef3438f4f27",
   "deployed": true,
-  "version": "28a4a2fc-00a2-4e91-931f-2ae5bb585a03",
+  "version": "07d5bad2-d379-4562-b456-32bd6bae32d8",
   "worker": "cung-xem-cinema-alpha",
   "mode": "regular Static Assets + Worker",
-  "publicAssetsMatched": 225,
+  "publicAssetsMatched": 226,
   "publicSecurityHeaders": {
     "x-content-type-options": "nosniff",
     "x-frame-options": "DENY",
@@ -14,16 +14,17 @@
     "permissions-policy": "camera=(), microphone=(), geolocation=()"
   },
   "roomSummaries": 3,
-  "localStages": 48,
-  "logicCases": 130,
-  "verificationRun": "one uninterrupted sequential local run",
+  "localStages": 50,
+  "logicCases": 140,
+  "verificationRun": "one uninterrupted sequential local run on final source after camera fit correction",
   "agentSkillsValidated": 37,
   "presentationGroups": 8,
   "hudChecks": 87,
   "hudScreenshots": 89,
   "gameGroups": 4,
-  "lotteryDraws": 53,
-  "leaseSoakSeconds": 100.451119852,
+  "lotteryDraws": 46,
+  "game3DAudioGroups": 5,
+  "leaseSoakSeconds": 100.424302541,
   "leaseSoakSockets": 30,
   "sourceCI": {
     "passed": true,
@@ -31,14 +32,14 @@
       22,
       24
     ],
-    "run": "https://github.com/qualife1291/Chill-With-Me/actions/runs/43625797753"
+    "run": "https://github.com/qualife1291/Chill-With-Me/actions/runs/43679133104"
   },
-  "previousVerifiedVersion": "6831cc53-d4e6-4fe4-a652-cb6509bc8f59",
+  "previousVerifiedVersion": "28a4a2fc-00a2-4e91-931f-2ae5bb585a03",
   "preserved": [
     "ROOMS/RoomSlot SQLite migration v1",
     "room data",
     "ASSETS delivery",
     "billing"
   ],
-  "limitations": "Real local Worker/WebSocket/native codecs/HLS/PDF/WebAudio, declared YouTube/speech/OS fixtures and software GPU. No physical-device/M1, battery/thermal/acoustic, cultural-rule, WAN/quota or rollback certification. Theme Core/lunar verification, timer, full voice/R2/TURN/provider/CSP gates remain open."
+  "limitations": "Actual local Worker/Three/WebGL/WebAudio/native codecs/PDF/HLS; declared YouTube/speech/visibility fixtures and software GPU. No physical-device/M1, acoustic/battery/thermal, cultural-rule, WAN/quota or rollback certification. Device TTS and original finite music, not recorded or AI singing. Recorded-call pack, calendar/theme, timer, full voice/R2/TURN/provider/CSP gates remain open."
 }

@@ -72,4 +72,4 @@ Nguồn nghiên cứu ngoài game và acceptance: [ADVANCED_EXPERIENCE](ADVANCED
 - [x] Camera/viewport game độc lập thao tác cá nhân, native player/Hold/volume giữ identity; demand/finite motion/hidden/context-loss và reduced motion có fallback, không loop physics hay thêm renderer.
 - [x] Hô số hoặc hô vui opt-in, lời gốc/nhạc tổng hợp hữu hạn; chỉ số mới nhất, không đọc lại snapshot/hidden/reconnect. Shared speech ownership để hô/chat không hủy nhầm nhau; mute/priority/pause/leave cleanup.
 - [x] Fixture lời hô 1–90/variants và speech ownership/race; multi-profile privacy/ACL, 3D picking/rotation, desktop/320px/landscape, idle/resources/player identity, âm thanh thật với voice fixture được khai báo.
-- [ ] Hồi quy local, review UI/security/code/docs, push/CI và deploy/GET đúng Worker. Gói hát thu âm và pilot giọng/thiết bị thật vẫn cần bằng chứng riêng.
+- [x] Hồi quy local, review UI/security/code/docs, push/CI và deploy/GET đúng Worker. Gói hát thu âm và pilot giọng/thiết bị thật vẫn cần bằng chứng riêng.
