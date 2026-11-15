@@ -1,9 +1,9 @@
 {
-  "date": "2026-11-15T08:18:26.726965+00:00",
-  "source": "18f7bdf",
-  "sourceFull": "18f7bdf84f8b90310eda79556492fed7d6ee401b",
+  "date": "2026-11-15T13:02:14.777050+00:00",
+  "source": "31ad9fc",
+  "sourceFull": "31ad9fc88c5d0176bfe0bf0925d2518a5cc2af89",
   "deployed": true,
-  "version": "89fc4944-f438-499b-b516-1dda67b27228",
+  "version": "095a21e5-662a-488d-b7ed-6f261fa2c948",
   "worker": "cung-xem-cinema-alpha",
   "mode": "regular Static Assets + Worker",
   "publicAssetsMatched": 226,
@@ -14,17 +14,17 @@
     "permissions-policy": "camera=(), microphone=(), geolocation=()"
   },
   "roomSummaries": 3,
-  "localStages": 52,
-  "logicCases": 147,
-  "verificationRun": "one uninterrupted sequential local run on final runtime and tests; targeted selector/focus fixes verified before this run",
+  "localStages": 56,
+  "logicCases": 156,
+  "verificationRun": "One uninterrupted sequential full runtime verification; later matrix-only QA synchronization awaited rAF/visualViewport before existing bounds checks. No runtime changes afterward; default three-profile and final 37-profile matrices reran successfully.",
   "agentSkillsValidated": 37,
   "presentationGroups": 8,
   "hudChecks": 87,
   "hudScreenshots": 89,
   "gameGroups": 4,
-  "lotteryDraws": 48,
+  "lotteryDraws": 58,
   "game3DAudioGroups": 6,
-  "leaseSoakSeconds": 100.51652162500001,
+  "leaseSoakSeconds": 100.51289059000001,
   "leaseSoakSockets": 30,
   "sourceCI": {
     "passed": true,
@@ -32,25 +32,65 @@
       22,
       24
     ],
-    "run": "https://github.com/qualife1291/Chill-With-Me/actions/runs/43693635267"
+    "run": "https://github.com/qualife1291/Chill-With-Me/actions/runs/43716643275"
   },
-  "previousVerifiedVersion": "07d5bad2-d379-4562-b456-32bd6bae32d8",
+  "previousVerifiedVersion": "89fc4944-f438-499b-b516-1dda67b27228",
   "preserved": [
     "ROOMS/RoomSlot SQLite migration v1",
     "room data",
     "ASSETS delivery",
     "billing"
   ],
-  "limitations": "Actual local Worker/Three/WebGL/WebAudio/native codecs/PDF/HLS; declared YouTube/speech/visibility fixtures and software GPU. No physical-device/M1, acoustic/battery/thermal, cultural-rule, WAN/quota or rollback certification. Device TTS and original cues/personal native music loops, not recorded or AI singing. Recorded-call pack, calendar/theme, timer, full voice/R2/TURN/provider/CSP gates remain open.",
-  "lobbyMusicGroups": 3,
+  "limitations": "Real Linux engines and local Worker/WebGL/WebAudio/native H264/AAC, software renderers; reported GPU strings may be privacy-masked, not proof of Apple hardware. Viewport/DPR/touch/reduced-motion/resource hints and hidden events are emulation/fixtures. CPU/network constraint is Chromium CDP simulation, not physical mobile speed/WAN/battery/thermal. Diagnostics enabled. Keyboard-sized viewport is not OS keyboard/IME; 640x450/DPR2 approximates zoomed layout, not browser/OS zoom. Timing includes automation/software GPU and is not field CWV or FPS certification; no real iOS/Android/macOS/M1 device connected. Recorded-call pack, calendar/theme, timer, full voice/R2/TURN/provider/CSP, cultural-rules and rollback gates remain open.",
+  "lobbyMusicGroups": 4,
   "gameFrameCounters": {
     "selection": {
       "frames": 1,
-      "windowMs": 1220
+      "windowMs": 1249
     },
     "peerLook": {
       "frames": 0,
-      "windowMs": 3218
+      "windowMs": 3242
     }
-  }
+  },
+  "activeDeployment": {
+    "id": "0cf69c5a-75bf-411d-a49c-bee2c7388a05",
+    "created_on": "2026-11-15T13:01:35.498629Z",
+    "versions": [
+      {
+        "version_id": "095a21e5-662a-488d-b7ed-6f261fa2c948",
+        "percentage": 100
+      }
+    ]
+  },
+  "deviceMatrix": {
+    "profiles": 37,
+    "passed": 37,
+    "checks": 152,
+    "screenshots": 170,
+    "createWallMs": {
+      "p50": 356.5,
+      "p95": 717.1
+    },
+    "engines": [
+      {
+        "engine": "chromium",
+        "version": "155.0.8059.79",
+        "headedFirefox": false
+      },
+      {
+        "engine": "firefox",
+        "version": "153.0",
+        "headedFirefox": true
+      },
+      {
+        "engine": "webkit",
+        "version": "26.5",
+        "headedFirefox": false
+      }
+    ],
+    "report": "device-matrix-extended.json"
+  },
+  "viewportResizeRepeated": 3,
+  "testedBuildIndexSha256": "40ffa90042e8bba0ff0fef8e7e0078f561bbbb00c78c645cdea83ef1a029cd3b"
 }
