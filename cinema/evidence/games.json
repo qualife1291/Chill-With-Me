@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "date": "2026-11-14T18:11:05.018Z",
+  "date": "2026-11-15T04:52:57.699Z",
   "checks": [
     "game satisfies initial source; actual admission preempts game panel and pending DTO hides state; authoritative turns/host ACL/CAS synchronize two players with a spectator",
     "four viewports fit, primary controls are >=44px and hit-testable, Escape/focus and one-sheet ownership work; native iframe identity and personal Hold survive game/chat toggles",
@@ -14,7 +14,7 @@
     "games-oaq-1024.png",
     "games-loto-320.png"
   ],
-  "draws": 53,
+  "draws": 46,
   "logic": "pure rules fixtures and seeded invariants in games.test.ts",
   "limitations": "Real local Worker/WebSocket/DOM/CSS, actual 3s lottery cadence; YouTube API is a declared advancing-time fixture, software GPU and emulated viewports. No physical-device, WAN, cultural-rules pilot or battery certification."
 }

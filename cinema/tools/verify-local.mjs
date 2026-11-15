@@ -151,6 +151,7 @@ try {
     "hold-emotions.cjs",
     "presentation.cjs",
     "games.cjs",
+    "game-stage.cjs",
     "media.cjs",
     "hls.cjs",
     "roadmap.cjs",

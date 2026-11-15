@@ -8,15 +8,24 @@ export default function OaqBoard({
   busy,
   name,
   onMove,
+  selectedPit,
+  onSelectPit,
+  controlsOnly = false,
 }: {
   game: Game;
   id: string;
   busy: boolean;
   name: (id: string) => string;
   onMove: (pit: number, direction: 1 | -1) => void;
+  selectedPit?: number | null;
+  onSelectPit?: (pit: number | null) => void;
+  controlsOnly?: boolean;
 }) {
-  const [pit, setPit] = useState<number | null>(null);
-  useEffect(() => setPit(null), [g.id, g.revision]);
+  const [localPit, setLocalPit] = useState<number | null>(null);
+  const pit = selectedPit === undefined ? localPit : selectedPit;
+  const setPit = (value: number | null) =>
+    onSelectPit ? onSelectPit(value) : setLocalPit(value);
+  useEffect(() => setLocalPit(null), [g.id, g.revision]);
   const current = g.oaq,
     player = g.players.indexOf(id),
     turn = current?.turn,
@@ -51,52 +60,74 @@ export default function OaqBoard({
               : "Bạn ở phía B"}
         </p>
       )}
-      <div className="oaq-board" role="group" aria-label="Bàn Ô ăn quan">
-        {current.pits.map((tokens, index) => {
-          const isQuan = index === 0 || index === 6,
-            own = ownPits(player).includes(index);
-          const inside = (
-            <>
-              <span className="pebbles" aria-hidden="true">
-                {Array.from({ length: Math.min(6, tokens.dan) }, (_, n) => (
-                  <i key={n} />
-                ))}
-              </span>
-              {tokens.quan > 0 && (
-                <Sprout className="quan-token" aria-hidden="true" size={25} />
-              )}
-              <strong>{tokens.dan}</strong>
-              <small>
-                {isQuan
-                  ? `Quan ${index === 0 ? "trái" : "phải"}`
-                  : `${index < 6 ? "A" : "B"}${index < 6 ? index : index - 6}`}
-              </small>
-            </>
-          );
-          return isQuan ? (
-            <div
-              key={index}
-              className={`oaq-pit quan pit-${index}`}
-              aria-label={`${index === 0 ? "Quan trái" : "Quan phải"}, ${tokens.dan} dân, ${tokens.quan} quan`}
-            >
-              {inside}
-            </div>
-          ) : (
-            <button
-              key={index}
-              className={`oaq-pit pit-${index}${pit === index ? " selected" : ""}`}
-              aria-label={`Ô ${index < 6 ? "A" : "B"}${index < 6 ? index : index - 6}, ${tokens.dan} dân`}
-              aria-pressed={pit === index}
-              disabled={!canMove || !own || tokens.dan === 0}
-              onClick={() =>
-                setPit((value) => (value === index ? null : index))
-              }
-            >
-              {inside}
-            </button>
-          );
-        })}
-      </div>
+      {controlsOnly ? (
+        <label className="game-pit-select">
+          Ô muốn rải
+          <select
+            aria-label="Ô muốn rải"
+            value={pit ?? ""}
+            disabled={!canMove}
+            onChange={(e) =>
+              setPit(e.target.value === "" ? null : Number(e.target.value))
+            }
+          >
+            <option value="">Chạm ô trên bàn hoặc chọn ở đây</option>
+            {ownPits(player)
+              .filter((p) => current.pits[p].dan > 0)
+              .map((p) => (
+                <option key={p} value={p}>
+                  Ô {player === 0 ? "A" : "B"}
+                  {player === 0 ? p : p - 6} · {current.pits[p].dan} dân
+                </option>
+              ))}
+          </select>
+        </label>
+      ) : (
+        <div className="oaq-board" role="group" aria-label="Bàn Ô ăn quan">
+          {current.pits.map((tokens, index) => {
+            const isQuan = index === 0 || index === 6,
+              own = ownPits(player).includes(index);
+            const inside = (
+              <>
+                <span className="pebbles" aria-hidden="true">
+                  {Array.from({ length: Math.min(6, tokens.dan) }, (_, n) => (
+                    <i key={n} />
+                  ))}
+                </span>
+                {tokens.quan > 0 && (
+                  <Sprout className="quan-token" aria-hidden="true" size={25} />
+                )}
+                <strong>{tokens.dan}</strong>
+                <small>
+                  {isQuan
+                    ? `Quan ${index === 0 ? "trái" : "phải"}`
+                    : `${index < 6 ? "A" : "B"}${index < 6 ? index : index - 6}`}
+                </small>
+              </>
+            );
+            return isQuan ? (
+              <div
+                key={index}
+                className={`oaq-pit quan pit-${index}`}
+                aria-label={`${index === 0 ? "Quan trái" : "Quan phải"}, ${tokens.dan} dân, ${tokens.quan} quan`}
+              >
+                {inside}
+              </div>
+            ) : (
+              <button
+                key={index}
+                className={`oaq-pit pit-${index}${pit === index ? " selected" : ""}`}
+                aria-label={`Ô ${index < 6 ? "A" : "B"}${index < 6 ? index : index - 6}, ${tokens.dan} dân`}
+                aria-pressed={pit === index}
+                disabled={!canMove || !own || tokens.dan === 0}
+                onClick={() => setPit(pit === index ? null : index)}
+              >
+                {inside}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {g.phase !== "finished" && pit !== null && (
         <div className="game-move-controls">
           <button

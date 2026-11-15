@@ -14,6 +14,7 @@ import React, {
   useMemo,
   useRef,
   useEffect,
+  lazy,
   type RefObject,
 } from "react";
 import ModelAvatar from "./ModelAvatar";
@@ -23,6 +24,8 @@ import { type Room, type Member } from "../shared/model";
 import { cameraView, orbitView } from "../shared/camera";
 import { SCREEN, screenCorners, screenClipMatrix } from "../shared/projection";
 import { avatarMotion, avatarPosition } from "../shared/avatar";
+import type { Game } from "../shared/games";
+const GameStage = lazy(() => import("./games/GameStage"));
 function ProceduralAvatar({
   m,
   capacity,
@@ -466,6 +469,10 @@ function Camera({
 }
 export default function Cinema({
   suspended = false,
+  game,
+  selectedPit = null,
+  onSelectPit = () => {},
+  gameAngle = 0,
   room,
   id,
   mode,
@@ -484,6 +491,10 @@ export default function Cinema({
   lighting = "normal",
 }: {
   suspended?: boolean;
+  game?: Game;
+  selectedPit?: number | null;
+  onSelectPit?: (pit: number | null) => void;
+  gameAngle?: number;
   lighting?: Lighting;
   dpr: number;
   onUnavailable: () => void;
@@ -508,6 +519,13 @@ export default function Cinema({
     .join(",");
   return (
     <Canvas
+      className={game ? "game-renderer" : "cinema-renderer"}
+      role={game ? "img" : undefined}
+      aria-label={
+        game
+          ? `Bàn ${game.kind === "oaq" ? "Ô ăn quan" : "lô tô"} 3D`
+          : undefined
+      }
       frameloop="demand"
       dpr={dpr}
       camera={{ position: [0, 3.3, 7], fov: 60, near: 0.15, far: 80 }}
@@ -516,72 +534,88 @@ export default function Cinema({
         position: "absolute",
         inset: 0,
         zIndex: 1,
-        pointerEvents: "none",
+        pointerEvents: game ? "auto" : "none",
       }}
     >
       <SceneVisibility suspended={suspended} />
       <SceneRecovery onUnavailable={onUnavailable} />
       <SceneEnvironment
+        hidden={!!game}
         space={spaceInfo(room.space).id}
         capacity={room.capacity}
         lighting={lighting}
       />
-      {/* Native media lives below WebGL. This transparent depth-writing plane
+      <group visible={!game}>
+        {/* Native media lives below WebGL. This transparent depth-writing plane
           opens the screen only where foreground avatars/chairs do not occlude it. */}
-      <mesh position={[0, SCREEN.y, SCREEN.z]}>
-        <planeGeometry args={[SCREEN.width, SCREEN.height]} />
-        <meshBasicMaterial
-          color="#000000"
-          opacity={0}
-          transparent
-          blending={THREE.NoBlending}
-          depthWrite
-          depthTest
-          toneMapped={false}
-          fog={false}
-        />
-      </mesh>
-      <Walkways capacity={room.capacity} />
-      <Seating
-        capacity={room.capacity}
-        sofa={room.seating === "sofa"}
-        occupied={occupied}
-      />
-      {room.members
-        .filter((m) => mode !== "first" || m.id !== id)
-        .map((m) => (
-          <Avatar
-            key={m.id}
-            m={m}
-            capacity={room.capacity}
-            offset={offset}
-            reducedMotion={reducedMotion}
-            look={
-              m.id === id
-                ? {
-                    yaw: THREE.MathUtils.clamp(yaw, -75, 75),
-                    pitch: THREE.MathUtils.clamp(pitch, -45, 35),
-                    bodyYaw,
-                  }
-                : m.look || { yaw: 0, pitch: 0, bodyYaw: 0 }
-            }
+        <mesh position={[0, SCREEN.y, SCREEN.z]}>
+          <planeGeometry args={[SCREEN.width, SCREEN.height]} />
+          <meshBasicMaterial
+            color="#000000"
+            opacity={0}
+            transparent
+            blending={THREE.NoBlending}
+            depthWrite
+            depthTest
+            toneMapped={false}
+            fog={false}
           />
-        ))}
-      <Camera
-        room={room}
-        id={id}
-        mode={mode}
-        offset={offset}
-        yaw={yaw}
-        pitch={pitch}
-        bodyYaw={bodyYaw}
-        controlsOpen={controlsOpen}
-        zoom={zoom}
-        reducedMotion={reducedMotion}
-        motion={motion}
-        motionAt={motionAt}
-        surface={surface}
-      />
+        </mesh>
+        <Walkways capacity={room.capacity} />
+        <Seating
+          capacity={room.capacity}
+          sofa={room.seating === "sofa"}
+          occupied={occupied}
+        />
+        {room.members
+          .filter((m) => mode !== "first" || m.id !== id)
+          .map((m) => (
+            <Avatar
+              key={m.id}
+              m={m}
+              capacity={room.capacity}
+              offset={offset}
+              reducedMotion={reducedMotion}
+              look={
+                m.id === id
+                  ? {
+                      yaw: THREE.MathUtils.clamp(yaw, -75, 75),
+                      pitch: THREE.MathUtils.clamp(pitch, -45, 35),
+                      bodyYaw,
+                    }
+                  : m.look || { yaw: 0, pitch: 0, bodyYaw: 0 }
+              }
+            />
+          ))}
+      </group>
+      {game ? (
+        <Suspense fallback={null}>
+          <GameStage
+            game={game}
+            id={id}
+            selectedPit={selectedPit}
+            onSelectPit={onSelectPit}
+            angle={gameAngle}
+            reducedMotion={reducedMotion}
+          />
+        </Suspense>
+      ) : (
+        <Camera
+          room={room}
+          id={id}
+          mode={mode}
+          offset={offset}
+          yaw={yaw}
+          pitch={pitch}
+          bodyYaw={bodyYaw}
+          controlsOpen={controlsOpen}
+          zoom={zoom}
+          reducedMotion={reducedMotion}
+          motion={motion}
+          motionAt={motionAt}
+          surface={surface}
+        />
+      )}
     </Canvas>
   );
 }

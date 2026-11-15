@@ -8,6 +8,7 @@ Bắt đầu ở [PROJECT_STATE](../PROJECT_STATE.md): source/version, bằng ch
 | Tìm module/luồng dữ liệu | [ARCHITECTURE](ARCHITECTURE.md) |
 | Lệnh/giới hạn/runbook | [cinema README](../cinema/README.md) |
 | Acceptance và backlog đang mở | [roadmap](KE_HOACH_TRIEN_KHAI_HIEN_HANH.md) |
+| Game 3D / hô số / nguồn nhạc | [GAME_3D_AUDIO](GAME_3D_AUDIO.md) |
 | Luật game chính xác | [GAME_RULES_V1](GAME_RULES_V1.md) |
 | Nguồn/biến thể/license game | [VIETNAMESE_GAMES](VIETNAMESE_GAMES.md) |
 | StyleX/token decisions | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) |

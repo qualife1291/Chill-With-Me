@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playFireworkSound } from "./fireworkSound";
+import { playLotoMusic } from "./games/lotoMusic";
 import type { ReactionKind } from "../shared/model";
 import type { ReactionVariant } from "../shared/reactions";
 export type RoomSound = ReactionKind | ReactionVariant | "poke" | "game";
@@ -24,6 +25,11 @@ export function useRoomSounds(session = "", sideGain = 1) {
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
   const fireworkStop = useRef<(() => void) | null>(null);
+  const lotoStop = useRef<(() => void) | null>(null);
+  const stopLoto = useCallback(() => {
+    lotoStop.current?.();
+    lotoStop.current = null;
+  }, []);
   const scheduledCues = useRef(new Set<AudioScheduledSourceNode>());
   const stopCues = useCallback(() => {
     clearTimeout(activeTimer.current);
@@ -31,6 +37,7 @@ export function useRoomSounds(session = "", sideGain = 1) {
     setActive(false);
     fireworkStop.current?.();
     fireworkStop.current = null;
+    stopLoto();
     for (const node of scheduledCues.current) {
       try {
         node.stop();
@@ -290,5 +297,29 @@ export function useRoomSounds(session = "", sideGain = 1) {
     },
     [stopCues],
   );
-  return { enabled, toggle, play, active, warning };
+  const playLoto = useCallback(
+    (variant: number) => {
+      const ctx = context.current,
+        bus = output.current;
+      if (
+        !enabledRef.current ||
+        !ctx ||
+        !bus ||
+        ctx.state !== "running" ||
+        document.hidden
+      )
+        return;
+      stopLoto();
+      lotoStop.current = playLotoMusic(ctx, bus, variant);
+      activeUntil.current = Math.max(activeUntil.current, Date.now() + 1100);
+      clearTimeout(activeTimer.current);
+      setActive(true);
+      activeTimer.current = setTimeout(
+        () => setActive(false),
+        Math.max(0, activeUntil.current - Date.now()),
+      );
+    },
+    [stopLoto],
+  );
+  return { enabled, toggle, play, active, warning, playLoto, stopLoto };
 }

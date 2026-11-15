@@ -38,7 +38,7 @@ Bảng này không nhân bản kết quả/count/source release. Các report cur
 ## Công việc tiếp theo có thể triển khai
 
 1. **Shared focus timer:** host start/pause/reset, deadline từ room clock, chỉ broadcast transitions, không ghi mỗi giây; reconnect/hidden/transfer/CAS và Hold. Giao diện gọn, completion im lặng mặc định.
-2. **Game polish:** pilot rule packs, animation rải hữu hạn giữ accessibility/reduced motion; TTS gọi số opt-in dùng hàng đợi riêng có ưu tiên và cancel để không đè chat; pause/host transfer được kiểm lại. Chưa nhập engine multiplayer/WebGL thứ hai.
+2. **Game polish:** pilot rule packs, animate sowing with accessible/reduced alternatives; device number/festive calling and 3D are implemented. Next: recorded-call pack with license/loudness/codec checks, optional richer finite sow traces; pause/host transfer stay guarded. Chưa nhập engine multiplayer/WebGL thứ hai.
 3. **Conversation cards/mood opt-in:** không suy đoán cảm xúc, không lịch sử riêng tư, chọn đề tài và bỏ qua dễ dàng; xem [product direction](ADVANCED_EXPERIENCE.md#chill-with-me-product-direction--researched-2026-11-13).
 4. **StyleX mở rộng chọn lọc:** component có lợi ích variants/theming rõ ràng, kiểm cold-load tokens/CSS scope/bundle và keyboard/mobile. Không rewrite toàn app chỉ đổi cú pháp.
 
@@ -64,3 +64,12 @@ Bảng này không nhân bản kết quả/count/source release. Các report cur
 | Advanced renderer | WebGPU/depth-mask/native DOM compatibility và hardware pilot; giữ WebGL nhẹ hiện hành |
 
 Nguồn nghiên cứu ngoài game và acceptance: [ADVANCED_EXPERIENCE](ADVANCED_EXPERIENCE.md), [VIETNAMESE_GAMES](VIETNAMESE_GAMES.md). Gate chưa có quyền/tài nguyên vẫn được giữ mở, không đánh dấu toàn bộ roadmap hoàn tất.
+
+## Game 3D và hô lô tô · 15/11/2026
+
+- [x] Nghiên cứu R3F/Three.js, Tone.js/Howler, Web Speech và source hô số; ghi rõ license/nguồn đọc được, không giả là có gói hát tiếng Việt sẵn.
+- [x] Chế độ bàn 3D dùng lại một renderer/context; Ô có quân nổi/ô chọn, lô tô có lồng cầu/bóng số/vé chính mình. Bàn phẳng và điều khiển ≥44px/bàn phím vẫn dùng được; không đổi luật/DTO/CAS.
+- [x] Camera/viewport game độc lập thao tác cá nhân, native player/Hold/volume giữ identity; demand/finite motion/hidden/context-loss và reduced motion có fallback, không loop physics hay thêm renderer.
+- [x] Hô số hoặc hô vui opt-in, lời gốc/nhạc tổng hợp hữu hạn; chỉ số mới nhất, không đọc lại snapshot/hidden/reconnect. Shared speech ownership để hô/chat không hủy nhầm nhau; mute/priority/pause/leave cleanup.
+- [x] Fixture lời hô 1–90/variants và speech ownership/race; multi-profile privacy/ACL, 3D picking/rotation, desktop/320px/landscape, idle/resources/player identity, âm thanh thật với voice fixture được khai báo.
+- [ ] Hồi quy local, review UI/security/code/docs, push/CI và deploy/GET đúng Worker. Gói hát thu âm và pilot giọng/thiết bị thật vẫn cần bằng chứng riêng.

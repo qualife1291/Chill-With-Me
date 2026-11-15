@@ -118,11 +118,11 @@ KayKit GLB provenance/checksums/license: `public/models/manifest.json`. The offl
 
 ## Folk games and local playback diagnostics
 
-Choose **Tương tác → Trò chơi dân gian**, or Ô ăn quan / Lô tô as the initial room activity. Only the host opens/starts/closes a game. Approved members join before start; remaining members spectate. A game is independent of the mounted movie/presentation and personal Hold. The 2D sheet is lazy; world GPU work pauses while it is open, media/leases keep running.
+Choose **Tương tác → Trò chơi dân gian**, or Ô ăn quan / Lô tô as the initial room activity. Only the host opens/starts/closes a game. Approved members join before start; remaining members spectate. A game is independent of the mounted movie/presentation and personal Hold. The default flat sheet suspends the world renderer; optional 3D reuses it in a separate viewport, hides room geometry temporarily and restores it on exit. Native media/leases/Hold remain mounted.
 
 Rules: [GAME_RULES_V1](../docs/GAME_RULES_V1.md). Ô ăn quan has two players, 50 dân + two quan worth 10 points each, no quan-non rule; direction, relay/capture/refill/debt/end choices are versioned. Lô tô has 2–10 unique private 15-number tickets, server-crypto 1–90 draw without repetition, ≥3 seconds per draw. The first complete row freezes drawing; Kinh or the host's result action publishes all simultaneous winners. Host never receives another ticket or the secret deck. No money/prizes or game history.
 
-Host/players can pause; the pausing player or host resumes. Reconnect keeps the game through the normal 30-second grace. True departure cancels an active Ô game without a winner; lô tô continues if at least two players remain. Monotonic revision CAS rejects stale actions without automatic replay. Finished rounds stay bounded until close/replacement. Game sounds are opt-in and use existing audio priority/mute. Spoken-number TTS and rule/device usability pilots remain open.
+Host/players can pause; the pausing player or host resumes. Reconnect keeps the game through the normal 30-second grace. True departure cancels an active Ô game without a winner; lô tô continues if at least two players remain. Monotonic revision CAS rejects stale actions without automatic replay. Finished rounds stay bounded until close/replacement. Game sounds are opt-in and use existing audio priority/mute. Spoken-number/festive device calls are opt-in; recorded singing and physical voice/rule/device usability pilots remain open.
 
 `node tests/games.cjs` exercises the actual local Worker, private DTOs, three profiles, four viewport/hitbox sweeps, real draw cadence, reload/host transfer and stable media/Hold. Pure rule/property cases are in `tests/games.test.ts`. CSS stones are original project graphics; no extra 3D/game engine or copied asset.
 
@@ -201,3 +201,5 @@ After deploying the pinned Worker, verify public asset bytes and room summaries 
 ## Agent and styling maintenance
 
 [37 skills](../docs/AGENT_SKILLS.md): 29 user archive, three pinned official skills, five project-authored game skills. Preserve official contents/hashes/licenses. [Meta StyleX pilot](../docs/DESIGN_SYSTEM.md) compiles shared semantic tokens and game rules; runtime injection is disabled. Unused locals/parameters fail TypeScript. Read PROJECT_STATE → architecture/task owner; [read map](../docs/INDEX.md) keeps research/history out of routine context.
+
+Games offer **Bàn phẳng / Bàn 3D** inside the activity sheet; 3D reuses the room renderer, keeps native media/Hold mounted and stops idle rendering. **Hô số & nhịp vui** offers opt-in device Vietnamese number calls or original fun call lines with a short generated cue. Chat voice/speed selection is shared; speech ownership avoids cross-cancellation and missed calls never queue after reconnect. Sources, licenses and recorded-singing limits: [game 3D/audio](../docs/GAME_3D_AUDIO.md).

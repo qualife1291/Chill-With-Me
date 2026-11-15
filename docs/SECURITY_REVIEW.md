@@ -45,3 +45,9 @@ Không kiểm thử tấn công hoặc thay đổi phòng production. Chỉ GET/
 - [Chẩn đoán](../cinema/src/PlaybackDiagnostics.tsx) chỉ đọc native video khi người dùng yêu cầu, một timer 8 giây; dừng khi hidden/đóng/đổi nguồn/rời, không đọc URL ra UI, không ghi DB/upload/recording. Các số đo không vượt iframe origin để giả lập thống kê YouTube.
 
 Rule pilot với người biết luật, phần cứng thật và mọi gate vận hành/provider nêu trên vẫn mở. Chỉ kiểm thử mutation trên local.
+
+## Review bổ sung · 3D/hô số · 15/11/2026
+
+- Không đổi schema, role/CAS hoặc rút số; 3D chỉ render DTO đã duyệt và vé chính viewer, bóng trang trí không chứa bộ tương lai. CanvasTexture chỉ nhận số/lời gốc nội bộ, không HTML/URL/asset từ người dùng. Không thấy thêm dynamic HTML/eval hoặc raw global Speech cancel ngoài broker.
+- `speechBus.ts` phân owner, chặn callback cũ sau cancel/preempt, giữ queue chờ hữu hạn; lỗi speak đồng bộ được xử lý. Hô số snapshot/reconnect/hidden/paused không phát lại, mute/exit dọn music/voice; bài/giọng nghệ sĩ chưa nhập. Không thêm provider, credentials, dependency hoặc thay đổi billing.
+- Một context/renderer; geometry, bounded original textures và sáu oscillator được giải phóng. Camera fit được kiểm bằng Three.js projection độc lập; browser kiểm picking, 320px/landscape, idle/reduced, mode cycling, private cards, Hold và media identity. Không suy ra phần cứng, acoustic quality hoặc recorded-song rights từ fixtures.

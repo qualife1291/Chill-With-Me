@@ -528,3 +528,169 @@
     grid-column: 1/-1;
   }
 }
+
+.game-view-options {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.game-view-options button {
+  flex: 1;
+}
+.game-view-options [aria-pressed="true"] {
+  background: var(--cw-felt);
+  border-color: var(--cw-accent);
+}
+.game-angle,
+.game-pit-select,
+.loto-voice label {
+  display: block;
+  font-size: 13px;
+  margin-block: 8px;
+}
+.game-angle input,
+.game-pit-select select,
+.loto-voice select {
+  width: 100%;
+  min-height: 44px;
+}
+.loto-voice summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+.loto-verse {
+  line-height: 1.5;
+}
+.cinema-app.has-3d-game {
+  --active-sheet-width: 340px;
+}
+.cinema-app.has-3d-game .screen-surface {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.cinema-app.has-3d-game .game-sheet.is-3d {
+  display: block;
+  width: 340px;
+  max-height: var(--sheet-height);
+}
+.cinema-app.has-3d-game .game-scores {
+  display: flex;
+  flex-direction: row;
+  margin-block: 8px;
+}
+.cinema-app.has-3d-game .game-scores > span {
+  font-size: 12px;
+  padding: 6px;
+}
+.cinema-app.has-3d-game .game-turn {
+  font-size: 12px;
+}
+.cinema-app.has-3d-game .game-sheet > header {
+  height: auto;
+  min-height: 48px;
+  padding: 0;
+}
+.cinema-app.has-3d-game .loto-call {
+  padding: 6px;
+}
+.cinema-app.has-3d-game .loto-call strong {
+  font-size: 40px;
+}
+.cinema-app .game-renderer {
+  inset: 72px 382px 96px 14px !important;
+  width: auto !important;
+  height: auto !important;
+  border: 1px solid #cba56a55;
+  border-radius: 24px;
+  touch-action: manipulation;
+}
+.cinema-app.has-3d-game .chat-toasts {
+  left: 14px;
+  right: 14px;
+  top: 62px;
+  bottom: auto;
+  width: auto;
+  max-height: 72px;
+  overflow: hidden;
+}
+.cinema-app.has-3d-game:has(.chat-toasts) .game-renderer {
+  top: 144px !important;
+}
+.cinema-app.has-3d-game:has(.chat-toasts) .game-sheet.is-3d {
+  max-height: max(100px, calc(var(--panel-viewport, 100svh) - 230px));
+}
+@media (max-width: 900px) and (min-height: 501px) {
+  .cinema-app .game-renderer {
+    inset: 64px 8px 310px 8px !important;
+  }
+  .cinema-app.has-3d-game .game-sheet.is-3d {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    height: 210px;
+    max-height: 210px;
+    padding: 10px;
+  }
+  .cinema-app.has-3d-game .game-sheet.is-3d > header {
+    min-height: 44px;
+  }
+}
+@media (max-height: 500px) {
+  .cinema-app .game-renderer {
+    inset: 58px 292px 84px 8px !important;
+  }
+  .cinema-app.has-3d-game .game-sheet.is-3d {
+    left: auto;
+    right: 8px;
+    width: 270px;
+    max-height: calc(100svh - 142px);
+    padding: 10px;
+  }
+  .cinema-app.has-3d-game .game-move-controls {
+    position: static;
+  }
+  .cinema-app.has-3d-game .game-scores {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+.cinema-app.has-3d-game .game-sheet > header {
+  gap: 6px;
+}
+.cinema-app.has-3d-game .game-sheet > header strong {
+  flex: 1;
+}
+.cinema-app.has-3d-game .game-sheet > header button:not([aria-label]) {
+  font-size: 12px;
+  padding: 6px 10px;
+}
+.game-angle summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+@media (max-width: 900px) and (min-height: 501px) {
+  .cinema-app.has-3d-game .game-scores > span {
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    font-size: 10px;
+  }
+  .cinema-app.has-3d-game .game-scores small {
+    display: none;
+  }
+  .cinema-app.has-3d-game .game-turn {
+    margin-block: 4px;
+    padding: 4px;
+  }
+  .cinema-app.has-3d-game .game-pit-select {
+    margin-block: 4px;
+    font-size: 11px;
+  }
+}
+.cinema-app.has-3d-game .game-sheet > header button:not([aria-label]) {
+  width: auto;
+  min-width: 88px;
+  white-space: nowrap;
+}

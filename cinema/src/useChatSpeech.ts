@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Room } from "../shared/model";
+import { speechBus } from "./speechBus";
 export function useChatSpeech(
   room: Room | null,
   enabled: boolean,
@@ -73,7 +74,7 @@ export function useChatSpeech(
     queue.current = [];
     active.current = false;
     clearTimeout(timer.current);
-    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    if ("speechSynthesis" in window) speechBus.cancel("chat");
     setSpeaking(false);
   }, []);
   const run = useCallback(function next() {
@@ -130,10 +131,10 @@ export function useChatSpeech(
       u.onstart = null;
       u.onend = null;
       u.onerror = null;
-      speechSynthesis.cancel();
+      speechBus.cancel("chat");
       finish();
     }, 20000);
-    speechSynthesis.speak(u);
+    speechBus.speak("chat", u);
   }, []);
   const announce = useCallback(
     (text: string) => {

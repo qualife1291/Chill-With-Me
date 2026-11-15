@@ -251,10 +251,12 @@ export default memo(function SceneEnvironment({
   space,
   capacity,
   lighting = "normal",
+  hidden = false,
 }: {
   space: Space;
   capacity: number;
   lighting?: Lighting;
+  hidden?: boolean;
 }) {
   const boxes = useMemo(() => decoration(space, capacity), [space, capacity]);
   const roof = space === "rooftop";
@@ -265,15 +267,17 @@ export default memo(function SceneEnvironment({
         attach="background"
         args={[roof ? "#101b30" : space === "lounge" ? "#342f28" : "#101b19"]}
       />
-      <fog
-        attach="fog"
-        args={[
-          roof ? "#101b30" : space === "lounge" ? "#342f28" : "#101b19",
-          roof ? 24 : 18,
-          roof ? 65 : 38,
-        ]}
-      />
-      <group name={"space-" + space}>
+      {!hidden && (
+        <fog
+          attach="fog"
+          args={[
+            roof ? "#101b30" : space === "lounge" ? "#342f28" : "#101b19",
+            roof ? 24 : 18,
+            roof ? 65 : 38,
+          ]}
+        />
+      )}
+      <group name={"space-" + space} visible={!hidden}>
         <ambientLight intensity={(roof ? 0.6 : 0.8) * brightness} />
         <hemisphereLight
           args={[

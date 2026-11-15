@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "date": "2026-11-14T18:07:17.367Z",
+  "date": "2026-11-15T04:49:37.414Z",
   "checks": [
     "real three-page PDF validates/rasterizes; password/201-page/corrupt files reject before mutation and warnings survive background movie reconciliation; lazy worker, host-only controls, pixel budget, native player/timeline preserved; authenticated document relay reaches viewer",
     "late rejoin requires approval, hides document from pending profile and follows the current page after authenticated transfer",

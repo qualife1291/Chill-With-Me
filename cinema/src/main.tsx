@@ -3,6 +3,7 @@ import { unpackFileChunk } from "../shared/fileRelay";
 import CinemaPreferences from "./CinemaPreferences";
 import PlaybackDiagnostics from "./PlaybackDiagnostics";
 import { usePreference } from "./usePreference";
+import { CALLER_MODES, useLotoCaller } from "./useLotoCaller";
 import { AUDIO_PRIORITIES, audioMix } from "../shared/audioMix";
 import { MOTION_MODES } from "../shared/immersive";
 import { useWakeLock } from "./useWakeLock";
@@ -432,11 +433,47 @@ function App() {
   const sideGain = priority === "video" && !!room?.playing ? 0.25 : 1;
   const speech = useChatSpeech(room, tts, sideGain);
   const sounds = useRoomSounds(activeSession, sideGain);
-  const ambience = useAmbience(activeSession, speech.speaking, sideGain);
+  const [callerMode, setCallerMode] = usePreference(
+    "cinema-loto-caller",
+    CALLER_MODES,
+    "off",
+  );
+  const caller = useLotoCaller({
+    game: room?.game,
+    session: activeSession,
+    mode: callerMode,
+    enabled: sounds.enabled,
+    volume: sideGain,
+    voiceURI: speech.voiceURI,
+    rate: speech.rate,
+    serverNow: clock.serverNow,
+    onMusic: sounds.playLoto,
+    stopMusic: sounds.stopLoto,
+  });
+  const [gameView, setGameView] = usePreference(
+    "cinema-game-view",
+    ["flat", "table"] as const,
+    "flat",
+  );
+  const [gamePit, setGamePit] = useState<number | null>(null),
+    [gameAngle, setGameAngle] = useState(0);
+  const game3d =
+    sheet === "games" &&
+    gameView === "table" &&
+    !light &&
+    !!room?.game &&
+    room.game.phase !== "lobby";
+  useEffect(() => setGamePit(null), [room?.game?.id, room?.gameRevision]);
+  useEffect(() => setGameAngle(0), [activeSession, room?.game?.id]);
+  const ambience = useAmbience(
+    activeSession,
+    speech.speaking || caller.speaking,
+    sideGain,
+  );
   const mix = audioMix(
     priority,
     !!room?.playing,
-    speech.speaking,
+    speech.speaking || caller.speaking,
     sounds.active,
     ambience.mode !== "off",
   );
@@ -481,7 +518,8 @@ function App() {
     for (const waiter of waiters.current.values())
       waiter.reject(Error("ROOM_CLOSED"));
     waiters.current.clear();
-    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    speech.stop();
+    caller.stop();
     const voluntary = exitIntent.current;
     exitIntent.current = false;
     setError(
@@ -592,7 +630,10 @@ function App() {
         `/rooms/${slot}/state`,
         undefined,
         AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]),
-      );
+      ).then((v) => {
+        caller.baseline(v.room?.game, v.room?.session || "");
+        return v;
+      });
     const recover = async (force = false) => {
       if (
         stop ||
@@ -632,6 +673,7 @@ function App() {
       const ws = new WebSocket(
         `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/rooms/${slot}/ws`,
       );
+      let firstGameSnapshot = true;
       socket = ws;
       connectingAt = performance.now();
       ws.binaryType = "arraybuffer";
@@ -734,7 +776,13 @@ function App() {
           setPendingMessages((p) => p.filter((m) => m.id !== v.commandId));
         } else if (v.type === "command-error")
           waiters.current.get(v.commandId)?.reject(Error(v.error));
-        else if (v.status) receive(v);
+        else if (v.status) {
+          if (firstGameSnapshot) {
+            firstGameSnapshot = false;
+            caller.baseline(v.room?.game, v.room?.session || "");
+          }
+          receive(v);
+        }
       };
       ws.onclose = (e) => {
         if (stop || socket !== ws) return;
@@ -826,8 +874,8 @@ function App() {
     setBodyYaw(0);
     setZoom(0);
     setSheet("");
-    setTts(speech.enable());
     try {
+      setTts(speech.enable());
       if (demo) {
         const r = createRoom(
           id,
@@ -1189,7 +1237,11 @@ function App() {
     (delta: number) => setZoom((v) => Math.max(-24, Math.min(24, v + delta))),
     [],
   );
-  const headDrag = useHeadDrag(turn, status === "joined" && !light, zoomBy);
+  const headDrag = useHeadDrag(
+    turn,
+    status === "joined" && !light && !game3d,
+    zoomBy,
+  );
   useEffect(() => {
     setGestureMode(false);
   }, [room?.session, light]);
@@ -1226,7 +1278,7 @@ function App() {
     return () => document.body.classList.remove("cinema-active");
   }, [status, !!room]);
   useEffect(() => {
-    if (status !== "joined") return;
+    if (status !== "joined" || game3d) return;
     const keys = new Set<string>();
     let frame = 0,
       last = 0;
@@ -1309,7 +1361,7 @@ function App() {
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", release);
     };
-  }, [status, turn]);
+  }, [status, turn, game3d]);
   const host = room?.host === id,
     me = room?.members.find((m) => m.id === id);
   return (
@@ -1338,7 +1390,7 @@ function App() {
         data-clock-calibrated={clock.calibrated}
         className={
           status === "joined" && room
-            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""} ${sheet === "games" ? "has-games" : ""} ${reactionsOpen ? "has-reactions" : ""} ${room.presentation ? "has-presentation" : ""}`
+            ? `cinema-app ${panel && panel !== "info" ? "with-panel" : ""} ${panel === "chat" ? "with-chat" : ""} ${panel === "info" ? "show-info" : ""} ${showControls ? "show-controls" : ""} ${sheet ? "has-sheet" : ""} ${sheet === "games" ? "has-games" : ""} ${game3d ? "has-3d-game" : ""} ${reactionsOpen ? "has-reactions" : ""} ${room.presentation ? "has-presentation" : ""}`
             : undefined
         }
       >
@@ -1821,6 +1873,29 @@ function App() {
                   soundsEnabled={sounds.enabled}
                   onEnableSounds={sounds.toggle}
                   serverNow={clock.serverNow}
+                  view={
+                    game3d
+                      ? "table"
+                      : gameView === "table" && !light
+                        ? "table"
+                        : "flat"
+                  }
+                  onView={(v) => {
+                    if (v === "table") setLight(false);
+                    setGameView(v);
+                  }}
+                  selectedPit={gamePit}
+                  onSelectPit={setGamePit}
+                  angle={gameAngle}
+                  onAngle={setGameAngle}
+                  caller={caller}
+                  callerMode={callerMode}
+                  onCallerMode={(m) => {
+                    if (["off", "number", "festive"].includes(m)) {
+                      if (m !== "off" && !sounds.enabled) sounds.toggle();
+                      setCallerMode(m);
+                    }
+                  }}
                   onClose={() => {
                     setSheet("");
                     requestAnimationFrame(() =>
@@ -2089,7 +2164,8 @@ function App() {
                           : "Rời phòng này?",
                       )
                     ) {
-                      if ("speechSynthesis" in window) speechSynthesis.cancel();
+                      speech.stop();
+                      caller.stop();
                       void command({ type: host ? "close" : "leave" });
                     }
                   }}
@@ -2169,6 +2245,7 @@ function App() {
                     onWheel={(e) => {
                       if (
                         light ||
+                        game3d ||
                         e.ctrlKey ||
                         (e.target as HTMLElement).closest(
                           ".screen-surface,.scene-controls,.sidebar,summary,button,input,textarea,select",
@@ -2183,6 +2260,7 @@ function App() {
                       );
                     }}
                     onPointerDownCapture={(e) => {
+                      if (game3d) return;
                       const target = e.target as HTMLElement;
                       if (
                         !target.closest(
@@ -2192,7 +2270,7 @@ function App() {
                         e.currentTarget.focus({ preventScroll: true });
                     }}
                   >
-                    {gestureMode && !light && (
+                    {gestureMode && !light && !game3d && (
                       <div
                         className="scene-gesture-layer"
                         aria-label="Kéo một ngón để nhìn, hai ngón để thu phóng"
@@ -2277,7 +2355,11 @@ function App() {
                       >
                         <SceneBoundary onError={sceneUnavailable}>
                           <Cinema
-                            suspended={sheet === "games"}
+                            suspended={sheet === "games" && !game3d}
+                            game={game3d ? room.game : undefined}
+                            selectedPit={gamePit}
+                            onSelectPit={setGamePit}
+                            gameAngle={gameAngle}
                             room={room}
                             id={id}
                             mode={camera}

@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "date": "2026-11-15T04:53:57.685Z",
+  "checks": [
+    "actual shared-context 3D picking issues a valid server move; second profile receives turn; native iframe/renderer identity preserved",
+    "320px/landscape/desktop fit; finite motion and reduced motion settle to zero idle frames; two 3D/flat cycles release resources and preserve Hold/context",
+    "loto 3D shows only own ticket; opt-in voice/finite real WebAudio cue; latest draw speaks once on both profiles, chat revisions and pause/resume never replay",
+    "lottery voice preempts active chat safely; one deferred chat resumes after call, no stale callback cancellation",
+    "reconnect baseline and hidden/visible updates do not replay missed calls; pause/close ownership cleanup has zero page errors"
+  ],
+  "screenshots": [
+    "game3d-oaq-1280.png",
+    "game3d-oaq-320.png",
+    "game3d-oaq-844.png",
+    "game3d-loto-1280.png"
+  ],
+  "limitations": "Actual local Worker/Three/WebGL/context and WebAudio nodes; software GPU/emulated viewports. YouTube and Vietnamese speech are explicit fixtures, visibility override is a lifecycle fixture; not physical device, acoustic quality or recorded singing certification."
+}

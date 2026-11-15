@@ -5,6 +5,8 @@ import { X, Sprout, Dices, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import type { Room, Command } from "../shared/model";
 import { completeTicket, type GameCommand } from "../shared/games";
 import "./games.css";
+import { callVariant, lotoCall } from "../shared/lotoCalls";
+import type { CallerMode, useLotoCaller } from "./useLotoCaller";
 const title = (kind: string) => (kind === "oaq" ? "Ô ăn quan" : "Lô tô");
 const reasons: Record<string, string> = {
   "quan-finished": "Hai quan đã được ăn hết.",
@@ -23,6 +25,15 @@ export default function GamePanel({
   soundsEnabled,
   onEnableSounds,
   serverNow,
+  view,
+  onView,
+  selectedPit,
+  onSelectPit,
+  angle,
+  onAngle,
+  callerMode,
+  onCallerMode,
+  caller,
 }: {
   room: Room;
   id: string;
@@ -32,6 +43,15 @@ export default function GamePanel({
   soundsEnabled: boolean;
   onEnableSounds: () => void;
   serverNow: () => number;
+  view: "flat" | "table";
+  onView: (view: "flat" | "table") => void;
+  selectedPit: number | null;
+  onSelectPit: (pit: number | null) => void;
+  angle: number;
+  onAngle: (angle: number) => void;
+  callerMode: CallerMode;
+  onCallerMode: (mode: CallerMode) => void;
+  caller: ReturnType<typeof useLotoCaller>;
 }) {
   const g = room.game,
     host = room.host === id,
@@ -43,9 +63,11 @@ export default function GamePanel({
     seen = useRef(g ? `${g.id}:${g.revision}` : "");
   useEffect(() => {
     root.current
-      ?.querySelector<HTMLButtonElement>("header button")
+      ?.querySelector<HTMLButtonElement>(
+        'button[aria-label="Đóng bảng trò chơi"]',
+      )
       ?.focus({ preventScroll: true });
-  }, []);
+  }, [view, g?.phase === "lobby"]);
   useEffect(() => {
     const rev = g ? `${g.id}:${g.revision}` : "",
       changed = !!seen.current && seen.current !== rev;
@@ -84,6 +106,7 @@ export default function GamePanel({
       g.phase === "playing" &&
       completeTicket(g.ticket, g.drawn || [])
     );
+  const table = view === "table" && !!g && g.phase !== "lobby";
   const result =
     g?.phase === "finished"
       ? g.winners?.length
@@ -94,7 +117,7 @@ export default function GamePanel({
       : "";
   return (
     <section
-      className="activity-sheet game-sheet"
+      className={`activity-sheet game-sheet${table ? " is-3d" : ""}`}
       aria-label="Trò chơi dân gian"
       ref={root}
       onKeyDown={(e) => {
@@ -106,10 +129,32 @@ export default function GamePanel({
     >
       <header>
         <strong>{g ? title(g.kind) : "Chơi cùng nhau"}</strong>
+        {table && (
+          <button type="button" onClick={() => onView("flat")}>
+            Bàn phẳng
+          </button>
+        )}
         <button type="button" aria-label="Đóng bảng trò chơi" onClick={onClose}>
           <X size={18} />
         </button>
       </header>
+      {g && !table && (
+        <div
+          className="game-view-options"
+          role="group"
+          aria-label="Kiểu bàn chơi"
+        >
+          <button aria-pressed={view === "flat"} onClick={() => onView("flat")}>
+            Bàn phẳng
+          </button>
+          <button
+            aria-pressed={view === "table"}
+            onClick={() => onView("table")}
+          >
+            Bàn 3D
+          </button>
+        </div>
+      )}
       {!g ? (
         <>
           <p className="small">
@@ -208,6 +253,9 @@ export default function GamePanel({
               id={id}
               busy={busy}
               name={name}
+              controlsOnly={table}
+              selectedPit={selectedPit}
+              onSelectPit={onSelectPit}
               onMove={(pit, direction) =>
                 void send({ action: "sow", pit, direction })
               }
@@ -218,6 +266,14 @@ export default function GamePanel({
               <div className="loto-call" role="status">
                 <small>Số vừa gọi</small>
                 <strong key={last ?? "empty"}>{last ?? "—"}</strong>
+                {last && (
+                  <span className="loto-verse">
+                    {
+                      lotoCall(last, callVariant(g.id, g.drawn?.length || 0))
+                        .line
+                    }
+                  </span>
+                )}
                 <span>{called.size}/90 số</span>
               </div>
               {g.ticket ? (
@@ -257,14 +313,46 @@ export default function GamePanel({
                 <summary>Các số đã gọi ({called.size})</summary>
                 <p>{g.drawn?.join(" · ") || "Chưa gọi số."}</p>
               </details>
+              <details className="loto-voice">
+                <summary>Hô số & nhịp vui</summary>
+                <label>
+                  Hô số lô tô
+                  <select
+                    aria-label="Hô số lô tô"
+                    value={callerMode}
+                    onChange={(e) => onCallerMode(e.target.value as CallerMode)}
+                  >
+                    <option value="off">Tắt giọng hô</option>
+                    <option value="number">Đọc số rõ ràng</option>
+                    <option value="festive">Hô vui · có nhịp nhạc</option>
+                  </select>
+                </label>
+                <button
+                  disabled={callerMode === "off"}
+                  onClick={caller.preview}
+                >
+                  Nghe thử hô số
+                </button>
+                <p className="small">
+                  Lời hô gốc, đọc bằng giọng thiết bị; nhạc ngắn tổng hợp. Chọn
+                  giọng tiếng Việt ở phần Chat. Thiết lập riêng của bạn.
+                </p>
+                {caller.warning && <p role="status">{caller.warning}</p>}
+              </details>
               {g.phase === "playing" && (
                 <div className="game-actions">
                   {host && (
                     <button
-                      disabled={busy || cooldown || g.claiming}
+                      disabled={
+                        busy || cooldown || g.claiming || caller.speaking
+                      }
                       onClick={() => void send({ action: "draw" })}
                     >
-                      {cooldown ? "Chờ một nhịp…" : "Gọi số"}
+                      {caller.speaking
+                        ? "Đang hô…"
+                        : cooldown
+                          ? "Chờ một nhịp…"
+                          : "Gọi số"}
                     </button>
                   )}
                   {g.ticket && (
@@ -314,6 +402,23 @@ export default function GamePanel({
                 </button>
               )}
             </div>
+          )}
+          {table && (
+            <details className="game-angle">
+              <summary>Góc bàn</summary>
+              <label>
+                Xoay bàn · {angle}°
+                <input
+                  aria-label="Xoay bàn 3D"
+                  type="range"
+                  min="-30"
+                  max="30"
+                  step="5"
+                  value={angle}
+                  onChange={(e) => onAngle(Number(e.target.value))}
+                />
+              </label>
+            </details>
           )}
           <GameRules kind={g.kind} />
           <footer className="game-footer">
